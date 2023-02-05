@@ -30,12 +30,7 @@ import org.apache.derby.iapi.services.monitor.Monitor;
 
 import org.apache.derby.shared.common.error.StandardException;
 
-import java.security.AccessController;
 import java.security.Key;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedAction;
 
 import java.io.File;
 import java.io.RandomAccessFile;
@@ -97,13 +92,7 @@ public class T_Cipher extends T_Generic
     protected String getProvider()
     {
 	// allow for alternate providers
-	String testProvider = 
-		
-        AccessController.doPrivileged(new PrivilegedAction<String>() {
-            public String run() {
-		    	return System.getProperty("testEncryptionProvider");
-		    }
-	    });
+        String testProvider = System.getProperty("testEncryptionProvider");
 	
 	if (testProvider != null) 
 		return testProvider;
@@ -607,20 +596,15 @@ public class T_Cipher extends T_Generic
     }
     */
 	
-	/**
-	 * Delete a file in a Privileged block as these tests are
-	 * run under the embedded engine code.
-	 */
-	private void deleteFile(final File f)
-	{
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run()  {
-		    	if (f.exists())
-		    	    f.delete();
-		    	return null;
-		    }
-	    });
-	}
+    /**
+     * Delete a file in a Privileged block as these tests are
+     * run under the embedded engine code.
+     */
+    private void deleteFile(final File f)
+    {
+        if (f.exists())
+            f.delete();
+    }
     
     /**
      * Privileged startup. Must be private so that user code
@@ -630,18 +614,8 @@ public class T_Cipher extends T_Generic
         throws StandardException
     {
         try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.startSystemModule( factoryInterface );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
+            return Monitor.startSystemModule( factoryInterface );
+        } catch (Exception pae)
         {
             throw StandardException.plainWrapException( pae );
         }

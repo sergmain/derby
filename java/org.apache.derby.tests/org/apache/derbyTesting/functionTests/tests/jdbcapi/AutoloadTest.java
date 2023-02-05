@@ -40,7 +40,6 @@ import org.apache.derbyTesting.junit.Derby;
 import org.apache.derbyTesting.junit.JDBC;
 import org.apache.derbyTesting.junit.JDBCDataSource;
 import org.apache.derbyTesting.junit.NetworkServerTestSetup;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.SpawnedProcess;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
@@ -115,31 +114,24 @@ public class AutoloadTest extends BaseJDBCTestCase
         // in the value. Could get fancy and see if it is
         // correctly formatted but not worth it.
 
-        try {
-            String jdbcDrivers = getSystemProperty("jdbc.drivers");
-            if (jdbcDrivers == null)
-                jdbcDrivers = "";
+        String jdbcDrivers = getSystemProperty("jdbc.drivers");
+        if (jdbcDrivers == null)
+            jdbcDrivers = "";
 
-            embeddedAutoLoad = jdbcDrivers
-                    .contains("org.apache.derby.jdbc.EmbeddedDriver");
+        embeddedAutoLoad = jdbcDrivers
+            .contains("org.apache.derby.jdbc.EmbeddedDriver");
 
-            clientAutoLoad = jdbcDrivers
-                    .contains("org.apache.derby.jdbc.ClientDriver");
+        clientAutoLoad = jdbcDrivers
+            .contains("org.apache.derby.jdbc.ClientDriver");
 
-        } catch (SecurityException se) {
-            // assume there is no autoloading if
-            // we can't read the value of jdbc.drivers.
-        }
-
-        
         if (jdbc4Autoload || embeddedAutoLoad || clientAutoLoad)
         {
             BaseTestSuite suite = new BaseTestSuite("AutoloadTest");
             
             if (jdbc4Autoload && !embeddedAutoLoad)
             {
-                suite.addTest(SecurityManagerSetup.noSecurityManager(
-                        new AutoloadTest("testEmbeddedNotStarted")));
+                suite.addTest(
+                        new AutoloadTest("testEmbeddedNotStarted"));
             }
             
             if (jdbc4Autoload || embeddedAutoLoad)
@@ -169,7 +161,7 @@ public class AutoloadTest extends BaseJDBCTestCase
         BaseTestSuite suite =
             new BaseTestSuite("AutoloadTest: no autoloading expected");
         
-        suite.addTest(SecurityManagerSetup.noSecurityManager(new AutoloadTest("testEmbeddedNotStarted")));
+        suite.addTest(new AutoloadTest("testEmbeddedNotStarted"));
         suite.addTest(new AutoloadTest("noloadTestNodriverLoaded"));
         suite.addTest(TestConfiguration.clientServerDecorator(
                 new AutoloadTest("noloadTestNodriverLoaded")));
@@ -200,8 +192,8 @@ public class AutoloadTest extends BaseJDBCTestCase
         suite.addTest(new AutoloadTest("testSuccessfulConnect"));
       	
         if ("embedded".equals(which)) {
-            suite.addTest(SecurityManagerSetup.noSecurityManager(
-                new AutoloadTest("testEmbeddedStarted")));
+            suite.addTest(
+                new AutoloadTest("testEmbeddedStarted"));
         }
 
         suite.addTest(new AutoloadTest("testUnsuccessfulConnect"));

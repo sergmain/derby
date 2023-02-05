@@ -34,10 +34,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 /**
  * Class that starts the network server in its own daemon thread.
@@ -135,10 +131,9 @@ public final class DRDAServerStarter implements ModuleControl, Runnable
      * code is not dependent on the network server code.
      * @param serverClass
      * @throws NoSuchMethodException 
-     * @throws SecurityException 
      */
     private void findStartStopMethods(final Class<?> serverClass)
-        throws SecurityException, NoSuchMethodException
+        throws NoSuchMethodException
     {
         // Methods are public so no need for privilege blocks.
         runServerMethod = serverClass.getMethod(
@@ -179,42 +174,35 @@ public final class DRDAServerStarter implements ModuleControl, Runnable
             Constructor  serverConstructor;
             try
             {
-                serverConstructor = AccessController.doPrivileged(
-			      new PrivilegedExceptionAction<Constructor>() {
-						  public Constructor run() throws NoSuchMethodException, SecurityException
-						  {
-							  if (listenAddress == null)
-								  return serverClass.getConstructor(
-                                      new Class[]{String.class, String.class});
-							  else
-								  return
-									  serverClass.getConstructor(new
-										  Class[] {java.net.InetAddress.class,
-												   Integer.TYPE,
-                                                   String.class,
-                                                   String.class});
-                          }
-					  }
-				  );
+                if (listenAddress == null)
+                { serverConstructor = serverClass.getConstructor(new Class[]{String.class, String.class}); }
+                else
+                {
+                    serverConstructor =
+                        serverClass.getConstructor(new
+                                                   Class[] {java.net.InetAddress.class,
+                                                       Integer.TYPE,
+                                                       String.class,
+                                                       String.class});
+                }
             }
-            catch( PrivilegedActionException e)
+            catch(Exception e1)
             {
-                Exception e1 = e.getException();
                 Monitor.logTextMessage(
-									   MessageId.CONN_NETWORK_SERVER_START_EXCEPTION, e1.getMessage());
-				e.printStackTrace(Monitor.getStream().getPrintWriter());
+                    MessageId.CONN_NETWORK_SERVER_START_EXCEPTION, e1.getMessage());
+                e1.printStackTrace(Monitor.getStream().getPrintWriter());
                 return;
 
             }
             
             findStartStopMethods(serverClass);
             
-			if (listenAddress == null) {
-				server = serverConstructor.newInstance(
+            if (listenAddress == null) {
+                server = serverConstructor.newInstance(
                     new Object[]{userArg, passwordArg});
             } else {
-				server = serverConstructor.newInstance(new Object[]
-					{listenAddress, portNumber,
+                server = serverConstructor.newInstance(new Object[]
+                    {listenAddress, portNumber,
                      userArg, passwordArg});
             }
 
@@ -223,9 +211,9 @@ public final class DRDAServerStarter implements ModuleControl, Runnable
         }
         catch( Exception e)
         {
-			Monitor.logTextMessage( MessageId.CONN_NETWORK_SERVER_START_EXCEPTION, e.getMessage());
-			server = null;
-			e.printStackTrace(Monitor.getStream().getPrintWriter());
+            Monitor.logTextMessage( MessageId.CONN_NETWORK_SERVER_START_EXCEPTION, e.getMessage());
+            server = null;
+            e.printStackTrace(Monitor.getStream().getPrintWriter());
         }
     } // end of boot
 
@@ -254,59 +242,43 @@ public final class DRDAServerStarter implements ModuleControl, Runnable
     
     public void stop()
     {
-		try {
-			if( serverThread != null && serverThread.isAlive())
-			{
-				serverShutdownMethod.invoke( server,
-											 null);
-				AccessController.doPrivileged(
-							      new PrivilegedAction<Object>() {
-								  public Object run() {
-								      serverThread.interrupt();
-								      return null;
-								  }
-							      });				
-				serverThread = null;
-			}
+        try {
+            if( serverThread != null && serverThread.isAlive())
+            {
+                serverShutdownMethod.invoke( server, null);
+                serverThread.interrupt();
+                serverThread = null;
+            }
 		   
-		}
-		catch( InvocationTargetException ite)
+        }
+        catch( InvocationTargetException ite)
         {
-			Monitor.logTextMessage(
-								   MessageId.CONN_NETWORK_SERVER_SHUTDOWN_EXCEPTION, ite.getTargetException().getMessage());
-			ite.printStackTrace(Monitor.getStream().getPrintWriter());
+            Monitor.logTextMessage(
+                MessageId.CONN_NETWORK_SERVER_SHUTDOWN_EXCEPTION, ite.getTargetException().getMessage());
+            ite.printStackTrace(Monitor.getStream().getPrintWriter());
 			
         }
         catch( Exception e)
         {
             Monitor.logTextMessage( MessageId.CONN_NETWORK_SERVER_SHUTDOWN_EXCEPTION, e.getMessage());
-			e.printStackTrace(Monitor.getStream().getPrintWriter());
-		}
+            e.printStackTrace(Monitor.getStream().getPrintWriter());
+        }
 			
-		serverThread = null;
-		server = null;
-		serverClass = null;
-		listenAddress = null;
-		portNumber = -1;
-		consoleWriter = null;
+        serverThread = null;
+        server = null;
+        serverClass = null;
+        listenAddress = null;
+        portNumber = -1;
+        consoleWriter = null;
 		
     } // end of stop
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 }

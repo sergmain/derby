@@ -110,6 +110,7 @@ public class BootAllTest  extends BaseJDBCTestCase {
         getTestConfiguration().shutdownDatabase();
     }
     
+    @SuppressWarnings({"deprecation","removal"})
     public void shutdownDerby() {
         getTestConfiguration().shutdownEngine();
         System.runFinalization();

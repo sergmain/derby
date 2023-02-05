@@ -26,9 +26,6 @@ import java.io.InputStream;
 import java.util.Properties;
 import junit.framework.Test;
 import org.apache.derbyTesting.junit.BaseTestSuite;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
-
-
 
 /**
  * Run a replication test in a distributed
@@ -57,7 +54,7 @@ public class ReplicationRun_Distributed extends ReplicationRun
         
         suite.addTestSuite( ReplicationRun_Distributed.class );
         
-        return SecurityManagerSetup.noSecurityManager(suite);
+        return suite;
     }
     
     //////////////////////////////////////////////////////////////

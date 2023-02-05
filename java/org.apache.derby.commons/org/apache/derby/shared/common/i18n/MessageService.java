@@ -27,8 +27,6 @@ import org.apache.derby.shared.common.reference.ModuleUtil;
 
 import java.io.InputStream;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.PropertyResourceBundle;
@@ -379,17 +377,7 @@ public final class MessageService {
     {
         try
         {
-            InputStream is = AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<InputStream>()
-                 {
-                    public InputStream run() throws IOException
-                    {
-                        return module.getResourceAsStream(resourceName);
-                    }
-                });
-
-            //System.out.println("        XXX stream = " + is + " for resourceName " + resourceName + " in module " + module);
+            InputStream is = module.getResourceAsStream(resourceName);
 
             if (is != null)
             {

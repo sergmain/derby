@@ -22,7 +22,6 @@
 package org.apache.derbyTesting.functionTests.tests.derbynet;
 
 import java.io.File;
-import java.security.AccessController;
 import java.sql.Connection;
 import java.util.Properties;
 
@@ -82,48 +81,32 @@ public class ClientSideSystemPropertiesTest extends BaseJDBCTestCase {
 
     
     private void checkTraceFileIsPresent() {
-        //Make sure the connection above created a trace file. This check is 
-        //made in the privilege block below by looking inside the 
-        //trace Directory and making sure the file count is greater than 0.
-        AccessController.doPrivileged
-		    (new java.security.PrivilegedAction<Void>(){
-		    	public Void run(){
-		    		File dir = new File(getSystemProperty("derby.client.traceDirectory"));
-		    		int fileCounter = 0;
-    	            File[] list = dir.listFiles();
-    	            File tempFile;
-    	            for (;fileCounter<list.length; fileCounter++)
-    	            	tempFile = list[fileCounter];
-    	            junit.framework.Assert.assertTrue(fileCounter>0);
-    	            return null;
-    		    }
-    		}	 
-    	    );
+        //Make sure the connection above created a trace file.
+        File dir = new File(getSystemProperty("derby.client.traceDirectory"));
+        int fileCounter = 0;
+        File[] list = dir.listFiles();
+        File tempFile;
+        for (;fileCounter<list.length; fileCounter++)
+            tempFile = list[fileCounter];
+        junit.framework.Assert.assertTrue(fileCounter>0);
     }
     
     /** If the trace Directory doesn't exist then create one. If there is one
      *  already there, then delete everything under it. */
     protected void setUp() throws Exception
     {
-    	AccessController.doPrivileged(
-    			new java.security.PrivilegedAction<Void>(){
-    				public Void run(){
-    					File dir = new File(getSystemProperty("derby.client.traceDirectory"));
-    					if (dir.exists() == false) //create the trace Directory
-    						junit.framework.Assert.assertTrue(dir.mkdir() || dir.mkdirs());
-    					else {//cleanup the trace Directory which already exists
-    						int fileCounter = 0;
-    						File[] list = dir.listFiles();
-    						File tempFile;
-    						for (;fileCounter<list.length; fileCounter++) {
-    							tempFile = list[fileCounter];
-    							assertTrue(tempFile.delete());
-        					}
-		        }
-	            return null;
-		    }
-		}	 
-	    );
+        File dir = new File(getSystemProperty("derby.client.traceDirectory"));
+        if (dir.exists() == false) //create the trace Directory
+            junit.framework.Assert.assertTrue(dir.mkdir() || dir.mkdirs());
+        else {//cleanup the trace Directory which already exists
+            int fileCounter = 0;
+            File[] list = dir.listFiles();
+            File tempFile;
+            for (;fileCounter<list.length; fileCounter++) {
+                tempFile = list[fileCounter];
+                assertTrue(tempFile.delete());
+            }
+        }
     }
     
     /** Delete the trace Directory so that the test environment is clean for the

@@ -25,8 +25,6 @@ import java.sql.Connection;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.io.File;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import org.apache.derby.shared.common.error.PublicAPI;
 import org.apache.derby.shared.common.reference.SQLState;
 import org.apache.derby.shared.common.error.StandardException;
@@ -154,15 +152,9 @@ public class Export extends ExportAbstract{
      *
      * @param file the file to check
      * @return {@code true} if the file exists, {@code false} if not.
-     * @throws SecurityException if the required privileges are missing
      */
     private final boolean fileExists(final File file) {
-        return (AccessController.doPrivileged(
-                new PrivilegedAction<Boolean>() {
-                    public Boolean run() {
-                        return file.exists();
-                    }
-            })).booleanValue();
+        return file.exists();
     }
 
 	/**

@@ -21,9 +21,6 @@
 
 package org.apache.derby.impl.services.daemon;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import org.apache.derby.iapi.services.context.ContextService;
 import org.apache.derby.iapi.services.daemon.DaemonFactory;
 import org.apache.derby.iapi.services.daemon.DaemonService;
@@ -40,61 +37,31 @@ public class SingleThreadDaemonFactory implements DaemonFactory
 		contextService = getContextService();
 	}
 
-	/*
-	 * Daemon factory method
-	 */
+    /*
+     * Daemon factory method
+     */
 
-	/* make a daemon service with the default timer */
-	public DaemonService createNewDaemon(String name)
-	{
-		BasicDaemon daemon = new BasicDaemon(contextService);
+    /* make a daemon service with the default timer */
+    public DaemonService createNewDaemon(String name)
+    {
+        BasicDaemon daemon = new BasicDaemon(contextService);
 
-		final Thread daemonThread = BasicDaemon.getMonitor().getDaemonThread(daemon, name, false);
-		// DERBY-3745.  setContextClassLoader for thread to null to avoid
-		// leaking class loaders.
-		try {
-            AccessController.doPrivileged(
-             new PrivilegedAction<Object>() {
-                public Object run()  {
-                    daemonThread.setContextClassLoader(null);
-                    return null;
-                }
-            });
-        } catch (SecurityException se) {
-            // ignore security exception.  Earlier versions of Derby, before the 
-            // DERBY-3745 fix did not require setContextClassloader permissions.
-            // We may leak class loaders if we are not able to set this, but 
-            // cannot just fail.
-        }
+        final Thread daemonThread = BasicDaemon.getMonitor().getDaemonThread(daemon, name, false);
+        // DERBY-3745.  setContextClassLoader for thread to null to avoid
+        // leaking class loaders.
+        daemonThread.setContextClassLoader(null);
 
-
-		daemonThread.start();
-		return daemon;
-	}
+        daemonThread.start();
+        return daemon;
+    }
     
     /**
-     * Privileged lookup of the ContextService. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ContextService    getContextService()
     {
-        if ( System.getSecurityManager() == null )
-        {
-            return ContextService.getFactory();
-        }
-        else
-        {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedAction<ContextService>()
-                 {
-                     public ContextService run()
-                     {
-                         return ContextService.getFactory();
-                     }
-                 }
-                 );
-        }
+        return ContextService.getFactory();
     }
 }
 

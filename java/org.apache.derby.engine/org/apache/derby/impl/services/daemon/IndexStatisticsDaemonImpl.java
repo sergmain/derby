@@ -21,8 +21,6 @@
 package org.apache.derby.impl.services.daemon;
 
 import java.io.PrintWriter;
-import java.security.PrivilegedAction;
-import java.security.AccessController;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
@@ -1337,28 +1335,12 @@ public class IndexStatisticsDaemonImpl
     }
 
     /**
-     * Privileged lookup of the ContextService. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ContextService    getContextService()
     {
-        if ( System.getSecurityManager() == null )
-        {
-            return ContextService.getFactory();
-        }
-        else
-        {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedAction<ContextService>()
-                 {
-                     public ContextService run()
-                     {
-                         return ContextService.getFactory();
-                     }
-                 }
-                 );
-        }
+        return ContextService.getFactory();
     }    
 
     /**

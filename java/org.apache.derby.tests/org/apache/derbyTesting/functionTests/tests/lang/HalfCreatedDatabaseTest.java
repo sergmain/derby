@@ -28,7 +28,6 @@ import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.BaseTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.JDBCDataSource;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
 /**
@@ -85,8 +84,6 @@ public class HalfCreatedDatabaseTest extends BaseJDBCTestCase
         Test test = new BaseTestSuite( HalfCreatedDatabaseTest.class );
 
         test = TestConfiguration.singleUseDatabaseDecorator( test, DB_NAME );
-
-        test = SecurityManagerSetup.noSecurityManager( test );
 
         return test;
     }

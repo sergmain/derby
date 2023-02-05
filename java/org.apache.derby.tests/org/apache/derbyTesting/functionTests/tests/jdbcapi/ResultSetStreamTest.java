@@ -28,9 +28,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -58,19 +55,7 @@ public class ResultSetStreamTest extends BaseJDBCTestCase {
     private static String sep;
 
     public void testInsertData() throws SQLException, Exception {
-        try {
-
-            AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<Void>() {
-                public Void run() throws SQLException, FileNotFoundException,
-                        IOException {
-                    insertData();
-                    return null;
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            throw e.getException();
-        }
+        insertData();
     }
 
     /**
@@ -163,19 +148,7 @@ public class ResultSetStreamTest extends BaseJDBCTestCase {
     }
 
     public void testBinaryStreamProcessing() throws SQLException, Exception {
-        try {
-
-            AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<Void>() {
-                public Void run() throws SQLException, FileNotFoundException,
-                        IOException {
-                    binaryStreamProcessing();
-                    return null;
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            throw e.getException();
-        }
+        binaryStreamProcessing();
     }
 
     /**

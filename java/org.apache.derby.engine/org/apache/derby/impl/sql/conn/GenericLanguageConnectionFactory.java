@@ -70,10 +70,6 @@ import org.apache.derby.shared.common.reference.SQLState;
 import org.apache.derby.shared.common.reference.Property;
 import org.apache.derby.shared.common.reference.EngineType;
 
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
 import java.util.Properties;
 import java.util.Dictionary;
 import java.io.Serializable;
@@ -442,78 +438,39 @@ public class GenericLanguageConnectionFactory
 	}
     
     /**
-     * Privileged Monitor lookup. Must be package private so that user code
+     * Must be package private so that user code
      * can't call this entry point.
      */
     static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
     
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object  startSystemModule( final String factoryInterface )
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.startSystemModule( factoryInterface );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.startSystemModule( factoryInterface );
     }
 
     
     /**
-     * Privileged lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object  findSystemModule( final String factoryInterface )
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.findSystemModule( factoryInterface );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.findSystemModule( factoryInterface );
     }
 
     
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object bootServiceModule
@@ -523,65 +480,26 @@ public class GenericLanguageConnectionFactory
          )
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.bootServiceModule( create, serviceModule, factoryInterface, properties );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.bootServiceModule( create, serviceModule, factoryInterface, properties );
     }
 
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object findServiceModule( final Object serviceModule, final String factoryInterface)
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.findServiceModule( serviceModule, factoryInterface );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.findServiceModule( serviceModule, factoryInterface );
     }
 
     /**
-     * Privileged module lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private static  Object getServiceModule( final Object serviceModule, final String factoryInterface )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     return Monitor.getServiceModule( serviceModule, factoryInterface );
-                 }
-             }
-             );
+        return Monitor.getServiceModule( serviceModule, factoryInterface );
     }
 
 }

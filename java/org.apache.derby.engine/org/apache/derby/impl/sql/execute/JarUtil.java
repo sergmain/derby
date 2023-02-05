@@ -27,9 +27,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -361,20 +358,10 @@ public class JarUtil
         throws IOException
     {
         try {
-            return AccessController.doPrivileged
-            (new java.security.PrivilegedExceptionAction<InputStream>(){
-                
-                public InputStream run() throws IOException {    
-                    try {
-                        return new URL(externalPath).openStream();
-                    } catch (MalformedURLException mfurle)
-                    {
-                        return new FileInputStream(externalPath);
-                    }
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            throw (IOException) e.getException();
+            return new URL(externalPath).openStream();
+        } catch (MalformedURLException mfurle)
+        {
+            return new FileInputStream(externalPath);
         }
     }
     
@@ -391,24 +378,14 @@ public class JarUtil
             final boolean add,
             final long currentGenerationId)
             throws StandardException {
-        try {
-            return (AccessController
-                    .doPrivileged(new java.security.PrivilegedExceptionAction<Long>() {
-
-                        public Long run() throws StandardException {
-                            long generationId;
+        long generationId;
                             
-                            if (add)
-                                generationId = fr.add(jarExternalName, contents);
-                            else
-                                generationId =  fr.replace(jarExternalName,
-                                        currentGenerationId, contents);
-                            return generationId;
-                        }
-                    })).longValue();
-        } catch (PrivilegedActionException e) {
-            throw (StandardException) e.getException();
-        }
+        if (add)
+        { generationId = fr.add(jarExternalName, contents); }
+        else
+        { generationId =  fr.replace(jarExternalName, currentGenerationId, contents); }
+        
+        return generationId;
     }
     
     /**
@@ -503,28 +480,12 @@ public class JarUtil
     }
     
     /**
-     * Privileged lookup of a Context. Must be private so that user code
+     *  Must be private so that user code
      * can't call this entry point.
      */
     private  static  Context    getContextOrNull( final String contextID )
     {
-        if ( System.getSecurityManager() == null )
-        {
-            return ContextService.getContextOrNull( contextID );
-        }
-        else
-        {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedAction<Context>()
-                 {
-                     public Context run()
-                     {
-                         return ContextService.getContextOrNull( contextID );
-                     }
-                 }
-                 );
-        }
+        return ContextService.getContextOrNull( contextID );
     }
 
 }

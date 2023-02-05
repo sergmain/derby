@@ -341,6 +341,8 @@ public class RunList
     }
 
 
+    // Suppress warnings on Runtime.exec() introduced by JDK 18
+    @SuppressWarnings("deprecation")
     private static void runTests(Properties suiteProps, String suite)
         throws IOException, Exception
     {

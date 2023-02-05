@@ -21,6 +21,10 @@
 
 /**
  * <p>
+ * This module corresponds to <i>derbynet.jar</i>.
+ * </p>
+ * 
+ * <p>
  * The Derby network server wraps the engine in a DRDA protocol
  * driver. In this configuration, clients on remote machines can access
  * Derby databases. The optional engine modules can be added to this

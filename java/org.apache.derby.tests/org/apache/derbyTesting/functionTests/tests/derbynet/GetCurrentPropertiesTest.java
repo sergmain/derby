@@ -28,7 +28,6 @@ import org.apache.derby.drda.NetworkServerControl;
 import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.NetworkServerTestSetup;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
 /**
@@ -36,9 +35,6 @@ import org.apache.derbyTesting.junit.TestConfiguration;
  * 
  */
 public class GetCurrentPropertiesTest extends BaseJDBCTestCase {
-    // create own policy file
-    private static final String POLICY_FILE_NAME =
-        "org/apache/derbyTesting/functionTests/tests/derbynet/GetCurrentPropertiesTest.policy";
 
     public GetCurrentPropertiesTest(String name) {
         super(name);
@@ -48,11 +44,6 @@ public class GetCurrentPropertiesTest extends BaseJDBCTestCase {
     {
         Test test = new BaseTestSuite(GetCurrentPropertiesTest.class);
         test = TestConfiguration.clientServerDecorator(test);
-
-        // Install a security manager using the special policy file.
-        // Grant ALL FILES execute, and getPolicy permissions,
-        // as well as write for the trace files.
-        test = new SecurityManagerSetup(test, POLICY_FILE_NAME);
 
         // return suite; to ensure that nothing interferes with setting of
         // properties, wrap in singleUseDatabaseDecorator 

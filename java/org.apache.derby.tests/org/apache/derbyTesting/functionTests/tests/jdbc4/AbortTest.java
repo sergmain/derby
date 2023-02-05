@@ -21,9 +21,6 @@
 
 package org.apache.derbyTesting.functionTests.tests.jdbc4;
 
-import java.security.AccessControlException;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -37,7 +34,6 @@ import junit.framework.Test;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.CleanDatabaseTestSetup;
 import org.apache.derbyTesting.junit.J2EEDataSource;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
 /**
@@ -59,19 +55,15 @@ public class AbortTest extends Wrapper41Test
     //
     ///////////////////////////////////////////////////////////////////////
 
-    private boolean _hasSecurityManager;
-
     ///////////////////////////////////////////////////////////////////////
     //
     // CONSTRUCTOR
     //
     ///////////////////////////////////////////////////////////////////////
 
-    public AbortTest(String name, boolean hasSecurityManager)
+    public AbortTest(String name)
     {
         super(name);
-        
-        _hasSecurityManager = hasSecurityManager;
     }
 
     ///////////////////////////////////////////////////////////////////////
@@ -84,26 +76,17 @@ public class AbortTest extends Wrapper41Test
     {
         BaseTestSuite suite = new BaseTestSuite( "AbortTest" );
 
-        suite.addTest( baseSuite( true ) );
-        suite.addTest( baseSuite( false ) );
+        suite.addTest( baseSuite() );
 
         suite.addTest
-            (
-             TestConfiguration.clientServerDecorator
-             ( baseSuite( true ) )
-             );
-        suite.addTest
-            (
-             TestConfiguration.clientServerDecorator
-             ( baseSuite( false ) )
-             );
+            (TestConfiguration.clientServerDecorator( baseSuite( )));
         
         return suite;
     }
 
-    public static Test baseSuite( boolean hasSecurityManager )
+    public static Test baseSuite()
     {
-        AbortTest   abortTest = new AbortTest( "test_basic", hasSecurityManager );
+        AbortTest   abortTest = new AbortTest( "test_basic" );
         
         Test test = new CleanDatabaseTestSetup( abortTest )
             {
@@ -113,14 +96,7 @@ public class AbortTest extends Wrapper41Test
                 }
             };
 
-        if ( hasSecurityManager )
-        {
-            return new SecurityManagerSetup( test, "org/apache/derbyTesting/functionTests/tests/jdbc4/noAbortPermission.policy" );
-        }
-        else
-        {
-            return SecurityManagerSetup.noSecurityManager( test );
-        }
+        return test;
     }
     
     
@@ -132,19 +108,11 @@ public class AbortTest extends Wrapper41Test
 
     /**
      * <p>
-     * Test Connection.abort(Executor) with and without a security manager.
+     * Test Connection.abort(Executor).
      * </p>
      */
     public  void    test_basic() throws Exception
     {
-        //
-        // Only run if we can grant permissions to the jar files.
-        //
-        if ( !TestConfiguration.loadingFromJars() ) { return; }
-
-        println( "AbortTest( " + _hasSecurityManager + " )" );
-        assertEquals( _hasSecurityManager, (System.getSecurityManager() != null) );
-
         physical();
         pooled();
         xa();
@@ -220,40 +188,7 @@ public class AbortTest extends Wrapper41Test
             assertSQLState( "XCZ02", se );
         }
 
-        if ( _hasSecurityManager ) { missingPermission( wrapper1 ); }
-        else { noSecurityManager( wrapper1, conn2 ); }
-    }
-
-    // Run if we have a security manager. This tests that abort() fails
-    // if the caller has not been granted the correct permission.
-    private void    missingPermission( final Wrapper41Conn wrapper1 ) throws Exception
-    {
-        // should not be able to abort the connection because this code
-        // lacks the permission
-        try {
-            //
-            // This doPrivileged block absolves outer code blocks (like JUnit)
-            // of the need to be granted SQLPermission( "callAbort" ). However,
-            // derbyTesting.jar still needs that permission.
-            //
-            AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object    run() throws Exception
-                     {
-                         ConnectionMethodsTest.DirectExecutor  executor = new ConnectionMethodsTest.DirectExecutor();
-                         wrapper1.abort( executor );
-                         return null;
-                     }
-                 }
-                 );
-            fail( "The call to Connection.abort(Executor) should have failed." );
-        }
-        catch (Exception e)
-        {
-            assertTrue( e instanceof AccessControlException );
-        }
+        noSecurityManager( wrapper1, conn2 );
     }
 
     // Run if we don't have a security manager. Verifies that abort() is uncontrolled

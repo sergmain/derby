@@ -85,7 +85,7 @@ public class JAXPFinder {
              * the implementation-specific class for that object.
              * Note that we cannot just use:
              *
-             *   SecurityManagerSetup.getURL(DocumentBuilderFactory.class)
+             *   TestConfiguration.getURL(DocumentBuilderFactory.class)
              *
              * because the 1.4, 1.5, and 1.6 JVMs (at least, Sun and IBM)
              * all embed the JAXP API classes, so any attempts to look
@@ -100,7 +100,7 @@ public class JAXPFinder {
              * JVM) JAXP implementations, we can find the implementation
              * jar file and thus we can assign the correct permissions.
              */
-            URL jaxpURL = SecurityManagerSetup.getURL(
+            URL jaxpURL = TestConfiguration.getURL(
                 DocumentBuilderFactory.newInstance().getClass());
 
             /* If we found a URL then the JAXP parser is in the classpath

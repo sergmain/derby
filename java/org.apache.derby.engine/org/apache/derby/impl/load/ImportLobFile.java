@@ -28,8 +28,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.FileNotFoundException;
 import org.apache.derby.iapi.services.io.LimitInputStream;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
 import org.apache.derby.shared.common.error.PublicAPI;
 import org.apache.derby.shared.common.reference.SQLState;
 import org.apache.derby.shared.common.error.StandardException;
@@ -69,18 +67,7 @@ class ImportLobFile
     {
         RandomAccessFile lobRaf;
         try {
-            // open the lob file under a privelged block.
-            try {
-                lobRaf = AccessController.doPrivileged
-                (new java.security.PrivilegedExceptionAction<RandomAccessFile>(){
-                        public RandomAccessFile run() throws IOException{
-                            return new RandomAccessFile(lobFile, "r");
-                        }   
-                    }
-                 );    	
-            } catch (PrivilegedActionException pae) {
-                throw pae.getException();
-            }
+            lobRaf = new RandomAccessFile(lobFile, "r");
         } catch (FileNotFoundException ex) {
             throw PublicAPI.wrapStandardException(
                       StandardException.newException(

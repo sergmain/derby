@@ -79,9 +79,6 @@ import java.sql.Ref;
 import java.sql.RowId;
 import java.sql.SQLXML;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Map;

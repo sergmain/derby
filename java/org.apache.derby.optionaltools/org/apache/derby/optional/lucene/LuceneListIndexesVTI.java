@@ -22,10 +22,6 @@
 package org.apache.derby.optional.lucene;
 
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -212,7 +208,6 @@ class LuceneListIndexesVTI extends StringColumnVTI
                 rowProperties = readIndexProperties( indexPropertiesFile );
             }
             catch (IOException ioe) { throw ToolUtilities.wrap( ioe ); }
-            catch (PrivilegedActionException pae) { throw ToolUtilities.wrap( pae ); }
         }
 
         return rowProperties;
@@ -221,48 +216,26 @@ class LuceneListIndexesVTI extends StringColumnVTI
     /** List files */
     private static  StorageFile[]  listDirectories( final StorageFactory storageFactory, final StorageFile dir )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<StorageFile[]>()
-             {
-                public StorageFile[] run()
-                {
-                    ArrayList<StorageFile>  subdirectories = new ArrayList<StorageFile>();
-                    String[]    fileNames = dir.list();
+        ArrayList<StorageFile>  subdirectories = new ArrayList<StorageFile>();
+        String[]    fileNames = dir.list();
 
-                    for ( String fileName : fileNames )
-                    {
-                        StorageFile candidate = storageFactory.newStorageFile( dir, fileName );
-                        if ( candidate.isDirectory() ) { subdirectories.add( candidate ); }
-                    }
+        for ( String fileName : fileNames )
+        {
+            StorageFile candidate = storageFactory.newStorageFile( dir, fileName );
+            if ( candidate.isDirectory() ) { subdirectories.add( candidate ); }
+        }
 
-                    StorageFile[]   result = new StorageFile[ subdirectories.size() ];
-                    subdirectories.toArray( result );
+        StorageFile[]   result = new StorageFile[ subdirectories.size() ];
+        subdirectories.toArray( result );
                     
-                    return result;
-                }
-             }
-             );
+        return result;
     }
 
     /** Read the index properties file */
     private static  Properties readIndexProperties( final StorageFile file )
         throws IOException
     {
-        try {
-            return AccessController.doPrivileged
-            (
-             new PrivilegedExceptionAction<Properties>()
-             {
-                public Properties run() throws IOException
-                {
-                    return LuceneSupport.readIndexPropertiesNoPrivs( file );
-                }
-             }
-             );
-        } catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getCause();
-        }
+        return LuceneSupport.readIndexPropertiesNoPrivs( file );
     }
 
 }

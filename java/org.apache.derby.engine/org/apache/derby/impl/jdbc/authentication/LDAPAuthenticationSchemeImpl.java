@@ -23,9 +23,6 @@ package org.apache.derby.impl.jdbc.authentication;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Properties;
 import javax.naming.*;
 import javax.naming.directory.*;
@@ -196,177 +193,168 @@ extends JNDIAuthenticationSchemeBase
      * @return an initial DirContext using the supplied environment. 
      */
     private DirContext privInitialDirContext(final Properties env) throws NamingException {
-        try {
-            return AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<DirContext>() {
-                        public DirContext run() throws NamingException {
-                            return new InitialDirContext(env);
-                    }
-                });
-        } catch (PrivilegedActionException pae) {
-            throw (NamingException) pae.getCause();
-        }
+        return new InitialDirContext(env);
     }
 
     /**
-	 * This method basically tests and sets default/expected JNDI properties
-	 * for the JNDI provider scheme (here it is LDAP).
-	 *
-	 **/
-	protected void setJNDIProviderProperties()
-	{
+     * This method basically tests and sets default/expected JNDI properties
+     * for the JNDI provider scheme (here it is LDAP).
+     *
+     **/
+    protected void setJNDIProviderProperties()
+    {
 
-		// check if we're told to use a different initial context factory
-		if (initDirContextEnv.getProperty(
-							Context.INITIAL_CONTEXT_FACTORY) == (String) null)
-		{
-			initDirContextEnv.put(Context.INITIAL_CONTEXT_FACTORY,
-									  "com.sun.jndi.ldap.LdapCtxFactory");
-		}
+        // check if we're told to use a different initial context factory
+        if (initDirContextEnv.getProperty(
+                Context.INITIAL_CONTEXT_FACTORY) == (String) null)
+        {
+            initDirContextEnv.put(Context.INITIAL_CONTEXT_FACTORY,
+                                  "com.sun.jndi.ldap.LdapCtxFactory");
+        }
 
-		// retrieve LDAP server name/port# and construct LDAP url
-		if (initDirContextEnv.getProperty(
-							Context.PROVIDER_URL) == (String) null)
-		{
-			// Now we construct the LDAP url and expect to find the LDAP Server
-			// name.
-			//
-			String ldapServer = authenticationService.getProperty(
-						org.apache.derby.shared.common.reference.Property.AUTHENTICATION_SERVER_PARAMETER);
+        // retrieve LDAP server name/port# and construct LDAP url
+        if (initDirContextEnv.getProperty(
+                Context.PROVIDER_URL) == (String) null)
+        {
+            // Now we construct the LDAP url and expect to find the LDAP Server
+            // name.
+            //
+            String ldapServer = authenticationService.getProperty(
+                org.apache.derby.shared.common.reference.Property.AUTHENTICATION_SERVER_PARAMETER);
 
-			if (ldapServer == (String) null) {
+            if (ldapServer == (String) null) {
 
-				// we do expect a LDAP Server name to be configured
-				Monitor.logTextMessage(
-					MessageId.AUTH_NO_LDAP_HOST_MENTIONED,
-						 org.apache.derby.shared.common.reference.Property.AUTHENTICATION_SERVER_PARAMETER);
+                // we do expect a LDAP Server name to be configured
+                Monitor.logTextMessage(
+                    MessageId.AUTH_NO_LDAP_HOST_MENTIONED,
+                    org.apache.derby.shared.common.reference.Property.AUTHENTICATION_SERVER_PARAMETER);
 
-				this.providerURL = dfltLDAPURL + "/";
+                this.providerURL = dfltLDAPURL + "/";
 
-			} else {
+            } else {
 
-				if (ldapServer.startsWith(dfltLDAPURL) || ldapServer.startsWith("ldaps://") )
-					this.providerURL = ldapServer;
-				else if (ldapServer.startsWith("//"))
-					this.providerURL = "ldap:" + ldapServer;
-				else
-					this.providerURL = dfltLDAPURL + ldapServer;
-			}
-			initDirContextEnv.put(Context.PROVIDER_URL, providerURL);
-		}
+                if (ldapServer.startsWith(dfltLDAPURL) || ldapServer.startsWith("ldaps://") )
+                    this.providerURL = ldapServer;
+                else if (ldapServer.startsWith("//"))
+                    this.providerURL = "ldap:" + ldapServer;
+                else
+                    this.providerURL = dfltLDAPURL + ldapServer;
+            }
+            initDirContextEnv.put(Context.PROVIDER_URL, providerURL);
+        }
 
-		// check if we should we use a particular authentication method
-		// we assume the ldap server supports this authentication method
-		// (Netscape DS 3.1.1 does not support CRAM-MD5 for instance)
-		if (initDirContextEnv.getProperty(
-							Context.SECURITY_AUTHENTICATION) == (String) null)
-		{
-			// set the default to be clear userName/Password as not of all the
-			// LDAP server(s) support CRAM-MD5 (especially ldap v2 ones)
-			// Netscape Directory Server 3.1.1 does not support CRAM-MD5
-			// (told by Sun JNDI engineering). Netscape DS 4.0 allows SASL
-			// plug-ins to be installed and that can be used as authentication
-			// method.
-			//
-			initDirContextEnv.put(Context.SECURITY_AUTHENTICATION,
-									  "simple"
-									  );
-		}
+        // check if we should we use a particular authentication method
+        // we assume the ldap server supports this authentication method
+        // (Netscape DS 3.1.1 does not support CRAM-MD5 for instance)
+        if (initDirContextEnv.getProperty(
+                Context.SECURITY_AUTHENTICATION) == (String) null)
+        {
+            // set the default to be clear userName/Password as not of all the
+            // LDAP server(s) support CRAM-MD5 (especially ldap v2 ones)
+            // Netscape Directory Server 3.1.1 does not support CRAM-MD5
+            // (told by Sun JNDI engineering). Netscape DS 4.0 allows SASL
+            // plug-ins to be installed and that can be used as authentication
+            // method.
+            //
+            initDirContextEnv.put(Context.SECURITY_AUTHENTICATION,
+                                  "simple"
+                );
+        }
 
-		// Retrieve and set the search base (root) DN to use on the ldap
-		// server.
-		String ldapSearchBase =
-					authenticationService.getProperty(LDAP_SEARCH_BASE);
-		if (ldapSearchBase != (String) null)
-			this.searchBaseDN = ldapSearchBase;
-		else
-			this.searchBaseDN = "";
+        // Retrieve and set the search base (root) DN to use on the ldap
+        // server.
+        String ldapSearchBase =
+            authenticationService.getProperty(LDAP_SEARCH_BASE);
+        if (ldapSearchBase != (String) null)
+            this.searchBaseDN = ldapSearchBase;
+        else
+            this.searchBaseDN = "";
 
-		// retrieve principal and credentials for the search bind as the
-		// user may not want to allow anonymous binds (for searches)
-		this.searchAuthDN =
-					authenticationService.getProperty(LDAP_SEARCH_AUTH_DN);
-		this.searchAuthPW =
-					authenticationService.getProperty(LDAP_SEARCH_AUTH_PW);
+        // retrieve principal and credentials for the search bind as the
+        // user may not want to allow anonymous binds (for searches)
+        this.searchAuthDN =
+            authenticationService.getProperty(LDAP_SEARCH_AUTH_DN);
+        this.searchAuthPW =
+            authenticationService.getProperty(LDAP_SEARCH_AUTH_PW);
 
-		//
-		// Construct the LDAP search filter:
-		//
-		// If we were told to use a special search filther, we do so;
-		// otherwise we use our default search filter.
-		// The user may have set the search filter 3 different ways:
-		//
-		// - if %USERNAME% was found in the search filter, then we
-		// will substitute this with the passed-in uid at runtime.
-		//
-		// - if "derby.user" is the search filter value, then we
-		// will assume the user's DN can be found in the system or
-		// database property "derby.user.<uid>" . If the property
-		// does not exist, then we will do a normal lookup with our
-		// default search filter; otherwise we will perform an
-		// authenticated bind to the LDAP server using the found DN.
-		//
-		// - if neither of the 2 previous values were found, then we use
-		// our default search filter and we will substitute insert the
-		// uid passed at runtime into our default search filter.
-		//
-		String searchFilterProp =
-					authenticationService.getProperty(LDAP_SEARCH_FILTER);
+        //
+        // Construct the LDAP search filter:
+        //
+        // If we were told to use a special search filther, we do so;
+        // otherwise we use our default search filter.
+        // The user may have set the search filter 3 different ways:
+        //
+        // - if %USERNAME% was found in the search filter, then we
+        // will substitute this with the passed-in uid at runtime.
+        //
+        // - if "derby.user" is the search filter value, then we
+        // will assume the user's DN can be found in the system or
+        // database property "derby.user.<uid>" . If the property
+        // does not exist, then we will do a normal lookup with our
+        // default search filter; otherwise we will perform an
+        // authenticated bind to the LDAP server using the found DN.
+        //
+        // - if neither of the 2 previous values were found, then we use
+        // our default search filter and we will substitute insert the
+        // uid passed at runtime into our default search filter.
+        //
+        String searchFilterProp =
+            authenticationService.getProperty(LDAP_SEARCH_FILTER);
 		
-		if (searchFilterProp == (String) null)
-		{
-			// use our default search filter
-			this.leftSearchFilter = "(&(objectClass=inetOrgPerson)(uid=";
-			this.rightSearchFilter = "))";
+        if (searchFilterProp == (String) null)
+        {
+            // use our default search filter
+            this.leftSearchFilter = "(&(objectClass=inetOrgPerson)(uid=";
+            this.rightSearchFilter = "))";
 
-		} else if (StringUtil.SQLEqualsIgnoreCase(searchFilterProp,LDAP_LOCAL_USER_DN)) {
+        } else if (StringUtil.SQLEqualsIgnoreCase(searchFilterProp,LDAP_LOCAL_USER_DN)) {
 
-			// use local user DN in derby.user.<uid>
-			this.leftSearchFilter = "(&(objectClass=inetOrgPerson)(uid=";
-			this.rightSearchFilter = "))";
-			this.useUserPropertyAsDN = true;
+            // use local user DN in derby.user.<uid>
+            this.leftSearchFilter = "(&(objectClass=inetOrgPerson)(uid=";
+            this.rightSearchFilter = "))";
+            this.useUserPropertyAsDN = true;
 
-		} else if (searchFilterProp.indexOf(
-									LDAP_SEARCH_FILTER_USERNAME) != -1) {
+        } else if (searchFilterProp.indexOf(
+                       LDAP_SEARCH_FILTER_USERNAME) != -1) {
 
-			// user has set %USERNAME% in the search filter
-			this.leftSearchFilter = searchFilterProp.substring(0,
-				searchFilterProp.indexOf(LDAP_SEARCH_FILTER_USERNAME));
-			this.rightSearchFilter = searchFilterProp.substring(
-				searchFilterProp.indexOf(LDAP_SEARCH_FILTER_USERNAME)+
-				(int) LDAP_SEARCH_FILTER_USERNAME.length());
+            // user has set %USERNAME% in the search filter
+            this.leftSearchFilter = searchFilterProp.substring(0,
+                                                               searchFilterProp.indexOf(LDAP_SEARCH_FILTER_USERNAME));
+            this.rightSearchFilter = searchFilterProp.substring(
+                searchFilterProp.indexOf(LDAP_SEARCH_FILTER_USERNAME)+
+                (int) LDAP_SEARCH_FILTER_USERNAME.length());
 
 
-		} else	{ // add this search filter to ours
+        } else	{ // add this search filter to ours
 
-			// complement this search predicate to ours
-			this.leftSearchFilter = "(&("+searchFilterProp+")"+
-									"(objectClass=inetOrgPerson)(uid=";
-			this.rightSearchFilter = "))";
+            // complement this search predicate to ours
+            this.leftSearchFilter = "(&("+searchFilterProp+")"+
+                "(objectClass=inetOrgPerson)(uid=";
+            this.rightSearchFilter = "))";
 
-		}
+        }
 
-		if (SanityManager.DEBUG)
-		{
-			if (SanityManager.DEBUG_ON(
-						AuthenticationServiceBase.AuthenticationTrace)) {
+        if (SanityManager.DEBUG)
+        {
+            if (SanityManager.DEBUG_ON(
+                    AuthenticationServiceBase.AuthenticationTrace)) {
 
-				java.io.PrintWriter iDbgStream =
-					SanityManager.GET_DEBUG_STREAM();
+                java.io.PrintWriter iDbgStream =
+                    SanityManager.GET_DEBUG_STREAM();
 
-				iDbgStream.println(
-								"\n\n+ LDAP Authentication Configuration:\n"+
-								"   - provider URL ["+this.providerURL+"]\n"+
-								"   - search base ["+this.searchBaseDN+"]\n"+
-								"   - search filter to be [" +
-								this.leftSearchFilter + "<uid>" +
-								this.rightSearchFilter + "]\n" +
-								"   - use local DN [" +
-								(useUserPropertyAsDN ? "true" : "false") +
-								"]\n"
-								);
-			}
-		}
+                iDbgStream.println(
+                    "\n\n+ LDAP Authentication Configuration:\n"+
+                    "   - provider URL ["+this.providerURL+"]\n"+
+                    "   - search base ["+this.searchBaseDN+"]\n"+
+                    "   - search filter to be [" +
+                    this.leftSearchFilter + "<uid>" +
+                    this.rightSearchFilter + "]\n" +
+                    "   - use local DN [" +
+                    (useUserPropertyAsDN ? "true" : "false") +
+                    "]\n"
+                    );
+            }
+        }
 
         if (SanityManager.DEBUG &&
             SanityManager.DEBUG_ON(
@@ -382,20 +370,15 @@ extends JNDIAuthenticationSchemeBase
             // creation fails. Perhaps that should be investigated as well.
             FileOutputStream fos = null;
             try {
-                fos = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<FileOutputStream>() {
-                        public FileOutputStream run() throws IOException {
-                            return new FileOutputStream("DerbyLDAP.out");
-                        }
-                    });
-            } catch (PrivilegedActionException pae) {
+                fos =  new FileOutputStream("DerbyLDAP.out");
+            } catch (Exception pae) {
                 // If trace file creation fails do not stop execution.
             }
             if (fos != null) {
                 initDirContextEnv.put("com.sun.naming.ldap.trace.ber", fos);
             }
         }
-	}
+    }
 
 
 	/**

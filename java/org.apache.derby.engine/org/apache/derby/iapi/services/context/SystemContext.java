@@ -21,9 +21,6 @@
 
 package org.apache.derby.iapi.services.context;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import org.apache.derby.shared.common.error.ShutdownException;
 import org.apache.derby.shared.common.error.StandardException;
 import org.apache.derby.iapi.services.monitor.ModuleFactory;
@@ -83,21 +80,12 @@ final class SystemContext extends ContextImpl
 	}
 
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 }
 

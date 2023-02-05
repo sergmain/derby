@@ -21,6 +21,11 @@
 
 /**
  * <p>
+ * This module corresponds to <i>derbyclient.jar</i>. Note that the client JDBC driver (<i>org.apache.derby.jdbc.ClientDriver</i>)
+ * lives in the <i>org.apache.derby.tools</i> module.
+ * </p>
+ * 
+ * <p>
  * Applications running on remote machines access Derby databases via a
  * remote client configuration. In its smallest footprint, remote
  * JDBC connections are created via

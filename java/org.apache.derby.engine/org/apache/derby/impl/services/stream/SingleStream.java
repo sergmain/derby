@@ -39,9 +39,6 @@ import java.io.OutputStream;
 import java.io.File;
 import java.io.Writer;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import java.util.Properties;
 
 import java.lang.reflect.Method;
@@ -74,7 +71,7 @@ import org.apache.derby.shared.common.reference.MessageId;
  *
  */
 public final class SingleStream
-implements InfoStreams, ModuleControl, java.security.PrivilegedAction<HeaderPrintWriter>
+implements InfoStreams, ModuleControl
 {
 
 	/*
@@ -209,8 +206,6 @@ implements InfoStreams, ModuleControl, java.security.PrivilegedAction<HeaderPrin
             FileUtil.limitAccessToOwner(streamFile);
 		} catch (IOException ioe) {
 			return useDefaultStream(header, ioe);
-		} catch (SecurityException se) {
-			return useDefaultStream(header, se);
 		}
 
 		return new BasicHeaderPrintWriter(new BufferedOutputStream(fos), header,
@@ -254,9 +249,6 @@ implements InfoStreams, ModuleControl, java.security.PrivilegedAction<HeaderPrin
 			}
 		} catch (ClassNotFoundException cnfe) {
 			t = cnfe;
-		} catch (SecurityException se) {
-			t = se;
-			
 		}
 		return useDefaultStream(header, t);
 
@@ -316,8 +308,6 @@ implements InfoStreams, ModuleControl, java.security.PrivilegedAction<HeaderPrin
 			}
 		} catch (ClassNotFoundException cnfe) {
 			t = cnfe;
-		} catch (SecurityException se) {
-			t = se;
 		}
 		return useDefaultStream(header, t);
 
@@ -391,36 +381,26 @@ implements InfoStreams, ModuleControl, java.security.PrivilegedAction<HeaderPrin
     private String PBfileName;
     private PrintWriterGetHeader PBheader;
 
-	private HeaderPrintWriter makeFileHPW(String fileName, PrintWriterGetHeader header)
+    private HeaderPrintWriter makeFileHPW(String fileName, PrintWriterGetHeader header)
     {
         this.PBfileName = fileName;
         this.PBheader = header;
-        return (HeaderPrintWriter) java.security.AccessController.doPrivileged(this);
+        return run();
     }
 
 
     public final HeaderPrintWriter run()
     {
-        // SECURITY PERMISSION - OP4, OP5
         return PBmakeFileHPW(PBfileName, PBheader);
     }
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
 }

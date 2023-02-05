@@ -29,7 +29,6 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PrivilegedExceptionAction;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.Properties;
@@ -39,7 +38,7 @@ import javax.net.ssl.SSLSocketFactory;
 import org.apache.derby.client.BasicClientDataSource;
 import org.apache.derby.shared.common.drda.NaiveTrustManager;
 
-class OpenSocketAction implements PrivilegedExceptionAction<Socket> {
+class OpenSocketAction {
     private String server_;
     private int port_;
     private int clientSSLMode_;
@@ -50,7 +49,6 @@ class OpenSocketAction implements PrivilegedExceptionAction<Socket> {
         clientSSLMode_ = clientSSLMode;
     }
 
-    @Override
     public Socket run()
         throws UnknownHostException,
                IOException,

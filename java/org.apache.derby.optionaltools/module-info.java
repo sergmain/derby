@@ -21,6 +21,10 @@
 
 /**
  * <p>
+ * This module corresponds to <i>derbyoptionaltools.jar</i>.
+ * </p>
+ * 
+ * <p>
  * An extra set of tools supports metadata introspection, access to other
  * vendors' databases, full-text search, and the importing of
  * JSON-formatted data. Optional functionality includes:

@@ -21,8 +21,6 @@
 
 package org.apache.derby.impl.services.timer;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -170,76 +168,30 @@ public class SingletonTimerFactory
      *   loaders, or {@code null} otherwise
      */
     private ClassLoader getContextClassLoader() {
-        try {
-            return AccessController.doPrivileged(
-                    new PrivilegedAction<ClassLoader>() {
-                @Override
-                public ClassLoader run() {
-                    ClassLoader cl =
-                        Thread.currentThread().getContextClassLoader();
-                    if (cl == getClass().getClassLoader() ||
-                        cl == Thread.class.getClassLoader()) {
-                        // If the context class loader is the same as any of
-                        // these class loaders, we are not worried that the
-                        // timer thread will leak a class loader. These
-                        // class loaders will stay in memory at least for the
-                        // lifetime of the Derby engine anyway, so it's not
-                        // a problem that the timer thread keeps a reference
-                        // to any of them until the engine is shut down.
-                        //
-                        // Return null to signal that the context class loader
-                        // doesn't need to be changed.
-                        return null;
-                    } else {
-                        return cl;
-                    }
-                }
-            });
-        } catch (SecurityException se) {
-            // Ignore security exception. Versions of Derby before
-            // the DERBY-3745 fix did not require getClassLoader
-            // privileges. We may leak class loaders if we are not
-            // able to do this, but we can't just fail.
+        ClassLoader cl =
+            Thread.currentThread().getContextClassLoader();
+        if (cl == getClass().getClassLoader() ||
+            cl == Thread.class.getClassLoader()) {
+            // If the context class loader is the same as any of
+            // these class loaders, we are not worried that the
+            // timer thread will leak a class loader. These
+            // class loaders will stay in memory at least for the
+            // lifetime of the Derby engine anyway, so it's not
+            // a problem that the timer thread keeps a reference
+            // to any of them until the engine is shut down.
             //
-            // In most cases the above calls will succeed, even if
-            // RuntimePermission("getClassLoader") has not been granted.
-            // See the javadoc for Thread.getContextClassLoader() and
-            // Class.getClassLoader() for details.
-            report(se, MessageId.CANNOT_GET_CLASSLOADER);
+            // Return null to signal that the context class loader
+            // doesn't need to be changed.
             return null;
+        } else {
+            return cl;
         }
     }
 
     private void setContextClassLoader(final ClassLoader cl) {
-        try {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                @Override
-                public Void run() {
-                    Thread.currentThread().setContextClassLoader(cl);
-                    return null;
-                }
-            });
-        } catch (SecurityException se) {
-            // Ignore security exception. Earlier versions of Derby, before
-            // the DERBY-3745 fix, did not require setContextClassLoader
-            // permissions. We may leak class loaders if we are not able to
-            // set this, but cannot just fail.
-            report(se, MessageId.CANNOT_SET_CLASSLOADER);
-        }
+        Thread.currentThread().setContextClassLoader(cl);
     }
 
-    private void report (SecurityException se, String id) {
-        warnings.append(MessageService.getTextMessage(id, se.toString()));
-        warnings.append('\n');
-
-        if (SanityManager.DEBUG) {
-            for (StackTraceElement elt : se.getStackTrace()) {
-                warnings.append(elt.toString());
-                warnings.append('\n');
-            }
-            warnings.append('\n');
-        }
-    }
     /**
      * Return any warnings generated during the initialization of this class, or
      * null if none

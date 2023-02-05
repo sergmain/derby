@@ -21,9 +21,6 @@
 
 package org.apache.derby.diag;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import org.apache.derby.shared.common.error.StandardException;
 import org.apache.derby.shared.common.reference.SQLState;
 import org.apache.derby.iapi.services.context.Context;
@@ -62,28 +59,12 @@ abstract    class   DiagUtil
 
     
     /**
-     * Privileged lookup of a Context. Must be private so that user code
+     *  Must be private so that user code
      * can't call this entry point.
      */
     private  static  Context    getContextOrNull( final String contextID )
     {
-        if ( System.getSecurityManager() == null )
-        {
-            return ContextService.getContextOrNull( contextID );
-        }
-        else
-        {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedAction<Context>()
-                 {
-                     public Context run()
-                     {
-                         return ContextService.getContextOrNull( contextID );
-                     }
-                 }
-                 );
-        }
+        return ContextService.getContextOrNull( contextID );
     }
 
 }

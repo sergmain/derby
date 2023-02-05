@@ -34,8 +34,6 @@ import org.apache.derby.iapi.util.IdUtil;
 
 import java.util.Properties;
 import java.io.Serializable;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Dictionary;
 import java.util.Enumeration;
 
@@ -703,30 +701,17 @@ public class PropertyUtil {
 	 */
 	private static boolean systemPropertiesExistsBuiltinUser(String username)
 	{
-		ModuleFactory monitor = getMonitorLite();
+            ModuleFactory monitor = getMonitorLite();
 
-		try {
-			Properties JVMProperties = System.getProperties();
+            Properties JVMProperties = System.getProperties();
 
-			if (propertiesContainsBuiltinUser(JVMProperties, username)) {
-				return true;
-			}
-		} catch (SecurityException e) {
-			// Running with security manager and we can't get at all
-			// JVM properties, to try to map the back the authid to
-			// how the user may have specified a matching id (1->many,
-			// since userids are subject to SQL up-casing).
-			String key= Property.USER_PROPERTY_PREFIX +
-				IdUtil.SQLIdentifier2CanonicalPropertyUsername(username);
+            if (propertiesContainsBuiltinUser(JVMProperties, username)) {
+                return true;
+            }
 
-			if (monitor.getJVMProperty(key) != null) {
-				return true;
-			}
-		}
+            Properties applicationProperties = monitor.getApplicationProperties();
 
-		Properties applicationProperties = monitor.getApplicationProperties();
-
-		return propertiesContainsBuiltinUser(applicationProperties, username);
+            return propertiesContainsBuiltinUser(applicationProperties, username);
 	}
 
 	private static boolean propertiesContainsBuiltinUser(Properties props,
@@ -753,40 +738,22 @@ public class PropertyUtil {
 	}
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitorLite()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitorLite();
-                 }
-             }
-             );
+        return Monitor.getMonitorLite();
     }
 
 }

@@ -32,8 +32,6 @@ import org.apache.derby.iapi.sql.ResultSet;
 import org.apache.derby.iapi.sql.conn.LanguageConnectionContext;
 
 import org.apache.derby.shared.common.error.ExceptionSeverity;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.sql.SQLException;
 import java.util.Vector;
 import java.util.Enumeration;
@@ -159,19 +157,10 @@ class EmbedConnectionContext extends ContextImpl
     }
     
     /**
-     * Private, privileged lookup of the lcc..
+     * Private lookup of the lcc..
      */
     private LanguageConnectionContext privilegedGetLCC( final EmbedConnection conn )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<LanguageConnectionContext>()
-             {
-                 public LanguageConnectionContext run()
-                 {
-                     return conn.getLanguageConnection();
-                 }
-             }
-             );
+        return conn.getLanguageConnection();
     }
 }

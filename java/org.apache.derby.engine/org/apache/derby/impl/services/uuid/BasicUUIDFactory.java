@@ -21,9 +21,6 @@
 
 package org.apache.derby.impl.services.uuid;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import org.apache.derby.iapi.services.monitor.ModuleFactory;
 import org.apache.derby.iapi.services.monitor.Monitor;
 import org.apache.derby.catalog.UUID;
@@ -160,21 +157,12 @@ public final class BasicUUIDFactory
 	}
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
 }

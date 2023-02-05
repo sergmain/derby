@@ -28,7 +28,6 @@ import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.Derby;
 import org.apache.derbyTesting.junit.DerbyConstants;
 import org.apache.derbyTesting.junit.JDBC;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
 public class NetworkServerControlClientCommandTest extends BaseJDBCTestCase {
@@ -162,8 +161,6 @@ public class NetworkServerControlClientCommandTest extends BaseJDBCTestCase {
         Test test = TestConfiguration
                 .clientServerSuite(NetworkServerControlClientCommandTest.class);
         
-        // no security manager because we exec a process and don't have permission for that.
-        test = SecurityManagerSetup.noSecurityManager(test);
         suite.addTest(test);
         
         return suite;

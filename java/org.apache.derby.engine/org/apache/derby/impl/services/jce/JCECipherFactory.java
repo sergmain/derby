@@ -33,9 +33,6 @@ import org.apache.derby.iapi.util.StringUtil;
 
 import java.util.Properties;
 import java.util.Enumeration;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.Security;
@@ -398,10 +395,9 @@ final class JCECipherFactory implements CipherFactory
      */
     private void init(boolean create, Properties properties, boolean newAttrs)
 		throws StandardException
-	{
-
+    {
         boolean provider_or_algo_specified = false;
-		boolean storeProperties = create;
+        boolean storeProperties = create;
         persistentProperties = new Properties();
 
         // get the external key specified by the user to 
@@ -411,28 +407,28 @@ final class JCECipherFactory implements CipherFactory
         String externalKey =  properties.getProperty((newAttrs ? 
                                                       Attribute.NEW_CRYPTO_EXTERNAL_KEY:
                                                       Attribute.CRYPTO_EXTERNAL_KEY));
-		if (externalKey != null) {
-			storeProperties = false;
-		}
+        if (externalKey != null) {
+            storeProperties = false;
+        }
 
         cryptoProvider = properties.getProperty(Attribute.CRYPTO_PROVIDER);
 
-		if (cryptoProvider != null)
-		{
+        if (cryptoProvider != null)
+        {
             provider_or_algo_specified = true;
 
-			// explictly putting the properties back into the properties
-			// saves then in service.properties at create time.
-		//	if (storeProperties)
-		//		properties.put(Attribute.CRYPTO_PROVIDER, cryptoProvider);
+            // explictly putting the properties back into the properties
+            // saves then in service.properties at create time.
+            //	if (storeProperties)
+            //		properties.put(Attribute.CRYPTO_PROVIDER, cryptoProvider);
 
-			int dotPos = cryptoProvider.lastIndexOf('.');
-			if (dotPos == -1)
-				cryptoProviderShort = cryptoProvider;
-			else
-				cryptoProviderShort = cryptoProvider.substring(dotPos+1);
+            int dotPos = cryptoProvider.lastIndexOf('.');
+            if (dotPos == -1)
+                cryptoProviderShort = cryptoProvider;
+            else
+                cryptoProviderShort = cryptoProvider.substring(dotPos+1);
 
-		}
+        }
 
         cryptoAlgorithm = properties.getProperty(Attribute.CRYPTO_ALGORITHM);
         if (cryptoAlgorithm == null)
@@ -440,18 +436,18 @@ final class JCECipherFactory implements CipherFactory
         else {
             provider_or_algo_specified = true;
 
-		}
+        }
 
-		// explictly putting the properties back into the properties
-		// saves then in service.properties at create time.
+        // explictly putting the properties back into the properties
+        // saves then in service.properties at create time.
         if (storeProperties)
-			persistentProperties.put(Attribute.CRYPTO_ALGORITHM, 
+            persistentProperties.put(Attribute.CRYPTO_ALGORITHM, 
                                      cryptoAlgorithm);
 
         int firstSlashPos = cryptoAlgorithm.indexOf('/');
         int lastSlashPos = cryptoAlgorithm.lastIndexOf('/');
         if (firstSlashPos < 0 || lastSlashPos < 0 || firstSlashPos == lastSlashPos)
-    		throw StandardException.newException(SQLState.ENCRYPTION_BAD_ALG_FORMAT, cryptoAlgorithm);
+            throw StandardException.newException(SQLState.ENCRYPTION_BAD_ALG_FORMAT, cryptoAlgorithm);
 
         cryptoAlgorithmShort = cryptoAlgorithm.substring(0,firstSlashPos);
 
@@ -473,107 +469,101 @@ final class JCECipherFactory implements CipherFactory
             catch (Throwable t)
             {
                 throw StandardException.newException(
-                            SQLState.ENCRYPTION_BAD_JCE);
+                    SQLState.ENCRYPTION_BAD_JCE);
             }
         }
 
-		// If connecting to an existing database and Attribute.CRYPTO_KEY_LENGTH is set
-		// then obtain the encoded key length values without padding bytes and retrieve
-		// the keylength in bits if boot password mechanism is used 
-		// note: Attribute.CRYPTO_KEY_LENGTH is set during creation time to a supported
-		// key length in the connection url. Internally , two values are stored in this property
-		// if encryptionKey is used, this property will have only the encoded key length
-		// if boot password mechanism is used, this property will have the following 
-		// keylengthBits-EncodedKeyLength 
+        // If connecting to an existing database and Attribute.CRYPTO_KEY_LENGTH is set
+        // then obtain the encoded key length values without padding bytes and retrieve
+        // the keylength in bits if boot password mechanism is used 
+        // note: Attribute.CRYPTO_KEY_LENGTH is set during creation time to a supported
+        // key length in the connection url. Internally , two values are stored in this property
+        // if encryptionKey is used, this property will have only the encoded key length
+        // if boot password mechanism is used, this property will have the following 
+        // keylengthBits-EncodedKeyLength 
                  
-		if(!create)
-		{
-		    // if available, parse the keylengths stored in Attribute.CRYPTO_KEY_LENGTH 
-		    if(properties.getProperty(Attribute.CRYPTO_KEY_LENGTH) != null)
-		    {
-			String keyLengths = properties.getProperty(Attribute.CRYPTO_KEY_LENGTH);
-		 	int pos = keyLengths.lastIndexOf('-');
-			encodedKeyLength = Integer.parseInt(keyLengths.substring(pos+1)); 
-			if(pos != -1)
-			   keyLengthBits = Integer.parseInt(keyLengths.substring(0,pos));
-		    }
-		}
+        if(!create)
+        {
+            // if available, parse the keylengths stored in Attribute.CRYPTO_KEY_LENGTH 
+            if(properties.getProperty(Attribute.CRYPTO_KEY_LENGTH) != null)
+            {
+                String keyLengths = properties.getProperty(Attribute.CRYPTO_KEY_LENGTH);
+                int pos = keyLengths.lastIndexOf('-');
+                encodedKeyLength = Integer.parseInt(keyLengths.substring(pos+1)); 
+                if(pos != -1)
+                    keyLengthBits = Integer.parseInt(keyLengths.substring(0,pos));
+            }
+        }
 			
 
-		// case 1 - if 'encryptionKey' is not set and 'encryptionKeyLength' is set, then use
-		// the 'encryptionKeyLength' property value  as the keyLength in bits.
-		// case 2 - 'encryptionKey' property is not set and 'encryptionKeyLength' is not set, then
-		// use the defaults keylength:  56bits for DES, 168 for DESede and 128 for any other encryption
-		// algorithm
+        // case 1 - if 'encryptionKey' is not set and 'encryptionKeyLength' is set, then use
+        // the 'encryptionKeyLength' property value  as the keyLength in bits.
+        // case 2 - 'encryptionKey' property is not set and 'encryptionKeyLength' is not set, then
+        // use the defaults keylength:  56bits for DES, 168 for DESede and 128 for any other encryption
+        // algorithm
 
-		if (externalKey == null && create) {
-			if(properties.getProperty(Attribute.CRYPTO_KEY_LENGTH) != null)
-			{
-				keyLengthBits = Integer.parseInt(properties.getProperty(Attribute.CRYPTO_KEY_LENGTH));
-			}
-			else if (cryptoAlgorithmShort.equals(DES)) {
-				keyLengthBits = 56;
-			} else if (cryptoAlgorithmShort.equals(DESede) || cryptoAlgorithmShort.equals(TripleDES)) {
-				keyLengthBits = 168;
+        if (externalKey == null && create) {
+            if(properties.getProperty(Attribute.CRYPTO_KEY_LENGTH) != null)
+            {
+                keyLengthBits = Integer.parseInt(properties.getProperty(Attribute.CRYPTO_KEY_LENGTH));
+            }
+            else if (cryptoAlgorithmShort.equals(DES)) {
+                keyLengthBits = 56;
+            } else if (cryptoAlgorithmShort.equals(DESede) || cryptoAlgorithmShort.equals(TripleDES)) {
+                keyLengthBits = 168;
 
-			} else {
-				keyLengthBits = 128;
-			}
-		}
+            } else {
+                keyLengthBits = 128;
+            }
+        }
 
         // check the feedback mode
         String feedbackMode = cryptoAlgorithm.substring(firstSlashPos+1,lastSlashPos);
 
         if (!feedbackMode.equals("CBC") && !feedbackMode.equals("CFB") &&
             !feedbackMode.equals("ECB") && !feedbackMode.equals("OFB"))
-    		throw StandardException.newException(SQLState.ENCRYPTION_BAD_FEEDBACKMODE, feedbackMode);
+            throw StandardException.newException(SQLState.ENCRYPTION_BAD_FEEDBACKMODE, feedbackMode);
 
         // check the NoPadding mode is used
         String padding = cryptoAlgorithm.substring(lastSlashPos+1,cryptoAlgorithm.length());
         if (!padding.equals("NoPadding"))
-    		throw StandardException.newException(SQLState.ENCRYPTION_BAD_PADDING, padding);
+            throw StandardException.newException(SQLState.ENCRYPTION_BAD_PADDING, padding);
 
-		Throwable t;
-		try
-		{
-			if (cryptoProvider != null) {
-				// provider package should be set by property
-				if (Security.getProvider(cryptoProviderShort) == null)
-				{
+        Throwable t;
+        try
+        {
+            if (cryptoProvider != null) {
+                // provider package should be set by property
+                if (Security.getProvider(cryptoProviderShort) == null)
+                {
                     Class<?> cryptoClass = Class.forName(cryptoProvider);
                     if (!Provider.class.isAssignableFrom(cryptoClass)) {
                         throw StandardException.newException(
-                                SQLState.ENCRYPTION_NOT_A_PROVIDER,
-                                cryptoProvider);
+                            SQLState.ENCRYPTION_NOT_A_PROVIDER,
+                            cryptoProvider);
                     }
 
                     java.lang.reflect.Constructor<?> constructor = cryptoClass.getConstructor();
                     final Provider provider = (Provider) constructor.newInstance();
 
-					// add provider through privileged block.
-                    AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                        @Override
-                        public Void run() {
-                            Security.addProvider(provider);
-                            return null;
-                        }
-                    });
-				}
-			}
+                    // add provider
+                    Security.addProvider(provider);
+                }
+            }
 
-			// need this to check the boot password
-			messageDigest = MessageDigest.getInstance(MESSAGE_DIGEST);
+            // need this to check the boot password
+            messageDigest = MessageDigest.getInstance(MESSAGE_DIGEST);
 
-			byte[] generatedKey;
-			if (externalKey != null) {
+            byte[] generatedKey;
+            if (externalKey != null) {
 
-				// incorrect to specify external key and boot password
-				if (properties.getProperty((newAttrs ? 
+                // incorrect to specify external key and boot password
+                if (properties.getProperty((newAttrs ? 
                                             Attribute.NEW_BOOT_PASSWORD :
                                             Attribute.BOOT_PASSWORD)) != null)
-					throw StandardException.newException(SQLState.SERVICE_WRONG_BOOT_PASSWORD);
+                    throw StandardException.newException(SQLState.SERVICE_WRONG_BOOT_PASSWORD);
 
-				generatedKey = 
+                generatedKey = 
                     org.apache.derby.iapi.util.StringUtil.fromHexString(externalKey, 
                                                                         0, 
                                                                         externalKey.length());
@@ -582,47 +572,47 @@ final class JCECipherFactory implements CipherFactory
                         // If length is even, we assume invalid character(s),
                         // based on how 'fromHexString' behaves.
                         externalKey.length() % 2 == 0 
-                            ? SQLState.ENCRYPTION_ILLEGAL_EXKEY_CHARS
-                            : SQLState.ENCRYPTION_INVALID_EXKEY_LENGTH);
+                        ? SQLState.ENCRYPTION_ILLEGAL_EXKEY_CHARS
+                        : SQLState.ENCRYPTION_INVALID_EXKEY_LENGTH);
                 }
 
-			} else {
+            } else {
 
-				generatedKey = handleBootPassword(create, properties, newAttrs);
-				if(create || newAttrs)
-				   persistentProperties.put(Attribute.CRYPTO_KEY_LENGTH,
-                                            keyLengthBits+"-"+generatedKey.length);
-			}
+                generatedKey = handleBootPassword(create, properties, newAttrs);
+                if(create || newAttrs)
+                    persistentProperties.put(Attribute.CRYPTO_KEY_LENGTH,
+                                             keyLengthBits+"-"+generatedKey.length);
+            }
 
-			// Make a key and IV object out of the generated key
-			mainSecretKey = generateKey(generatedKey);
-			mainIV = generateIV(generatedKey);
+            // Make a key and IV object out of the generated key
+            mainSecretKey = generateKey(generatedKey);
+            mainIV = generateIV(generatedKey);
 
-			if (create)
-			{
-				persistentProperties.put(Attribute.DATA_ENCRYPTION, "true");
+            if (create)
+            {
+                persistentProperties.put(Attribute.DATA_ENCRYPTION, "true");
 
-				// Set two new properties to allow for future changes to the log and data encryption
-				// schemes. This property is introduced in version 10 , value starts at 1.
-				persistentProperties.put(RawStoreFactory.DATA_ENCRYPT_ALGORITHM_VERSION,
-                                               String.valueOf(1));
-				persistentProperties.put(RawStoreFactory.LOG_ENCRYPT_ALGORITHM_VERSION,
-                                               String.valueOf(1));
-			}
+                // Set two new properties to allow for future changes to the log and data encryption
+                // schemes. This property is introduced in version 10 , value starts at 1.
+                persistentProperties.put(RawStoreFactory.DATA_ENCRYPT_ALGORITHM_VERSION,
+                                         String.valueOf(1));
+                persistentProperties.put(RawStoreFactory.LOG_ENCRYPT_ALGORITHM_VERSION,
+                                         String.valueOf(1));
+            }
 
-			return;
-		}
+            return;
+        }
         catch (ClassNotFoundException cnfe)
         {
             t = StandardException.newException(
-                    SQLState.ENCRYPTION_NO_PROVIDER_CLASS,
-                    cnfe,
-                    cryptoProvider);
+                SQLState.ENCRYPTION_NO_PROVIDER_CLASS,
+                cnfe,
+                cryptoProvider);
         }
         catch (InstantiationException ie)
-		{
+        {
             t = ie;
-		}
+        }
         catch (IllegalAccessException iae)
         {
             t = iae;
@@ -631,25 +621,21 @@ final class JCECipherFactory implements CipherFactory
         {
             t = nsme;
         }
-		catch (java.lang.reflect.InvocationTargetException ite)
-		{
-			t = ite;
-		}
-		catch (NoSuchAlgorithmException nsae)
-		{
-			t = nsae;
-		}
-		catch (SecurityException se)
-		{
-			t = se;
-		} catch (LinkageError le) {
-			t = le;
-		} catch (ClassCastException cce) {
-			t = cce;
-		}
+        catch (java.lang.reflect.InvocationTargetException ite)
+        {
+            t = ite;
+        }
+        catch (NoSuchAlgorithmException nsae)
+        {
+            t = nsae;
+        } catch (LinkageError le) {
+            t = le;
+        } catch (ClassCastException cce) {
+            t = cce;
+        }
 
-		throw StandardException.newException(SQLState.MISSING_ENCRYPTION_PROVIDER, t);
-	}
+        throw StandardException.newException(SQLState.MISSING_ENCRYPTION_PROVIDER, t);
+    }
 
 
 	private byte[] handleBootPassword(boolean create, 
@@ -1027,55 +1013,36 @@ final class JCECipherFactory implements CipherFactory
             String fileName,
             final String filePerms)
 		throws java.io.IOException
-	{
+    {
         final StorageFile verifyKeyFile =
-                storageFactory.newStorageFile("", fileName);
-	    try
-        {
-            return AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<StorageRandomAccessFile>() {
-                @Override
-                public StorageRandomAccessFile run() throws IOException {
-                    return verifyKeyFile.getRandomAccessFile(filePerms);
-                }
-            });
-		}
-		catch( java.security.PrivilegedActionException pae)
-		{
-			throw (java.io.IOException)pae.getException();
-		}
-	}
+            storageFactory.newStorageFile("", fileName);
+        return verifyKeyFile.getRandomAccessFile(filePerms);
+    }
 
-	/**
-	 access a InputStream for a given file for reading.
-	 @param storageFactory   factory used for io access
-	 @param  fileName        name of the file to open as a stream for reading
-	 @return InputStream returns the stream for the file with fileName for reading
-	 @exception IOException Any exception during accessing the file for read
-	 */
-	private InputStream privAccessGetInputStream(StorageFactory storageFactory,String fileName)
+    /**
+       access a InputStream for a given file for reading.
+       @param storageFactory   factory used for io access
+       @param  fileName        name of the file to open as a stream for reading
+       @return InputStream returns the stream for the file with fileName for reading
+       @exception IOException Any exception during accessing the file for read
+    */
+    private InputStream privAccessGetInputStream(StorageFactory storageFactory,String fileName)
 	throws StandardException
-	{
+    {
         final StorageFile verifyKeyFile
-                = storageFactory.newStorageFile("", fileName);
-	    try
-	    {
-            return AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<InputStream>() {
-                @Override
-                public InputStream run() throws FileNotFoundException {
-                    return verifyKeyFile.getInputStream();
-                }
-            });
-	    }
-	    catch( java.security.PrivilegedActionException pae)
-	    {
+            = storageFactory.newStorageFile("", fileName);
+        try
+        {
+            return verifyKeyFile.getInputStream();
+        }
+        catch( Exception pae)
+        {
             throw StandardException.newException(
-                    SQLState.ENCRYPTION_UNABLE_KEY_VERIFICATION,
-                    pae.getCause(),
-                    cryptoProvider);
-	    }
-	}
+                SQLState.ENCRYPTION_UNABLE_KEY_VERIFICATION,
+                pae,
+                cryptoProvider);
+        }
+    }
 
     // tuple for returning results from encryptKey()
     private static final class EncryptedKeyResult

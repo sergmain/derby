@@ -226,7 +226,7 @@ public class FileCompare
         // Define the input and output files
         outFile = new BufferedReader(new FileReader(outfile));
         masterFile = new BufferedReader(new InputStreamReader(is));
-        
+
         // Do the comparison (diff)
         if (usesysdiff == true)
             return doSysDiff(is, testBase, outfile, outDir, pwDiff);
@@ -240,6 +240,8 @@ public class FileCompare
 		return ((new SimpleDiff()).doWork(masterFile,outFile,pwDiff));
     }
 
+    // Suppress warnings on Runtime.exec() introduced by JDK 18
+    @SuppressWarnings("deprecation")
     public boolean doSysDiff(InputStream masterIS, String testBase, String outfile,
         File outDir, PrintWriter pwDiff)
         throws IOException

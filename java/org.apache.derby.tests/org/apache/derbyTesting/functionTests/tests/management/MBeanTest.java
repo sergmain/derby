@@ -22,8 +22,6 @@
 package org.apache.derbyTesting.functionTests.tests.management;
 
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Set;
@@ -41,7 +39,6 @@ import junit.framework.Test;
 import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.NetworkServerTestSetup;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
 /**
@@ -105,17 +102,7 @@ abstract class MBeanTest extends BaseJDBCTestCase {
                         true   // wait for the server to start properly
                 );
 
-        /* Since the server will be started in a new process we need "execute" 
-         * FilePermission on all files (at least Java executables)...
-         * Will run without SecurityManager for now, but could probably add a 
-         * JMX specific policy file later. Or use the property trick reported
-         * on derby-dev 2008-02-26 and add the permission to the generic 
-         * policy.
-         * Note that the remote server will be running with a security
-         * manager (by default) if testing with jars.
-         */
-        Test testSetup = 
-                SecurityManagerSetup.noSecurityManager(networkServerTestSetup);
+        Test testSetup = networkServerTestSetup;
         // this decorator makes sure the suite is empty if this configration
         // does not support the network server:
         outerSuite.addTest(TestConfiguration.defaultServerDecorator(testSetup));
@@ -264,13 +251,7 @@ abstract class MBeanTest extends BaseJDBCTestCase {
     Set<ObjectName> queryMBeans(final ObjectName name) throws Exception {
         final MBeanServerConnection serverConn = getMBeanServerConnection(); 
         
-        return AccessController.doPrivileged(
-            new PrivilegedExceptionAction<Set<ObjectName>>() {
-                public Set<ObjectName> run() throws IOException {
-                    return serverConn.queryNames(name, null);
-               }   
-            }
-        );   
+        return serverConn.queryNames(name, null);
     }
     
     /**
@@ -293,16 +274,9 @@ abstract class MBeanTest extends BaseJDBCTestCase {
         
         if (!serverConn.isRegistered(mgmtObjName))
         {       
-            AccessController.doPrivileged(
-                new PrivilegedExceptionAction<Object>() {
-                    public Object run() throws InstanceAlreadyExistsException, MBeanRegistrationException, NotCompliantMBeanException, ReflectionException, MBeanException, IOException {
                         serverConn.createMBean(
                                 "org.apache.derby.mbeans.Management", 
                                 mgmtObjName);
-                        return null;
-                   }   
-                }
-            );
         }
         
         return mgmtObjName;
@@ -359,14 +333,8 @@ abstract class MBeanTest extends BaseJDBCTestCase {
     {
         final MBeanServerConnection jmxConn = getMBeanServerConnection();
         
-        return AccessController.doPrivileged(
-            new PrivilegedExceptionAction<Object>() {
-                public Object run() throws InstanceNotFoundException, MBeanException, ReflectionException, IOException  {
-                    return jmxConn.invoke(objName, name,
-                            params, sign);
-                }
-            }
-        );
+        return jmxConn.invoke(objName, name,
+                              params, sign);
     }
 
     /**
@@ -381,13 +349,7 @@ abstract class MBeanTest extends BaseJDBCTestCase {
             throws Exception {
         final MBeanServerConnection jmxConn = getMBeanServerConnection();
         final Attribute attribute = new Attribute(name, value);
-        AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-            @Override
-            public Void run() throws Exception {
-                jmxConn.setAttribute(objName, attribute);
-                return null;
-            }
-        });
+        jmxConn.setAttribute(objName, attribute);
     }
     
     /**
@@ -403,13 +365,7 @@ abstract class MBeanTest extends BaseJDBCTestCase {
         
         final MBeanServerConnection jmxConn = getMBeanServerConnection();
         
-        return AccessController.doPrivileged(
-            new PrivilegedExceptionAction<Object>() {
-                public Object run() throws AttributeNotFoundException, InstanceNotFoundException, MBeanException, ReflectionException, IOException {
-                    return jmxConn.getAttribute(objName, name);
-                }
-            }
-        );
+        return jmxConn.getAttribute(objName, name);
     }
     
     protected void assertBooleanAttribute(boolean expected,

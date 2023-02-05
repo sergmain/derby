@@ -345,7 +345,7 @@ public class SetQueryTimeoutTest
                     long endTime = System.currentTimeMillis();
                     setHighestRunTime(endTime - startTime);
                     while (fetchRow(resultSet)) {
-                        yield();
+                        Thread.yield();
                     }
                 } else {
                     long startTime = System.currentTimeMillis();

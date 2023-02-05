@@ -492,9 +492,13 @@ public class ReleaseNotesTransformer extends Task
     private void wireIntoBuild()
         throws Exception
     {
+        // The release id needs to be transformed for use as a download page name.
+        // See https://issues.apache.org/jira/browse/DERBY-7093
+        String downloadPageName = _releaseID.replace(".", "_");
+        
         String contents = readFileIntoString( _cliXconfFile );
         int insertPoint = contents.indexOf( "   </uris>" );
-        String insertion = "     <uri type=\"append\" src=\"releases/release-" + _releaseID + ".html\"/>\n";
+        String insertion = "     <uri type=\"append\" src=\"releases/release-" + downloadPageName + ".html\"/>\n";
         String result = contents.substring( 0, insertPoint ) + insertion + contents.substring( insertPoint );
 
         writeStringIntoFile( result, _cliXconfFile );

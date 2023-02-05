@@ -80,85 +80,64 @@ public abstract class Version {
             printWriter.println(header + "Default fetch size: " + Configuration.defaultFetchSize);
             printWriter.println(header + "Default isolation: " + Configuration.defaultIsolation);
 
-            SecurityManager security = System.getSecurityManager();
-            if (security == null) {
-                printWriter.println(header + "No security manager detected.");
-            } else {
-                printWriter.println(header + "Security manager detected.");
-            }
+            detectLocalHost(printWriter);
 
-            detectLocalHost(System.getSecurityManager(), printWriter);
+            printSystemProperty("JDBC 1 system property jdbc.drivers = ", "jdbc.drivers", printWriter);
 
-            printSystemProperty(security, "JDBC 1 system property jdbc.drivers = ", "jdbc.drivers", printWriter);
-
-            printSystemProperty(security, "Java Runtime Environment version ", "java.version", printWriter);
-            printSystemProperty(security, "Java Runtime Environment vendor = ", "java.vendor", printWriter);
-            printSystemProperty(security, "Java vendor URL = ", "java.vendor.url", printWriter);
-            printSystemProperty(security, "Java installation directory = ", "java.home", printWriter);
-            printSystemProperty(security, "Java Virtual Machine specification version = ", "java.vm.specification.version", printWriter);
-            printSystemProperty(security, "Java Virtual Machine specification vendor = ", "java.vm.specification.vendor", printWriter);
-            printSystemProperty(security, "Java Virtual Machine specification name = ", "java.vm.specification.name", printWriter);
-            printSystemProperty(security, "Java Virtual Machine implementation version = ", "java.vm.version", printWriter);
-            printSystemProperty(security, "Java Virtual Machine implementation vendor = ", "java.vm.vendor", printWriter);
-            printSystemProperty(security, "Java Virtual Machine implementation name = ", "java.vm.name", printWriter);
-            printSystemProperty(security, "Java Runtime Environment specification version = ", "java.specification.version", printWriter);
-            printSystemProperty(security, "Java Runtime Environment specification vendor = ", "java.specification.vendor", printWriter);
-            printSystemProperty(security, "Java Runtime Environment specification name = ", "java.specification.name", printWriter);
-            printSystemProperty(security, "Java class format version number = ", "java.class.version", printWriter);
-            printSystemProperty(security, "Java class path = ", "java.class.path", printWriter);
-            printSystemProperty(security, "Java native library path = ", "java.library.path", printWriter);
-            printSystemProperty(security, "Path of extension directory or directories = ", "java.ext.dirs", printWriter);
-            printSystemProperty(security, "Operating system name = ", "os.name", printWriter);
-            printSystemProperty(security, "Operating system architecture = ", "os.arch", printWriter);
-            printSystemProperty(security, "Operating system version = ", "os.version", printWriter);
-            printSystemProperty(security, "File separator (\"/\" on UNIX) = ", "file.separator", printWriter);
-            printSystemProperty(security, "Path separator (\":\" on UNIX) = ", "path.separator", printWriter);
-            printSystemProperty(security, "User's account name = ", "user.name", printWriter);
-            printSystemProperty(security, "User's home directory = ", "user.home", printWriter);
-            printSystemProperty(security, "User's current working directory = ", "user.dir", printWriter);
+            printSystemProperty( "Java Runtime Environment version ", "java.version", printWriter);
+            printSystemProperty( "Java Runtime Environment vendor = ", "java.vendor", printWriter);
+            printSystemProperty( "Java vendor URL = ", "java.vendor.url", printWriter);
+            printSystemProperty( "Java installation directory = ", "java.home", printWriter);
+            printSystemProperty( "Java Virtual Machine specification version = ", "java.vm.specification.version", printWriter);
+            printSystemProperty( "Java Virtual Machine specification vendor = ", "java.vm.specification.vendor", printWriter);
+            printSystemProperty( "Java Virtual Machine specification name = ", "java.vm.specification.name", printWriter);
+            printSystemProperty( "Java Virtual Machine implementation version = ", "java.vm.version", printWriter);
+            printSystemProperty( "Java Virtual Machine implementation vendor = ", "java.vm.vendor", printWriter);
+            printSystemProperty( "Java Virtual Machine implementation name = ", "java.vm.name", printWriter);
+            printSystemProperty( "Java Runtime Environment specification version = ", "java.specification.version", printWriter);
+            printSystemProperty( "Java Runtime Environment specification vendor = ", "java.specification.vendor", printWriter);
+            printSystemProperty( "Java Runtime Environment specification name = ", "java.specification.name", printWriter);
+            printSystemProperty( "Java class format version number = ", "java.class.version", printWriter);
+            printSystemProperty( "Java class path = ", "java.class.path", printWriter);
+            printSystemProperty( "Java native library path = ", "java.library.path", printWriter);
+            printSystemProperty( "Path of extension directory or directories = ", "java.ext.dirs", printWriter);
+            printSystemProperty( "Operating system name = ", "os.name", printWriter);
+            printSystemProperty( "Operating system architecture = ", "os.arch", printWriter);
+            printSystemProperty( "Operating system version = ", "os.version", printWriter);
+            printSystemProperty( "File separator (\"/\" on UNIX) = ", "file.separator", printWriter);
+            printSystemProperty( "Path separator (\":\" on UNIX) = ", "path.separator", printWriter);
+            printSystemProperty( "User's account name = ", "user.name", printWriter);
+            printSystemProperty( "User's home directory = ", "user.home", printWriter);
+            printSystemProperty( "User's current working directory = ", "user.dir", printWriter);
             printWriter.println(header + "END TRACE_DRIVER_CONFIGURATION");
             printWriter.flush();
         }
     }
 
-    private static void printSystemProperty(SecurityManager security,
-                                            String prefix,
+    private static void printSystemProperty(String prefix,
                                             String property,
                                             PrintWriter printWriter) {
         String header = "[derby] ";
         synchronized (printWriter) {
-            try {
-                if (security != null) {
-                    security.checkPropertyAccess(property);
-                }
-                String result = System.getProperty(property);
-                printWriter.println(header + prefix + result);
-                printWriter.flush();
-            } catch (SecurityException e) {
-                printWriter.println(header + 
-                    msgutil.getTextMessage(MessageId.SECURITY_MANAGER_NO_ACCESS_ID, property));
-                printWriter.flush();
-            }
+            String result = System.getProperty(property);
+            printWriter.println(header + prefix + result);
+            printWriter.flush();
         }
     }
 
     // printWriter synchronized by caller
     private static void detectLocalHost(
-            SecurityManager security,
             PrintWriter printWriter) {
 
         String header = "[derby] ";
-        // getLocalHost() will hang the HotJava 1.0 browser with a high security manager.
-        if (security == null) {
-            try {
-                printWriter.print(header + "Detected local client host: ");
-                printWriter.println(InetAddress.getLocalHost().toString());
-                printWriter.flush();
-            } catch (UnknownHostException e) {
-                printWriter.println(header + 
-                    msgutil.getTextMessage(MessageId.UNKNOWN_HOST_ID, e.getMessage()));
-                printWriter.flush();
-            }
+        try {
+            printWriter.print(header + "Detected local client host: ");
+            printWriter.println(InetAddress.getLocalHost().toString());
+            printWriter.flush();
+        } catch (UnknownHostException e) {
+            printWriter.println(header + 
+                                msgutil.getTextMessage(MessageId.UNKNOWN_HOST_ID, e.getMessage()));
+            printWriter.flush();
         }
     }
 }

@@ -28,10 +28,6 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.io.IOException;
 
-import java.security.PrivilegedAction;
-import java.security.AccessController;
-import java.security.AccessControlException;
-import java.security.AccessControlContext;
 import java.security.Permission;
 import javax.security.auth.Subject;
 
@@ -118,7 +114,8 @@ public class SecurityUtil {
 
     /**
      * Checks that a Subject has a Permission under the SecurityManager.
-     * To perform this check the following policy grant is required
+     * To perform this check the following policy grant is required.
+     * This method is a NOP now that Derby does not use a SecurityManager.
      * <ul>
      * <li> to run the encapsulated test:
      *      permission javax.security.auth.AuthPermission "doAsPrivileged";
@@ -128,36 +125,15 @@ public class SecurityUtil {
      *
      * @param subject the subject representing the SystemPrincipal(s)
      * @param perm the permission to be checked
-     * @throws AccessControlException if permissions are missing
      */
     static public void checkSubjectHasPermission(final Subject subject,
                                                  final Permission perm) {
-        // the checks
-        final PrivilegedAction<Void> runCheck
-            = new PrivilegedAction<Void>() {
-                    public Void run() {
-                        AccessController.checkPermission(perm);
-                        return null;
-                    }
-                };
-        final PrivilegedAction<Void> runCheckAsPrivilegedUser
-            = new PrivilegedAction<Void>() {
-                    public Void run() {
-                        // run check only using the the subject
-                        // (by using null as the AccessControlContext)
-                        final AccessControlContext acc = null;
-                        Subject.doAsPrivileged(subject, runCheck, acc);
-                        return null;
-                    }
-                };
-
-        // run check as privileged action for narrow codebase permissions
-        AccessController.doPrivileged(runCheckAsPrivilegedUser);
     }
 
     /**
      * Checks that a User has a Permission under the SecurityManager.
-     * To perform this check the following policy grant is required
+     * To perform this check the following policy grant is required.
+     * This method is a NOP now that Derby no longer uses a SecurityManager.
      * <ul>
      * <li> to run the encapsulated test:
      *      permission javax.security.auth.AuthPermission "doAsPrivileged";
@@ -167,18 +143,9 @@ public class SecurityUtil {
      *
      * @param user the user to be check for having the permission
      * @param perm the permission to be checked
-     * @throws AccessControlException if permissions are missing
      */
     static public void checkUserHasPermission(String user,
                                               Permission perm) {
-        // approve action if not running under a security manager
-        if (System.getSecurityManager() == null) {
-            return;
-        }
-
-        // check the subject for having the permission
-        final Subject subject = createSystemPrincipalSubject(user);
-        checkSubjectHasPermission(subject, perm);
     }
 
     /**
@@ -212,40 +179,21 @@ public class SecurityUtil {
     }
 
     /**
-     * Verify that we have been granted permission to use Derby internals
+     * Verify that we have been granted permission to use Derby internals.
+     * This is a NOP now that Derby no longer uses a SecurityManager.
      */
     public  static  void    checkDerbyInternalsPrivilege()
     {
-        if ( System.getSecurityManager() != null )
-        {
-            AccessController.checkPermission( USE_DERBY_INTERNALS );
-        }
     }
 
     
     /**
-     * Privileged lookup of a Context. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Context    getContextOrNull( final String contextID )
     {
-        if ( System.getSecurityManager() == null )
-        {
-            return ContextService.getContextOrNull( contextID );
-        }
-        else
-        {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedAction<Context>()
-                 {
-                     public Context run()
-                     {
-                         return ContextService.getContextOrNull( contextID );
-                     }
-                 }
-                 );
-        }
+        return ContextService.getContextOrNull( contextID );
     }
 
 }

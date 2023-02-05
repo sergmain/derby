@@ -37,10 +37,6 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.io.IOException;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -117,16 +113,12 @@ public class Main {
     	        } else {
                     try {
                     	final String inFile1 = file;
-                    	in1 = AccessController.doPrivileged(new PrivilegedExceptionAction<FileInputStream>() {
-            				public FileInputStream run() throws FileNotFoundException {
-        						return new FileInputStream(inFile1);
-            				}
-            			});
+                    	in1 = new FileInputStream(inFile1);
                         if (in1 != null) {
                             in1 = new BufferedInputStream(in1, utilMain.BUFFEREDFILESIZE);
                             in = langUtil.getNewInput(in1);
                         }
-                    } catch (PrivilegedActionException e) {
+                    } catch (Exception e) {
                         if (Boolean.getBoolean("ij.searchClassPath")) {
                             in = langUtil.getNewInput(util.getResourceAsStream(file));
                         }
@@ -140,17 +132,10 @@ public class Main {
 		final String outFile = util.getSystemProperty("ij.outfile");
 		if (outFile != null && outFile.length()>0) {
 			LocalizedOutput oldOut = out;
-			FileOutputStream fos = AccessController.doPrivileged(new PrivilegedAction<FileOutputStream>() {
-				public FileOutputStream run() {
-					FileOutputStream out = null;
-					try {
-						out = new FileOutputStream(outFile);
-					} catch (FileNotFoundException e) {
-						out = null;
-					}
-					return out;
-				}
-			});
+			FileOutputStream fos = null;
+                        try {
+                            fos = new FileOutputStream(outFile);
+                        } catch (FileNotFoundException e) {}
 			out = langUtil.getNewOutput(fos);
 
 			if (out == null)

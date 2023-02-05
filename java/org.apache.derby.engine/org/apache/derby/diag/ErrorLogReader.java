@@ -26,8 +26,6 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.FileInputStream;
-import java.security.PrivilegedAction;
-import java.security.AccessController;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -112,34 +110,25 @@ public class ErrorLogReader extends VTITemplate
 	private static final String END_EXECUTING_STRING = " :End prepared";
 
 
-	/**
-		ErrorLogReader() accesses the derby.log in
-		derby.system.home, if set, otherwise it looks in the current directory.
-		ErrorLogReader('filename') will access the specified
-		file name.
-	 */
-	public ErrorLogReader() throws StandardException
-	{
+    /**
+       ErrorLogReader() accesses the derby.log in
+       derby.system.home, if set, otherwise it looks in the current directory.
+       ErrorLogReader('filename') will access the specified
+       file name.
+    */
+    public ErrorLogReader() throws StandardException
+    {
         DiagUtil.checkAccess();
 
-        final String home = AccessController.doPrivileged
-            (
-             new PrivilegedAction<String>()
-             {
-                 public String run()
-                 {
-                     return System.getProperty( Property.SYSTEM_HOME_PROPERTY );
-                 }
-             }
-             );
+        final String home = System.getProperty( Property.SYSTEM_HOME_PROPERTY );
 
-		inputFileName = "derby.log";
+        inputFileName = "derby.log";
 
-		if (home != null)
-		{
-			inputFileName = home + "/" + inputFileName;
-		}
-	}
+        if (home != null)
+        {
+            inputFileName = home + "/" + inputFileName;
+        }
+    }
 
 	public ErrorLogReader(String inputFileName) throws StandardException
 	{

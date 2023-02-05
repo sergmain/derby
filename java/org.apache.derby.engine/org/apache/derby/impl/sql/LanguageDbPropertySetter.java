@@ -33,8 +33,6 @@ import org.apache.derby.shared.common.error.StandardException;
 import org.apache.derby.iapi.sql.conn.LanguageConnectionContext;
 import org.apache.derby.iapi.sql.dictionary.DataDictionary;
 import org.apache.derby.iapi.store.access.TransactionController;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.io.Serializable;
 import java.util.Dictionary;
 
@@ -107,28 +105,12 @@ public class LanguageDbPropertySetter implements PropertySetCallback
 		return null;
 	}
     /**
-     * Privileged lookup of a Context. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Context    getContext( final String contextID )
     {
-        if ( System.getSecurityManager() == null )
-        {
-            return ContextService.getContext( contextID );
-        }
-        else
-        {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedAction<Context>()
-                 {
-                     public Context run()
-                     {
-                         return ContextService.getContext( contextID );
-                     }
-                 }
-                 );
-        }
+        return ContextService.getContext( contextID );
     }
 
 }

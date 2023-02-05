@@ -1,3 +1,4 @@
+
 /*
 
 Derby - Class org.apache.derbyTesting.functionTests.tests.upgradeTests.Changes10_3
@@ -295,74 +296,6 @@ public class Changes10_3 extends UpgradeChange {
         }
         
         }
-    }
-
-    /**
-     * Ensure that the new policy-file-reloading procedure works after
-     * hard upgrade to 10.3 from previous derby versions.
-     */
-    public void testPolicyReloadingProcedure()
-        throws SQLException
-    {
-        int         currentPhase = getPhase();
-    
-        switch( currentPhase )
-        {
-            
-            case PH_CREATE:
-            case PH_SOFT_UPGRADE: 
-            case PH_POST_SOFT_UPGRADE: 
-                assertPolicyReloaderDoesNotExist();
-                break;
-                
-            case PH_HARD_UPGRADE:
-                assertPolicyReloaderExists();
-                break;
-            
-            default:
-                throw new SQLException( "Unknown upgrade phase: " + currentPhase );
-         
-        }
-    }
-
-    /**
-     * Verify that the policy-reloading procedure exists.
-     */
-    private void assertPolicyReloaderExists()
-        throws SQLException
-    {
-        tryReloading( true, null );
-    }
-    
-    /**
-     * Verify whether the policy-reloading procedure exists.
-     */
-    private void assertPolicyReloaderDoesNotExist()
-        throws SQLException
-    {
-        tryReloading( false, UNKNOWN_PROCEDURE );
-    }
-    
-    /**
-     * Call the policy reloading procedure.
-     */
-    private void tryReloading( boolean shouldSucceed, String expectedSQLState )
-        throws SQLException
-    {
-        boolean didSucceed = false;
-        
-        try {
-            Statement s = createStatement();
-            s.execute("call SYSCS_UTIL.SYSCS_RELOAD_SECURITY_POLICY()");
-
-            didSucceed = true;
-        }
-        catch (SQLException se)
-        {
-            assertSQLState( expectedSQLState, se );
-        }
-
-        assertEquals( "Reloading results.", shouldSucceed, didSucceed );
     }
 
     /**

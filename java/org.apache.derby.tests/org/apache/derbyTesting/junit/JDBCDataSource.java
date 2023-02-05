@@ -20,8 +20,6 @@
 package org.apache.derbyTesting.junit;
 
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -144,12 +142,7 @@ public class JDBCDataSource {
      */
     static javax.sql.DataSource getDataSourceObject(String classname, HashMap beanProperties)
     {
-        ClassLoader contextLoader = AccessController.doPrivileged(
-                new PrivilegedAction<ClassLoader>() {
-            public ClassLoader run() {
-                return Thread.currentThread().getContextClassLoader();
-            }
-        });
+        ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
     
         try {
             javax.sql.DataSource ds = null;

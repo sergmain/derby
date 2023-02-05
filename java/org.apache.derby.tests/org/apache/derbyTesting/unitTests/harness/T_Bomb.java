@@ -26,8 +26,6 @@ import org.apache.derby.iapi.services.context.ContextService;
 
 import org.apache.derby.iapi.services.context.Context;
 
-import java.security.PrivilegedAction;
-import java.security.AccessController;
 import java.util.Vector;
 
 public class T_Bomb implements Runnable { 
@@ -155,23 +153,7 @@ public class T_Bomb implements Runnable {
      */
     private  static  ContextService    getContextService()
     {
-        if ( System.getSecurityManager() == null )
-        {
-            return ContextService.getFactory();
-        }
-        else
-        {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedAction<ContextService>()
-                 {
-                     public ContextService run()
-                     {
-                         return ContextService.getFactory();
-                     }
-                 }
-                 );
-        }
+        return ContextService.getFactory();
     }
 
 }

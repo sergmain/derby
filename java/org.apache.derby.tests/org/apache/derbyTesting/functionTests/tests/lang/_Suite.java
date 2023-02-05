@@ -88,7 +88,6 @@ public class _Suite extends BaseTestCase  {
         suite.addTest(RolesTest.suite());
         suite.addTest(RolesConferredPrivilegesTest.suite());
         suite.addTest(SQLSessionContextTest.suite());
-        suite.addTest(RoutineSecurityTest.suite());
         suite.addTest(RoutineTest.suite());
         suite.addTest(RoutinesDefinersRightsTest.suite());
         suite.addTest(SQLAuthorizationPropTest.suite());
@@ -109,7 +108,6 @@ public class _Suite extends BaseTestCase  {
         suite.addTest(NullIfTest.suite());
         suite.addTest(InListMultiProbeTest.suite());
         suite.addTest(InPredicateTest.suite());
-        suite.addTest(SecurityPolicyReloadingTest.suite());
         suite.addTest(CurrentOfTest.suite());
         suite.addTest(UnaryArithmeticParameterTest.suite());
         suite.addTest(HoldCursorTest.suite());
@@ -261,7 +259,6 @@ public class _Suite extends BaseTestCase  {
         suite.addTest(ConsistencyCheckerTest.suite());
         suite.addTest(RawDBReaderTest.suite());
         suite.addTest(Derby5866TriggerOrderTest.suite());
-        suite.addTest(NoDBInternalsPermissionTest.suite());
         suite.addTest(ClassLoadingTest.suite());
         if (TestConfiguration.loadingFromJars()) { suite.addTest(VetJigsawTest.suite()); }
         return suite;

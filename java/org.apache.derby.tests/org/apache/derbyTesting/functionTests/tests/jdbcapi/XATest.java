@@ -45,15 +45,11 @@ import org.apache.derbyTesting.junit.CleanDatabaseTestSetup;
 import org.apache.derbyTesting.junit.DatabasePropertyTestSetup;
 import org.apache.derbyTesting.junit.J2EEDataSource;
 import org.apache.derbyTesting.junit.JDBC;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 import org.apache.derbyTesting.junit.Utilities;
 import org.apache.derbyTesting.junit.XATestUtil;
 
 public class XATest extends BaseJDBCTestCase {
-    //create own policy file
-    private static final String POLICY_FILE_NAME =
-            "org/apache/derbyTesting/functionTests/tests/jdbcapi/XATest.policy";
 
     public static final String LOCKTIMEOUT="40XL1";
     
@@ -1507,15 +1503,9 @@ public class XATest extends BaseJDBCTestCase {
         return test;
     }   
     
-    // grant ALL FILES execute, and getPolicy permissions,
-    // as well as write for the trace files.
+    // this method used to install a security manager
     private static Test decorateWithPolicy(Test test) {
-        //
-        // Install a security manager using the initial policy file. This is 
-        // needed foro the DeadlockWatchdog to allow it to access the ThreadMXBean
-        // to check for a deadlock
-        //
-        return new SecurityManagerSetup(test, POLICY_FILE_NAME);
+        return test;
     }
     
     

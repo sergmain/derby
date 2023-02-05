@@ -21,8 +21,6 @@ package org.apache.derbyTesting.junit;
 
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import junit.framework.Test;
 
 /**
@@ -45,8 +43,7 @@ public class ClassLoaderTestSetup extends BaseJDBCTestSetup {
     }
 
     private static ClassLoader makeClassLoader() {
-        PrivilegedAction<ClassLoader> pa = () -> new URLClassLoader(new URL[0]);
-        return AccessController.doPrivileged(pa);
+        return new URLClassLoader(new URL[0]);
     }
 
     @Override
@@ -66,18 +63,9 @@ public class ClassLoaderTestSetup extends BaseJDBCTestSetup {
     /**
      * Force this thread to use a specific class loader.
      * @param which class loader to set
-     *
-     * @throws  SecurityException
-     *          if the current thread cannot set the context ClassLoader
      */
     public static void setThreadLoader(final ClassLoader which) {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            @Override
-            public Void run() {
-                java.lang.Thread.currentThread().setContextClassLoader(which);
-              return null;
-            }
-        });
+        Thread.currentThread().setContextClassLoader(which);
     }
 
     /**
@@ -87,12 +75,7 @@ public class ClassLoaderTestSetup extends BaseJDBCTestSetup {
      * @return the current context class loader
      */
     public static ClassLoader getThreadLoader() {
-        return AccessController.doPrivileged(
-                new PrivilegedAction<ClassLoader>() {
-            public ClassLoader run() {
-                return Thread.currentThread().getContextClassLoader();
-            }
-        });
+        return Thread.currentThread().getContextClassLoader();
     }
 
 }

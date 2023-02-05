@@ -22,13 +22,10 @@ package org.apache.derbyTesting.functionTests.tests.store;
 
 import java.sql.SQLException;
 import junit.framework.Test;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
 public class Derby5582AutomaticIndexStatisticsTest extends AutomaticIndexStatisticsTest  {
 
-    // private thread group. Derby5582SecurityManager will prevent other threads from 
-	// modifying this thread group.
     private static final String PRIVTGNAME = "privtg";
 
 	public Derby5582AutomaticIndexStatisticsTest(String name) {
@@ -39,7 +36,7 @@ public class Derby5582AutomaticIndexStatisticsTest extends AutomaticIndexStatist
     /**
      * DERBY-5582 Ensure automatic statistics update thread can be created in the 
      * context of a SecurityManager that disallows modification of the parent 
-     * thread thread group.
+     * thread thread group. NOP now.
      * 
      * @throws InterruptedException
      */
@@ -64,30 +61,10 @@ public class Derby5582AutomaticIndexStatisticsTest extends AutomaticIndexStatist
    
     
     public static Test suite() {
-    	// Run just the one fixture with the custom SecurityManager
         Test t = new Derby5582AutomaticIndexStatisticsTest("testDerby5582");
-        Derby5582SecurityManager sm =  new Derby5582SecurityManager();
-        return TestConfiguration.additionalDatabaseDecorator(new SecurityManagerSetup(t, null,
-                sm),MASTERDB);
+        return TestConfiguration.additionalDatabaseDecorator(t, MASTERDB);
         }
 
-    /**
-     * SecurityManager which prevents modification of thread group privtg
-     *
-     */
-    public static class Derby5582SecurityManager  extends SecurityManager {
-        
-        public void checkAccess(ThreadGroup tg) {
-            ThreadGroup currentGroup = Thread.currentThread().getThreadGroup();
-            if (tg.getName().equals(PRIVTGNAME) && 
-                    !currentGroup.getName().equals("main")) {
-                throw new SecurityException("No permission to private ThreadGroup privtg");
-                
-            }
-            super.checkAccess(tg);
-        }
-    }
-    
     /**
      * Runnable to run testSTatsUpdatedOnGrowthFixture from
      * AutomaticStatisticsTest. Needs to be run in a separate thread

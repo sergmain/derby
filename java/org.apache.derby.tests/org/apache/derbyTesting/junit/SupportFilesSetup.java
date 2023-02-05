@@ -26,10 +26,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 import junit.extensions.TestSetup;
 import junit.framework.Test;
@@ -40,7 +36,7 @@ import org.apache.derbyTesting.functionTests.util.PrivilegedFileOpsForTests;
  * into the file system at setUp time. Resources are named
  * relative to org/apache/derbyTesting/, e.g. the name
  * passed into the constructor should be something like
- * funtionTests/test/lang/mytest.sql
+ * funtionTests/test/lang/mytest.sqlx
  * <BR>
  * Read only resources are placed into ${user.dir}/extin/name
  * Read-write resources are placed into ${user.dir}/extinout/name
@@ -117,7 +113,7 @@ public class SupportFilesSetup extends TestSetup {
         this.readWriteTargetFileNames = readWriteTargetFileNames;
     }
     
-    protected void setUp() throws PrivilegedActionException, IOException
+    protected void setUp() throws IOException
     {
         privCopyFiles(EXTIN, readOnly, readOnlyTargetFileNames);
         privCopyFiles(EXTINOUT, readWrite, readWriteTargetFileNames);
@@ -132,19 +128,13 @@ public class SupportFilesSetup extends TestSetup {
     }
     
     public  static   void privCopyFiles(final String dirName, final String[] resources, final String[] targetNames)
-    throws PrivilegedActionException
+        throws IOException
     {
-        AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-            public Void run() throws IOException, PrivilegedActionException {
-              copyFiles(dirName, resources, targetNames);
-              return null;
-            }
-        });
-
+        copyFiles(dirName, resources, targetNames);
     }
     
     private static  void copyFiles(String dirName, String[] resources, String[] targetNames)
-        throws PrivilegedActionException, IOException
+        throws IOException
     {
         File dir = new File(dirName);
         dir.mkdir();
@@ -235,12 +225,7 @@ public class SupportFilesSetup extends TestSetup {
      */
     public static String getReadOnlyFileName(final String name)
     {
-        return AccessController.doPrivileged(
-                new PrivilegedAction<String>() {
-            public String run() {
-                return getReadOnly(name).getAbsolutePath();
-            }
-        });
+        return getReadOnly(name).getAbsolutePath();
     }
     
     /**
@@ -250,12 +235,7 @@ public class SupportFilesSetup extends TestSetup {
      */
     public static String getReadWriteFileName(final String name)
     {
-        return AccessController.doPrivileged(
-                new PrivilegedAction<String>() {
-            public String run() {
-                return getReadWrite(name).getAbsolutePath();
-            }
-        });
+        return getReadWrite(name).getAbsolutePath();
     }
     
     /**
@@ -283,16 +263,7 @@ public class SupportFilesSetup extends TestSetup {
     
     private static URL getURL(final File file) throws MalformedURLException
     {
-        try {
-            return AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<URL>() {
-                public URL run() throws MalformedURLException {
-                    return file.toURI().toURL();
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            throw (MalformedURLException) e.getException();
-        } 
+        return file.toURI().toURL();
     }
 
 

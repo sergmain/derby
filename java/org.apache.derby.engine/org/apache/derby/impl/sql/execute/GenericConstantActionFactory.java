@@ -53,8 +53,6 @@ import org.apache.derby.impl.sql.compile.TableName;
 import java.util.List;
 import java.util.Properties;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.sql.Timestamp;
 
 /**
@@ -1200,28 +1198,12 @@ public class GenericConstantActionFactory
 	}
 
     /**
-     * Privileged lookup of a Context. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Context    getContext( final String contextID )
     {
-        if ( System.getSecurityManager() == null )
-        {
-            return ContextService.getContext( contextID );
-        }
-        else
-        {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedAction<Context>()
-                 {
-                     public Context run()
-                     {
-                         return ContextService.getContext( contextID );
-                     }
-                 }
-                 );
-        }
+        return ContextService.getContext( contextID );
     }
 
 }

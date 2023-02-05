@@ -26,8 +26,6 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.FileInputStream;
-import java.security.PrivilegedAction;
-import java.security.AccessController;
 import java.text.SimpleDateFormat;
 import java.util.Hashtable;
 import java.sql.ResultSetMetaData;
@@ -104,34 +102,25 @@ public class StatementDuration extends VTITemplate
 	private static final String END_EXECUTING_STRING = " :End prepared";
 
 
-	/**
-		StatementDuration() accesses the error log in
-		derby.system.home, if set, otherwise it looks in the current directory.
-		StatementDuration('filename') will access the specified
-		file name.
-	 */
-	public StatementDuration()  throws StandardException
-	{
+    /**
+       StatementDuration() accesses the error log in
+       derby.system.home, if set, otherwise it looks in the current directory.
+       StatementDuration('filename') will access the specified
+       file name.
+    */
+    public StatementDuration()  throws StandardException
+    {
         DiagUtil.checkAccess();
 
-        final String home = AccessController.doPrivileged
-            (
-             new PrivilegedAction<String>()
-             {
-                 public String run()
-                 {
-                     return System.getProperty( Property.SYSTEM_HOME_PROPERTY );
-                 }
-             }
-             );
+        final String home = System.getProperty( Property.SYSTEM_HOME_PROPERTY );
 
-		inputFileName = "derby.log";
+        inputFileName = "derby.log";
 
-		if (home != null)
-		{
-			inputFileName = home + "/" + inputFileName;
-		}
-	}
+        if (home != null)
+        {
+            inputFileName = home + "/" + inputFileName;
+        }
+    }
 
 	public StatementDuration(String inputFileName)  throws StandardException
 	{

@@ -26,9 +26,7 @@ import java.io.PrintWriter;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URL;
-import java.security.AccessController;
 import java.security.CodeSource;
-import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.util.Properties;
 import org.apache.derby.shared.common.reference.Property;
@@ -48,8 +46,7 @@ import org.apache.derby.impl.drda.NetworkServerControlImpl;
     <LI>start [-h &lt;host&gt;] [-p &lt;portnumber&gt;] [-ssl &lt;sslmode&gt;]:  This starts the Network
     Server on the port/host specified or on localhost, port 1527 if no
     host/port is specified and no properties are set to override the 
-    defaults. By default a security manager with a default security policy will 
-    be installed. The default security policy file is called server.policy. 
+    defaults.
     By default the Network Server will only listen for 
     connections from the machine on which it is running. 
     Use -h 0.0.0.0 to listen on all interfaces or -h &lt;hostname&gt; to listen 
@@ -189,8 +186,6 @@ public class NetworkServerControl{
     public final static int DEFAULT_PORTNUMBER = 1527;
 
     private final static String DERBYNET_JAR = "derbynet.jar";
-    private final static String POLICY_FILENAME = "server.policy";
-    private final static String POLICY_FILE_PROPERTY = "java.security.policy";
     private final static String DERBY_HOSTNAME_WILDCARD = "0.0.0.0";
     private final static String IPV6_HOSTNAME_WILDCARD = "::";
     private final static String SOCKET_PERMISSION_HOSTNAME_WILDCARD = "*";
@@ -323,27 +318,13 @@ public class NetworkServerControl{
             // Java 7 and above: file permission restriction
             if (command == NetworkServerControlImpl.COMMAND_START) {
                 try {
-                    AccessController.doPrivileged((PrivilegedAction<Void>) () ->
-                    {
-                        System.setProperty(
-                                Property.SERVER_STARTED_FROM_CMD_LINE,
-                                "true");
-                        return null;
-                    });
+                    System.setProperty(
+                        Property.SERVER_STARTED_FROM_CMD_LINE,
+                        "true");
                 } catch (Exception e) {
                     server.consoleExceptionPrintTrace(e);
                     System.exit(1);
                 }
-            }
-
-            //
-            // In order to run secure-by-default, we install a security manager
-            // if one isn't already installed. This feature is described by DERBY-2196.
-            //
-            if ( needsSecurityManager( server, command ) )
-            {
-                verifySecurityState( server );
-                installSecurityManager( server );
             }
 
             //
@@ -383,7 +364,6 @@ public class NetworkServerControl{
     /** Start a Network Server.
      *  This method will launch a separate thread and start a Network Server.
      *  This method  may return before the server is ready to accept connections.
-     *  This will also install a security manager with a default security policy.
      *  Use the ping method to verify that the server has started.
      *
      * <P>
@@ -605,145 +585,6 @@ public class NetworkServerControl{
         serverImpl.setClientLocale( locale );
     }
 
-    /**
-     * Return true if we need to install a Security Manager. All of the
-     * following must apply. See DERBY-2196.
-     *
-     * <ul>
-     * <li>The VM was booted with NetworkServerContro.main() as the
-     * entry point. This is handled by the fact that this method is only called
-     * by main().</li>
-     * <li>The VM isn't already running a SecurityManager.</li>
-     * <li>The command must be "start".</li>
-     * <li>The customer didn't specify the -noSecurityManager flag on the startup command
-     * line.</li>
-     * </ul>
-     */
-    private static  boolean needsSecurityManager( NetworkServerControlImpl server, int command )
-        throws Exception
-    {
-        return
-            (
-             (System.getSecurityManager() == null) &&
-             (command == NetworkServerControlImpl.COMMAND_START) &&
-             (!server.runningUnsecure())
-             );
-   }
-    
-    /**
-     * Verify that all prerequisites are met before bringing up a security
-     * manager. See DERBY-2196. If prerequisites aren't met, raise an
-     * exception which explains how to get up and running. At one point, we were going to require
-     * that authentication be enabled before bringing up a security manager.
-     * This, however, gave rise to incompatibilities. See DERBY-2757.
-     *
-     * Currently, this method is a nop.
-     */
-    private static  void verifySecurityState( NetworkServerControlImpl server )
-        throws Exception
-    {
-    }
-
-    
-    /**
-     * Install a SecurityManager governed by the Basic startup policy. See DERBY-2196.
-     */
-    private static  void installSecurityManager( NetworkServerControlImpl server )
-        throws Exception
-    {
-        //
-        // The Basic policy refers to some properties. Make sure they are set.
-        //
-        if ( PropertyUtil.getSystemProperty( Property.SYSTEM_HOME_PROPERTY ) == null )
-        { System.setProperty( Property.SYSTEM_HOME_PROPERTY, PropertyUtil.getSystemProperty( "user.dir" ) ); }
-
-        //
-        // Make sure the following property is set so that it can be substituted into the
-        // policy file. That will let us grant write permission on the server's
-        // trace file.
-        //
-        if ( PropertyUtil.getSystemProperty( Property.DRDA_PROP_TRACEDIRECTORY ) == null )
-        { System.setProperty( Property.DRDA_PROP_TRACEDIRECTORY, PropertyUtil.getSystemProperty( Property.SYSTEM_HOME_PROPERTY ) ); }
-
-        //
-        // Forcibly set the following property so that it will be correctly
-        // substituted into the default policy file. This is the hostname for
-        // SocketPermissions. This is an internal property which customers
-        // may not override.
-        //
-        System.setProperty( Property.DERBY_SECURITY_HOST, getHostNameForSocketPermission( server ) );
-
-        //
-        // Forcibly set the following property so that it will be correctly
-        // substituted into the default policy file. This is the hostname for
-        // SocketPermissions. This is an internal property which customers
-        // may not override.
-        //
-        System.setProperty(Property.DERBY_SECURITY_PORT,
-                           String.valueOf(server.getPort()));
-
-        //
-        // Forcibly set the following property. This is the parameter in
-        // the Basic policy which points at the directory where the embedded and
-        // network codesources. Do not let the customer
-        // override this
-        //
-        URL    derbyInstallURL = getCodeSourceURL( server );
-        String derbyInstallStr = getCodeSourcePrefix( server, derbyInstallURL );
-        String derbyInstallPth = new File(derbyInstallURL.getFile())
-                                 .getParentFile().getAbsolutePath();
-
-        System.setProperty( Property.DERBY_INSTALL_URL, derbyInstallStr );
-        System.setProperty( Property.DERBY_INSTALL_PATH, derbyInstallPth );
-
-        //
-        // Now install a SecurityManager, using the Basic policy file.
-        //
-        String      policyFileURL = getPolicyFileURL();
-
-        System.setProperty( POLICY_FILE_PROPERTY, policyFileURL );
-        
-        SecurityManager     securityManager = new SecurityManager();
-
-        System.setSecurityManager( securityManager );
-
-        // Report success.
-        if (securityManager.equals(System.getSecurityManager())) {
-            String successMessage = server.localizeMessage(
-                    "DRDA_SecurityInstalled.I", null);
-            server.consoleMessage(successMessage, true);
-        }
-    }
-
-    /**
-     * Get the hostname as a value suitable for substituting into the
-     * default server policy file. The special
-     * wildcard valuse "0.0.0.0" and "::" are forced to be "*" since that is the wildcard
-     * hostname understood by SocketPermission. SocketPermission does
-     * not understand the "0.0.0.0" and "::" wildcards. IPV6 addresses are
-     * enclosed in square brackets. This logic arose from two JIRAs:
-     * DERBY-2811 and DERBY-2874.
-     */
-    private static String  getHostNameForSocketPermission( NetworkServerControlImpl server )
-        throws Exception
-    {
-        //
-        // By now, server.getPropertyInfo() has been called, followed by
-        // server.parseArgs(). So the server knows its hostname.
-        //
-        String  hostname = server.getHost();
-        
-        if (
-            hostnamesEqual( DERBY_HOSTNAME_WILDCARD, hostname ) ||
-            IPV6_HOSTNAME_WILDCARD.equals( hostname ) 
-            )
-        { hostname = SOCKET_PERMISSION_HOSTNAME_WILDCARD; }
-        else if ( isIPV6Address( hostname ) )
-        { hostname = '[' + hostname + "]:0-"; }
-
-        return hostname;
-    }
-
     // return true if the two hostnames are equivalent
     private static  boolean hostnamesEqual( String left, String right )
     {
@@ -787,76 +628,6 @@ public class NetworkServerControl{
             return (address instanceof Inet6Address);
             
         } catch (Exception e) { return false; }
-    }
-
-    /**
-     *<p>
-     * Find the url of the library directory which holds derby.jar and
-     * derbynet.jar. The Basic policy assumes that both jar files live in the
-     * same directory.
-     * </p>
-     */
-    private static  URL  getCodeSourceURL( NetworkServerControlImpl server )
-        throws Exception
-    {
-        // Note: This method is expected to run only when no security manager
-        //       has been installed, hence no use of privileged blocks.
-        ProtectionDomain pd = NetworkServerControl.class.getProtectionDomain();
-        CodeSource cs = pd.getCodeSource();
-        if (cs == null) {
-            return null;
-        }
-        URL url = cs.getLocation();
-		return url;
-	}
-
-	private static String getCodeSourcePrefix(
-                NetworkServerControlImpl server,
-                URL url )
-		throws Exception
-	{
-        // Replace in "file://some", but not in "file:///some".
-        String extForm = url.toExternalForm().replaceFirst(
-                "^file://([^/].*)", "file:////$1");
-        int idx = extForm.indexOf(DERBYNET_JAR);
-
-        //
-        // If the customer isn't running against jar files, our Basic policy
-        // won't work.
-        //
-        if ( idx < 0 )
-        {
-            String  errorMessage = server.localizeMessage( "DRDA_MissingNetworkJar.S", null );
-
-            // this throws an exception and exits this method
-            server.consoleError( errorMessage );
-        }
-
-        //
-        // Otherwise, we have the directory prefix for our url.
-        //
-        String directoryPrefix = extForm.substring(0, idx);
-
-        return directoryPrefix;
-    }
-
-    /**
-     *<p>
-     * Get the URL of the policy file. Typically, this will be some pointer into
-     * derbynet.jar.
-     * </p>
-     */
-    private static  String getPolicyFileURL()
-        throws Exception
-    {
-        String      resourceName =
-            NetworkServerControl.class.getPackage().getName().replace( '.', '/' ) +
-            '/' +
-            POLICY_FILENAME;
-        URL         resourceURL = NetworkServerControl.class.getClassLoader().getResource( resourceName );
-        String      stringForm = resourceURL.toExternalForm();
-
-        return stringForm;
     }
 
 }

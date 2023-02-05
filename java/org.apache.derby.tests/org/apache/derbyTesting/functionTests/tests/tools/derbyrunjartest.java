@@ -28,7 +28,7 @@ import junit.framework.Test;
 import org.apache.derbyTesting.junit.BaseTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.Derby;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
+import org.apache.derbyTesting.junit.TestConfiguration;
 
 /**
  * Basic tests for exercising the {@code org.apache.derby.run.run}
@@ -51,10 +51,7 @@ public class derbyrunjartest extends BaseTestCase {
             suite.addTest(new derbyrunjartest("xtestServer"));
         }
 
-        return new SecurityManagerSetup(
-                suite,
-                cl.getName().replace('.', '/') + ".policy",
-                true);
+        return suite;
     }
 
     /**
@@ -67,7 +64,7 @@ public class derbyrunjartest extends BaseTestCase {
     private void runtool(String[] toolArgs, String[] output, int exitCode)
             throws Exception {
         String runClassName = org.apache.derby.run.run.class.getName();
-        URL result = SecurityManagerSetup.getURL(runClassName);
+        URL result = TestConfiguration.getURL(runClassName);
         String derbyrunloc = null;
 
         if (result.toString().endsWith(".jar")) {

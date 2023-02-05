@@ -58,7 +58,7 @@ import org.apache.derby.iapi.sql.ResultColumnDescriptor;
  * </UL>
  * 
  */
-public final class ErrorMessages extends VTITemplate implements VTICosting, java.security.PrivilegedAction<InputStream>  {
+public final class ErrorMessages extends VTITemplate implements VTICosting  {
 	
 	/* The name of the file containing all the SQLSTate codes.
 	 * The class gets the SQLState code from the messages
@@ -151,41 +151,39 @@ public final class ErrorMessages extends VTITemplate implements VTICosting, java
 	}
 	
 	
-        /**          */
-	private void loadProperties() throws IOException
-	{
-		p = new Properties();
-		for (int i = 0; i < 50; i++) {
-			msgFile = i;
-			InputStream is = java.security.AccessController.doPrivileged(this);
-			if (is == null)
-				continue;
+    private void loadProperties() throws IOException
+    {
+        p = new Properties();
+        for (int i = 0; i < 50; i++) {
+            msgFile = i;
+            InputStream is = run();
+            if (is == null)
+                continue;
 
-			try {
-				p.load(is);
-			} finally {
-				try {
-					is.close();
-				} catch (IOException ioe) {
-				}
-			}
-		}
-		keys = p.keys();
-	}
+            try {
+                p.load(is);
+            } finally {
+                try {
+                    is.close();
+                } catch (IOException ioe) {}
+            }
+        }
+        keys = p.keys();
+    }
 
-        /**          */
-	private boolean notAnException() {
+    /**          */
+    private boolean notAnException() {
 
-		if (k.length() < 5)
-			return true;
+        if (k.length() < 5)
+            return true;
         int tempSeverity = StandardException.getSeverityFromIdentifier(k);
-		//if the severity is not one of our customer-visible severity
-		//levels, it's just a message, not an SQLException
+        //if the severity is not one of our customer-visible severity
+        //levels, it's just a message, not an SQLException
         if (tempSeverity < (ExceptionSeverity.NO_APPLICABLE_SEVERITY + 1))
-	  return true;
+            return true;
 	severity = tempSeverity;	
 	return false;
-	}
+    }
 
 		
 	/*VTICosting methods*/
@@ -215,7 +213,6 @@ public final class ErrorMessages extends VTITemplate implements VTICosting, java
 		InputStream msg = getClass().getResourceAsStream("/org/apache/derby/loc/m" + msgFile + "_en.properties");
 		msgFile = 0;
 		return msg;
-
 	}
 
 	/*

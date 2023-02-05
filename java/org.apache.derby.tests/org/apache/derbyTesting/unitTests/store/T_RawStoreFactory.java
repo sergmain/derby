@@ -60,10 +60,6 @@ import org.apache.derby.shared.common.reference.Property;
 import org.apache.derby.iapi.services.io.FormatableBitSet;
 
 import java.io.*;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.security.AccessController;
 import java.util.Properties;
 
 /**
@@ -7648,65 +7644,32 @@ public class T_RawStoreFactory extends T_MultiThreadedIterations {
 
     
     /**
-     * Privileged lookup of the ContextService. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ContextService    getContextService()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ContextService>()
-             {
-                 public ContextService run()
-                 {
-                     return ContextService.getFactory();
-                 }
-             }
-             );
+        return ContextService.getFactory();
     }
 
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object createPersistentService( final String factoryInterface, final String serviceName, final Properties properties ) 
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.createPersistentService( factoryInterface, serviceName, properties );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.createPersistentService( factoryInterface, serviceName, properties );
     }
 
 }

@@ -28,8 +28,6 @@ import org.apache.derby.shared.common.i18n.MessageService;
 import org.apache.derby.shared.common.reference.SQLState;
 import org.apache.derby.shared.common.error.ExceptionSeverity;
 
-import java.security.PrivilegedAction;
-import java.security.AccessController;
 import java.sql.SQLException;
 
 public class ConnectionUtil {
@@ -59,28 +57,12 @@ public class ConnectionUtil {
 	}
     
     /**
-     * Privileged lookup of a Context. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Context    getContextOrNull( final String contextID )
     {
-        if ( System.getSecurityManager() == null )
-        {
-            return ContextService.getContextOrNull( contextID );
-        }
-        else
-        {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedAction<Context>()
-                 {
-                     public Context run()
-                     {
-                         return ContextService.getContextOrNull( contextID );
-                     }
-                 }
-                 );
-        }
+        return ContextService.getContextOrNull( contextID );
     }
 
 }

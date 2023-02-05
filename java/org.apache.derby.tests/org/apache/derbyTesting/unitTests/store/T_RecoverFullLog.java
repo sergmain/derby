@@ -51,10 +51,6 @@ import org.apache.derby.iapi.store.access.conglomerate.LogicalUndo;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.File;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.security.AccessController;
 import java.util.Properties;
 
 
@@ -868,90 +864,42 @@ public class T_RecoverFullLog extends T_Generic {
 
     
     /**
-     * Privileged lookup of the ContextService. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ContextService    getContextService()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ContextService>()
-             {
-                 public ContextService run()
-                 {
-                     return ContextService.getFactory();
-                 }
-             }
-             );
+        return ContextService.getFactory();
     }
 
 
     /**
-     * Privileged service lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private static  Object findService( final String factoryInterface, final String serviceName )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     return Monitor.findService( factoryInterface, serviceName );
-                 }
-             }
-             );
+        return Monitor.findService( factoryInterface, serviceName );
     }
     
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  boolean startPersistentService( final String serviceName, final Properties properties ) 
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Boolean>()
-                 {
-                     public Boolean run()
-                         throws StandardException
-                     {
-                         return Monitor.startPersistentService( serviceName, properties );
-                     }
-                 }
-                 ).booleanValue();
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.startPersistentService( serviceName, properties );
     }
 
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object createPersistentService( final String factoryInterface, final String serviceName, final Properties properties ) 
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.createPersistentService( factoryInterface, serviceName, properties );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.createPersistentService( factoryInterface, serviceName, properties );
     }
 
 }

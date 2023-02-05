@@ -109,7 +109,7 @@
    </copy>
 
    <copy todir="${out.testing.dir}/${derby.testing.suites.dir}">
-     <fileset dir="${derby.testing.src.dir}/${derby.testing.functest.dir}/suites" includes="*.runall,*.properties,*.exclude,*.policy"/>
+     <fileset dir="${derby.testing.src.dir}/${derby.testing.functest.dir}/suites" includes="*.runall,*.properties,*.exclude"/>
    </copy>
 
     <copy todir="${out.testing.dir}/${derby.testing.functest.dir}/testData/v1">
@@ -141,11 +141,6 @@
         includes="*.csv"/>
     </copy>
 
-    <copy todir="${out.testing.dir}/${derby.testing.functest.dir}/tests/compatibility">
-        <fileset dir="${derby.testing.src.dir}/${derby.testing.functest.dir}/tests/compatibility"
-          includes="*.policy"/>
-    </copy>
-
     <copy todir="${out.testing.dir}/${derby.testing.functest.dir}/tests/demo">
       <fileset dir="${derby.testing.src.dir}/${derby.testing.functest.dir}/tests/demo"
                includes="*.sql,*.properties"/>
@@ -153,12 +148,12 @@
 
     <copy todir="${out.testing.dir}/${derby.testing.functest.dir}/tests/derbynet">
       <fileset dir="${derby.testing.src.dir}/${derby.testing.functest.dir}/tests/derbynet" 
-        includes="*.inc,*.policy,*.properties,*.sql,*.tests,*.key"/>
+        includes="*.inc,*.properties,*.sql,*.tests,*.key"/>
     </copy>
 
     <copy todir="${out.testing.dir}/${derby.testing.functest.dir}/tests/engine">
       <fileset dir="${derby.testing.src.dir}/${derby.testing.functest.dir}/tests/engine"
-        includes="*.sql,*.properties,*.subsql,*.policy,*.jar,*.tstlog,xmlTestFiles/*"/>
+        includes="*.sql,*.properties,*.subsql,*.jar,*.tstlog,xmlTestFiles/*"/>
     </copy>
 
     <copy todir="${out.testing.dir}/${derby.testing.functest.dir}/tests/i18n">
@@ -177,22 +172,22 @@
 
     <copy todir="${out.testing.dir}/${derby.testing.functest.dir}/tests/jdbcapi">
       <fileset dir="${derby.testing.src.dir}/${derby.testing.functest.dir}/tests/jdbcapi" 
-        includes="*.gif,*.properties,*.sql,*.utf,*.policy"/>
+        includes="*.gif,*.properties,*.sql,*.utf"/>
     </copy>
 
     <copy todir="${out.testing.dir}/${derby.testing.functest.dir}/tests/lang">
       <fileset dir="${derby.testing.src.dir}/${derby.testing.functest.dir}/tests/lang" 
-        includes="*.sql,*.properties,*.subsql,*.policy,*.jar,*.dat,*.tstlog,*.trace,xmlTestFiles/*"/>  
+        includes="*.sql,*.properties,*.subsql,*.jar,*.dat,*.tstlog,*.trace,xmlTestFiles/*"/>  
     </copy>
 
     <copy todir="${out.testing.dir}/${derby.testing.functest.dir}/tests/largedata">
       <fileset dir="${derby.testing.src.dir}/${derby.testing.functest.dir}/tests/largedata" 
-        includes="*.sql,*.properties,*.subsql,*.policy,*.jar,*.dat,*.tstlog,xmlTestFiles/*"/>  
+        includes="*.sql,*.properties,*.subsql,*.jar,*.dat,*.tstlog,xmlTestFiles/*"/>  
     </copy>
 
     <copy todir="${out.testing.dir}/${derby.testing.functest.dir}/tests/management">
       <fileset dir="${derby.testing.src.dir}/${derby.testing.functest.dir}/tests/management"
-               includes="jmx.*,*.policy"/>
+               includes="jmx.*"/>
     </copy>
 
     <copy todir="${out.testing.dir}/${derby.testing.functest.dir}/tests/memorydb">
@@ -210,33 +205,29 @@
         includesfile="${derby.testing.src.dir}/${derby.testing.functest.dir}/tests/perf/copyfiles.ant"/>  
     </copy>
 
-    <copy todir="${out.testing.dir}/${derby.testing.functest.dir}/tests/replicationTests">
-      <fileset dir="${derby.testing.src.dir}/${derby.testing.functest.dir}/tests/replicationTests" includes="*.policy"/>
-    </copy>
-
     <copy todir="${out.testing.dir}/${derby.testing.functest.dir}/tests/store">
       <fileset dir="${derby.testing.src.dir}/${derby.testing.functest.dir}/tests/store" 
-        includes="*.sql,*.properties,*.subsql,*.policy,*.jar,*.view,*banner,*.data"/>  
+        includes="*.sql,*.properties,*.subsql,*.jar,*.view,*banner,*.data"/>  
     </copy>
 
     <copy todir="${out.testing.dir}/${derby.testing.functest.dir}/tests/storetests">
       <fileset dir="${derby.testing.src.dir}/${derby.testing.functest.dir}/tests/storetests" 
-        includes="*.sql,*.properties,*.policy"/>  
+        includes="*.sql,*.properties"/>  
     </copy>
 
     <copy todir="${out.testing.dir}/${derby.testing.functest.dir}/tests/tools">
       <fileset dir="${derby.testing.src.dir}/${derby.testing.functest.dir}/tests/tools" 
-        includes="*.jar,*.sql,*.properties,*.policy"/>
+        includes="*.jar,*.sql,*.properties"/>
     </copy>
 
     <copy todir="${out.testing.dir}/${derby.testing.functest.dir}/tests/unit">
       <fileset dir="${derby.testing.src.dir}/${derby.testing.functest.dir}/tests/unit" 
-        includes="*.properties,*.policy"/>  
+        includes="*.properties"/>  
     </copy>
 
     <copy todir="${out.testing.dir}/${derby.testing.functest.dir}/util">
       <fileset dir="${derby.testing.src.dir}/${derby.testing.functest.dir}/util" 
-        includes="*.sql,*.properties,*.policy"/>
+        includes="*.sql,*.properties"/>
     </copy>
 
     <copy todir="${out.testing.dir}/${derby.testing.system.dir}/mailjdbc/schema">
@@ -249,11 +240,6 @@
 
 	<copy todir="${out.testing.dir}/${derby.testing.system.dir}/oe/schema">
 	   <fileset dir="${derby.testing.src.dir}/${derby.testing.system.dir}/oe/schema"/>
-    </copy>
-
-    <copy todir="${out.testing.dir}/${derby.testing.unittest.dir}">
-      <fileset dir="${derby.testing.src.dir}/${derby.testing.unittest.dir}" 
-        includes="**/*.policy"/>  
     </copy>
 
     <copy todir="${out.testing.dir}/${derby.testing.functest.dir}/tests/demo">

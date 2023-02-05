@@ -21,8 +21,6 @@
 
 package org.apache.derby.diag;
 
-import java.security.PrivilegedAction;
-import java.security.AccessController;
 import java.sql.ResultSetMetaData;
 import java.sql.Timestamp;
 import java.sql.Types;
@@ -186,28 +184,12 @@ public final class StatementCache extends VTITemplate {
 	}
     
     /**
-     * Privileged lookup of a Context. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Context    getContextOrNull( final String contextID )
     {
-        if ( System.getSecurityManager() == null )
-        {
-            return ContextService.getContextOrNull( contextID );
-        }
-        else
-        {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedAction<Context>()
-                 {
-                     public Context run()
-                     {
-                         return ContextService.getContextOrNull( contextID );
-                     }
-                 }
-                 );
-        }
+        return ContextService.getContextOrNull( contextID );
     }
 
 }

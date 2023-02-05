@@ -21,9 +21,6 @@
 
 package org.apache.derby.mbeans;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import org.apache.derby.shared.common.reference.Module;
 import org.apache.derby.iapi.services.monitor.Monitor;
 
@@ -89,21 +86,12 @@ public class Management implements ManagementMBean {
     }
     
     /**
-     * Privileged module lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private static  Object getSystemModule( final String factoryInterface )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     return Monitor.getSystemModule( factoryInterface );
-                 }
-             }
-             );
+        return Monitor.getSystemModule( factoryInterface );
     }
 
 }

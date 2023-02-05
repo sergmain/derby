@@ -5403,6 +5403,11 @@ ln=lower-case two-letter ISO-639 language code, CO=upper-case two-letter ISO-316
                 <text>Username not found in SYS.SYSUSERS.</text>
             </msg>
 
+            <msg>
+                <name>XK002.S</name>
+                <text>Derby no longer supports the Java SecurityManager. The SecurityManager was deprecated by JEP 411. The SYSCS_UTIL.SYSCS_RELOAD_SECURITY_POLICY() does nothing.</text>
+            </msg>
+
         </family>
 
 

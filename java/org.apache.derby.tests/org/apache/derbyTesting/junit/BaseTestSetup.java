@@ -38,23 +38,10 @@ public abstract class BaseTestSetup extends TestSetup {
     }
 
     /**
-     * Setup the security manager for this Derby decorator/TestSetup
-     * and then call the part's run method to run the decorator and
-     * the test it wraps.
+     * This method used to setup the security manager. Now it just runs the test.
      */
-    @Override
     public void run(TestResult result)
     {
-        // install a default security manager if one has not already been
-        // installed
-        if ( System.getSecurityManager() == null )
-        {
-            if (TestConfiguration.getCurrent().defaultSecurityManagerSetup())
-            {
-                BaseTestCase.assertSecurityManager();
-            }
-        }
-        
         super.run(result);
     }
 

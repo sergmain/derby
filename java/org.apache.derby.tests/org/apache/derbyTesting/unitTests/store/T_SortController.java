@@ -44,10 +44,6 @@ import org.apache.derby.shared.common.reference.SQLState;
 
 import org.apache.derby.iapi.types.SQLInteger;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Properties;
 import java.util.Vector;
 import java.util.StringTokenizer;
@@ -62,24 +58,19 @@ import org.apache.derby.shared.common.sanity.SanityManager;
 
 public class T_SortController extends T_Generic
 {
-	private static final String testService = "sortTest";
+    private static final String testService = "sortTest";
 
-	/** Set this to print out the rows that are inserted into
-	 ** and returned from each sort. **/
-	protected boolean verbose = false;
+    /** Set this to print out the rows that are inserted into
+     ** and returned from each sort. **/
+    protected boolean verbose = false;
 
-	public String getModuleToTestProtocolName() {
-		return AccessFactory.MODULE;
-	}
+    public String getModuleToTestProtocolName() {
+        return AccessFactory.MODULE;
+    }
 
-	private void setSortBufferSize(final String buf_length) {
-    	AccessController.doPrivileged(new PrivilegedAction<Void>() {
-		    public Void run()  {
-		    	System.setProperty("derby.storage.sortBufferMax", buf_length);
-		    	return null;
-		    }
-	    });
-	}
+    private void setSortBufferSize(final String buf_length) {
+        System.setProperty("derby.storage.sortBufferMax", buf_length);
+    }
 
 	/*
 	** Methods of T_SortController
@@ -842,53 +833,22 @@ public class T_SortController extends T_Generic
 	}
     
     /**
-     * Privileged lookup of the ContextService. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ContextService    getContextService()
     {
-        if ( System.getSecurityManager() == null )
-        {
-            return ContextService.getFactory();
-        }
-        else
-        {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedAction<ContextService>()
-                 {
-                     public ContextService run()
-                     {
-                         return ContextService.getFactory();
-                     }
-                 }
-                 );
-        }
+        return ContextService.getFactory();
     }
 
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object createPersistentService( final String factoryInterface, final String serviceName, final Properties properties ) 
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.createPersistentService( factoryInterface, serviceName, properties );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.createPersistentService( factoryInterface, serviceName, properties );
     }
 
 }

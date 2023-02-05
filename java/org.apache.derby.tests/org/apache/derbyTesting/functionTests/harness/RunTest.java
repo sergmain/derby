@@ -183,8 +183,6 @@ public class RunTest
      * may be used to bypass problematic tests and get the
      * remainder of the tests running with the security manager.
      */
-    static boolean runWithoutSecurityManager;
-
     static InputStream isSed = null; // For test_sed.properties // Cliff
 
 	public static void main(String[] args)
@@ -283,9 +281,6 @@ public class RunTest
             // Run the Server if needed
 	    if ((driverName != null) && (!skiptest) )
 	    {
-            // before going further, get the policy file copied and if
-            // needed, modify it with the test's policy file
-            composePolicyFile();
             String spacedJvmFlags = jvmflags;
             // we now replace any '^' in jvmflags with ' '
             if ((jvmflags != null) && (jvmflags.indexOf("^")>0))
@@ -1754,10 +1749,6 @@ clp.list(System.out);
 	        }
 
  
-	        if (NetServer.isJCCConnection(framework)
-	        		|| "true".equalsIgnoreCase(ap.getProperty("noSecurityManager")))
-	        	runWithoutSecurityManager = true;
-	        
    		// Also check for supportfiles
     		String suppFiles = ap.getProperty("supportfiles");
 			boolean copySupportFiles = ((suppFiles != null) && (suppFiles.length()>0));
@@ -2264,7 +2255,6 @@ clp.list(System.out);
 	    String systemHome, String scriptPath)
 	    throws FileNotFoundException, IOException, Exception
 	{
-    	composePolicyFile();
         
 	    //System.out.println("testType: " + testType);
 	    String ij = "";
@@ -2362,12 +2352,6 @@ clp.list(System.out);
         }
         jvm.setD(jvmProps);
        
-        // set security properties
-        if (!runWithoutSecurityManager)
-            jvm.setSecurityProps();
-        else
-        	System.out.println("-- SecurityManager not installed --");
-
         Vector<String> v = jvm.getCommandLine();
 
         boolean isModuleAware = JVMInfo.isModuleAware();
@@ -2496,72 +2480,6 @@ clp.list(System.out);
     	return spacedJvmFlags;    
     }
     
-    public static void composePolicyFile() throws ClassNotFoundException
-    {
-        try{
-            //DERBY-892: allow for test- and suite-specific policy additions
-            
-            // this is the default policy file
-            String default_policy = "util/derby_tests.policy";
-            
-            // if the property replacePolicyFile is set (in the 
-            // test specific _app.properties file, or at the command line)
-            // do not use the default policy file at all, otherwise, append
-            if (!replacePolicyFile)
-            {
-            	File userDirHandle = new File(userdir);
-            	CopySuppFiles.copyFiles(userDirHandle, default_policy);
-            }
-            // see if there is a suite specific policy file and append or replace
-            if ((isSuiteRun) && (suiteName!=null)) 
-            {
-                InputStream newpolicy = loadTestResource("suites/" + 
-                    suiteName.substring(0,suiteName.indexOf(':')) + 
-                    ".policy");
-                writePolicyFile(newpolicy);
-            }
-
-            // if we are running with useprocess=false, we need some special
-            // properties (setSecurityManager, setIO)
-            if (!useprocess) 
-            {
-                InputStream newpolicy = loadTestResource("util/" + "useprocessfalse.policy");
-                writePolicyFile(newpolicy);
-            }
-            
-            // now get the test specific policy file and append or replace
-            InputStream newpolicy =
-                loadTestResource("tests/" + testDirName + "/" + testBase + ".policy");
-            writePolicyFile(newpolicy);
-        } catch (IOException ie) {
-            System.out.println("Exception trying to create policy file: ");
-            ie.printStackTrace(); 
-        }
-    }
-
-    public static void writePolicyFile(InputStream newpolicy)
-    {
-        try{
-            if (newpolicy != null)
-            {
-                File oldpolicy = new File(runDir,"derby_tests.policy");
-                if (verbose && oldpolicy.exists()) System.out.println("Appending to derby_tests.policy");
-                BufferedReader policyadd = new BufferedReader(new InputStreamReader(newpolicy, "UTF-8"));
-                FileWriter policyfw = new FileWriter(oldpolicy.getPath(), true);
-                PrintWriter policypw = new PrintWriter( new BufferedWriter(policyfw, 10000), true );
-                String str = "";
-                while ( (str = policyadd.readLine()) != null ) { policypw.println(str); }
-                policypw.close();
-                policyadd.close();
-                policypw= null;
-                newpolicy = null;
-            }
-        } catch (IOException ie) {
-            System.out.println("Exception trying to create policy file: ");
-            ie.printStackTrace(); 
-        }
-    }
-
     private static void execTestProcess(String[] testCmd)
         throws Exception
     {
@@ -2701,9 +2619,6 @@ clp.list(System.out);
 
     	PrintStream ps = new PrintStream(new FileOutputStream(pathStr), true);
     	
-    	// Install a security manager within this JVM for this test.
-    	composePolicyFile();
-    	boolean installedSecurityManager = installSecurityManager();
     	if (testType.equals("sql"))
     	{
     	    String[] ijarg = new String[3];
@@ -2909,11 +2824,6 @@ clp.list(System.out);
             System.setErr(stderr);
         }        
         ps.close();
-         if (installedSecurityManager)
-        {
-        	System.setSecurityManager(null);
-        	
-        }        
     }
 
     static void addSkiptestReason(String reason) {
@@ -2967,56 +2877,6 @@ clp.list(System.out);
         //System.out.println(tmp);
         
         return tmp;
-    }
-    
-    /**
-     * Install the default security manager in this JVM for this
-     * test, used when useprocess is false.
-     * @return true if a security manager was installed
-     * @throws ClassNotFoundException
-     * @throws IOException
-     */
-    private static boolean installSecurityManager() throws ClassNotFoundException, IOException
-    {
-    	// SecurityManager not currently work with older j9 and useProcess=false
-    	// need to disable to allow tests to run.
-   	if (jvmName.startsWith("j9") && (!jvmName.equals("j9_foundation11")))
-   		return false;
-    	
-    	boolean installedSecurityManager = false;
-    	// Set up the SecurityManager in this JVM for this test.
-    	boolean haveSecurityManagerAlready = System.getSecurityManager() != null;
-        if (runWithoutSecurityManager)
-        {
-        	// Test doesn't run with a SecurityManager,
-        	// print a warning if one is there already.
-        	if (haveSecurityManagerAlready)
-        		System.out.println(
-        				"noSecurityManager=true,useProcess=false but SecurityManager installed by previous test");
-        	else
-        	    System.out.println("-- SecurityManager not installed --");
-        }     
-        else if (!haveSecurityManagerAlready)
-    	{
-        	// Get the set of -D options that would be needed
-        	// for a spawned VM and convert them to system properties.
-            for (String dashDOpt : jvm.getSecurityProps(null))
-    	    {
-    	    	if ("java.security.manager".equals(dashDOpt))
-    	    		continue;
-    	    	
-    	    	int eq = dashDOpt.indexOf("=");
-    	    	String key = dashDOpt.substring(0, eq);
-    	    	String value = dashDOpt.substring(eq + 1);
-    	    	
-    	    	System.setProperty(key, value);
-    	    	
-     	    }
-		    System.setSecurityManager(new SecurityManager());
-		    installedSecurityManager = true;
-    	}
-        
-        return installedSecurityManager;
     }
     
     // copy the .out file in utf8 format. 

@@ -1,5 +1,5 @@
 APACHE DERBY STATUS:
-Last modified at [$Date$] by $Author$.
+Last modified at [$Date: 2020-03-01 13:46:10 -0800 (Sun, 01 Mar 2020) $] by $Author: rhillegas $.
 
 Web site: http://db.apache.org/derby/
 
@@ -21,6 +21,7 @@ Project info
     period of time can earn a contributor commit access to the codebase.
 
 Official releases:
+ * 10.15.2.0 : Released 2020-03-01
  * 10.15.1.3 : Released 2019-03-11
  * 10.14.2.0 : Released 2018-05-03
  * 10.14.1.0 : Released 2017-10-22

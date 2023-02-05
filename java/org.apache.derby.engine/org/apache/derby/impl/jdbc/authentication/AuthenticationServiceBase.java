@@ -55,8 +55,6 @@ import org.apache.derby.iapi.sql.dictionary.UserDescriptor;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivilegedAction;
-import java.security.AccessController;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
@@ -822,75 +820,39 @@ public abstract class AuthenticationServiceBase
     }
 
     /**
-     * Privileged lookup of the ContextService. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ContextService    getContextService()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ContextService>()
-             {
-                 public ContextService run()
-                 {
-                     return ContextService.getFactory();
-                 }
-             }
-             );
+        return ContextService.getFactory();
     }
 
     /**
-     * Privileged lookup of a Context. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Context    getContext( final String contextID )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Context>()
-             {
-                 public Context run()
-                 {
-                     return ContextService.getContext( contextID );
-                 }
-             }
-             );
+        return ContextService.getContext( contextID );
     }
 
     /**
-     * Privileged service name lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  String getServiceName( final Object serviceModule )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<String>()
-             {
-                 public String run()
-                 {
-                     return Monitor.getServiceName( serviceModule );
-                 }
-             }
-             );
+        return Monitor.getServiceName( serviceModule );
     }
 
     /**
-     * Privileged module lookup. Must be package protected so that user code
+     * Must be package protected so that user code
      * can't call this entry point.
      */
     static  Object getServiceModule( final Object serviceModule, final String factoryInterface )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     return Monitor.getServiceModule( serviceModule, factoryInterface );
-                 }
-             }
-             );
+        return Monitor.getServiceModule( serviceModule, factoryInterface );
     }
 
 }

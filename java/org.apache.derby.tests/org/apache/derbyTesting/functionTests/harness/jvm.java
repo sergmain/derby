@@ -31,7 +31,6 @@ import java.io.IOException;
 
 import org.apache.derby.shared.common.info.JVMInfo;
 import org.apache.derby.impl.tools.sysinfo.ZipInfoProperties;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 
 
 /**
@@ -69,6 +68,9 @@ import org.apache.derbyTesting.junit.SecurityManagerSetup;
 
 
 public abstract class jvm {
+
+    private static final String JAVA_CLASS_VERSION = "java.class.version";
+    private static final int JDK_18_CLASS_VERSION = 62;
 
     // they all take their defaults as the initial value.
     // -1, null, and false all will mean we won't include them
@@ -114,10 +116,9 @@ public abstract class jvm {
     public int iminor = 0;
     String hostName;
 
-	// security defaults relative to WS
-	// not used if jvmargs serverCodeBase are set
-	private static String DEFAULT_POLICY="util/derby_tests.policy";
-	private static String DEFAULT_CODEBASE="/classes";
+    // security defaults relative to WS
+    // not used if jvmargs serverCodeBase are set
+    private static String DEFAULT_CODEBASE="/classes";
 
     // constructors
     public jvm() { }
@@ -174,6 +175,12 @@ public abstract class jvm {
     public void setFlags(String flags) { this.flags = flags; }
     public void setJavaCmd(String jcmd) { this.javaCmd = jcmd; }
 
+    public static boolean isAtLeastJDK18()
+    {
+        int jdkVersion = Double.valueOf(System.getProperty(JAVA_CLASS_VERSION)).intValue();
+
+        return (jdkVersion >= JDK_18_CLASS_VERSION);
+    }        
 	
     public Vector<String> getCommandLine()
     {
@@ -357,63 +364,10 @@ public abstract class jvm {
             throws ClassNotFoundException, IOException
 	{
 		if (D == null)
-			D = new Vector<String>();
-		
-		String userDir = System.getProperty("user.dir");
-		String policyFile = userDir + baseName(DEFAULT_POLICY);
+                { D = new Vector<String>(); }
 
-		String serverCodeBase = System.getProperty("serverCodeBase");
-		boolean[] isJar = new boolean[1];
-		if (serverCodeBase == null)
-			serverCodeBase = findCodeBase(isJar);
-   
-        
-		if (serverCodeBase == null)
-		{
-			String ws = guessWSHome();
-			serverCodeBase = ws + DEFAULT_CODEBASE;
-                 
-		}
-		
-		File pf = new File(policyFile);
-		File cb = new File(serverCodeBase);
-
-		if (!pf.exists())
-		{
-			System.out.println("WARNING: Running without Security manager." +
-							   "policy File (" + policyFile + 
-							   ") or serverCodeBase(" +  serverCodeBase + 
-							   ") not available");
-		return D;
-		}
-		
-		D.addElement("java.security.manager");
-		D.addElement("java.security.policy=" + pf.getAbsolutePath());
- 
-        Properties jusetup =
-            SecurityManagerSetup.getPolicyFilePropertiesForOldHarness();
-        // Take the definitions from the way JUnit tests
-        // set them up. This then supports the jar files being
-        // in different locations.
-        for (Enumeration p = jusetup.keys(); p.hasMoreElements(); )
-        {
-            String key = (String) p.nextElement();
-            D.addElement(key + "=" + jusetup.getProperty(key));
-        }
-		
-
-		// file path to the codebase
-		D.addElement("derbyTesting.codedir=" + cb.getAbsolutePath());
-		String hostName = (System.getProperty("hostName"));
-		if (hostName == null)
-			hostName="localhost";
-		D.addElement("derbyTesting.serverhost=" + hostName);
-		// in the case of testing with a remote host, this is irrelevant, 
-		// when testing 'normal' it is also localhost:
-		D.addElement("derbyTesting.clienthost=" + hostName);	 	
-		
-		return D;
-		
+                // NOP. No SecurityManager
+                return D;
 	}
 
 	/** Get the base file name from a resource name string

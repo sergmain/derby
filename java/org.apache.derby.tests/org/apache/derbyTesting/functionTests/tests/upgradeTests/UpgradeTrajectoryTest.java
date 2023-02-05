@@ -38,7 +38,6 @@ import org.apache.derbyTesting.junit.ClassLoaderTestSetup;
 import org.apache.derbyTesting.junit.JDBCClient;
 import org.apache.derbyTesting.junit.JDBCClientSetup;
 import org.apache.derbyTesting.junit.JDBCDataSource;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.SupportFilesSetup;
 import org.apache.derbyTesting.junit.SystemPropertyTestSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
@@ -248,7 +247,7 @@ public class UpgradeTrajectoryTest extends BaseJDBCTestCase
         
         Test sfs = new SupportFilesSetup((Test) suite);
 
-        return SecurityManagerSetup.noSecurityManager( sfs );
+        return sfs;
     }
 
     /**

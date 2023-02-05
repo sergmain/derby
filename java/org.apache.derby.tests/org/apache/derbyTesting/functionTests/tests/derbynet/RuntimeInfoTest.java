@@ -31,7 +31,6 @@ import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.LocaleTestSetup;
 import org.apache.derbyTesting.junit.NetworkServerTestSetup;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
 /**
@@ -50,9 +49,6 @@ public class RuntimeInfoTest extends BaseJDBCTestCase {
 			"org.apache.derby.drda.NetworkServerControl", "runtimeinfo",
 			"-p", String.valueOf(TestConfiguration.getCurrent().getPort()) };
 	
-    private static final String POLICY_FILE_NAME =
-        "org/apache/derbyTesting/functionTests/tests/derbynet/RuntimeInfoTest.policy";
-
     private static final Locale englishLocale = new Locale("en", "US");
     private static final Locale germanLocale = new Locale("de", "DE");
     private static final String stdout_err_tags = "<[^<>]*STD.*>";
@@ -275,7 +271,7 @@ public class RuntimeInfoTest extends BaseJDBCTestCase {
     }
 
 	/**
-	 * Decorate a test with SecurityManagerSetup, clientServersuite, and
+	 * Decorate a test with clientServersuite and
 	 * SupportFilesSetup.
 	 * 
 	 * @return the decorated test
@@ -290,8 +286,7 @@ public class RuntimeInfoTest extends BaseJDBCTestCase {
          * or subsequent times. */
         test = TestConfiguration.singleUseDatabaseDecorator(test);
         test = new LocaleTestSetup(test, serverLocale);
-        // Install a security manager using the initial policy file.
-        return new SecurityManagerSetup(test, POLICY_FILE_NAME);
+        return test;
     }
 	
 	private static final HashMap<Locale, HashMap<String, String>> outputs;

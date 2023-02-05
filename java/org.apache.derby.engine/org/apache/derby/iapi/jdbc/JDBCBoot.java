@@ -22,8 +22,6 @@
 package org.apache.derby.iapi.jdbc;
 
 import java.io.PrintWriter;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.sql.DriverManager;
 import java.util.Properties;
 import org.apache.derby.shared.common.error.StandardException;
@@ -105,42 +103,31 @@ public class JDBCBoot {
 	}
     
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  void    boot( final Properties props, final PrintWriter logging )
     {
-        AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     Monitor.startMonitor(props, logging);
+        Monitor.startMonitor(props, logging);
 
-                     /* The network server starter module is started differently from other modules because
-                      * 1. its start is conditional, depending on a system property, and PropertyUtil.getSystemProperty
-                      *    does not work until the Monitor has started,
-                      * 2. we do not want the server to try to field requests before Derby has booted, and
-                      * 3. if the module fails to start we want to log a message to the error log and continue as
-                      *    an embedded database.
-                      */
-                     if( Boolean.valueOf(PropertyUtil.getSystemProperty(Property.START_DRDA)).booleanValue())
-                     {
-                         try
-                         {
-                             Monitor.startSystemModule( NETWORK_SERVER_AUTOSTART_CLASS_NAME);
-                         }
-                         catch( StandardException se)
-                         {
-                             Monitor.logTextMessage( MessageId.CONN_NETWORK_SERVER_START_EXCEPTION,
-                                                     se.getMessage());
-                         }
-                     }
-                     
-                     return null;
-                 }
-             }
-             );
+        /* The network server starter module is started differently from other modules because
+         * 1. its start is conditional, depending on a system property, and PropertyUtil.getSystemProperty
+         *    does not work until the Monitor has started,
+         * 2. we do not want the server to try to field requests before Derby has booted, and
+         * 3. if the module fails to start we want to log a message to the error log and continue as
+         *    an embedded database.
+         */
+        if( Boolean.valueOf(PropertyUtil.getSystemProperty(Property.START_DRDA)).booleanValue())
+        {
+            try
+            {
+                Monitor.startSystemModule( NETWORK_SERVER_AUTOSTART_CLASS_NAME);
+            }
+            catch( StandardException se)
+            {
+                Monitor.logTextMessage( MessageId.CONN_NETWORK_SERVER_START_EXCEPTION,
+                                        se.getMessage());
+            }
+        }
     }
 }

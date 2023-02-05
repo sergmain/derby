@@ -25,7 +25,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import junit.framework.Test;
 import org.apache.derbyTesting.junit.Decorator;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
 /**
@@ -88,11 +87,7 @@ public class LuceneCollationTest extends GeneratedColumnsHelper
              "en"
              );
 
-        //
-        // Turn off the security manager. trying to override the default security manager
-        // with a lucene-specific policy file fails because the decorators don't compose correctly.
-        //
-        return SecurityManagerSetup.noSecurityManager( collationTest );
+        return collationTest;
     }
 
     ///////////////////////////////////////////////////////////////////////////////////

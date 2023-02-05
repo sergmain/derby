@@ -78,6 +78,7 @@ public class Bug5052rtsTest extends BaseJDBCTestCase {
      * 
      * @throws SQLException
      */
+    @SuppressWarnings({"deprecation","removal"})
     public void testBug5052() throws SQLException {
         Statement stmt0 = createStatement();
         Statement stmt1 = createStatement();

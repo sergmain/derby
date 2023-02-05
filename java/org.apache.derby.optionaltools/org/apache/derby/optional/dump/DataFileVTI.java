@@ -33,7 +33,6 @@ import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.io.StringWriter;
 import java.math.BigDecimal;
-import java.security.AccessController;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.Connection;
@@ -554,13 +553,8 @@ public  class   DataFileVTI extends VTITemplate
      * Get system property.
      */
     private static String getSystemProperty( final String name)
-	{
-        return AccessController.doPrivileged
-            ( new java.security.PrivilegedAction<String>()
-                {
-                    public String run() { return System.getProperty( name ); }
-                }
-            );
+    {
+        return  System.getProperty( name );
     }
 
     /**

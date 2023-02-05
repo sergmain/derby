@@ -22,8 +22,6 @@
 package org.apache.derby.jdbc;
 
 import java.io.PrintWriter;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -939,39 +937,21 @@ public class BasicEmbeddedDataSource40
 
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
     /**
-     * Privileged service lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private static  Object findService( final String factoryInterface, final String serviceName )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     return Monitor.findService( factoryInterface, serviceName );
-                 }
-             }
-             );
+        return Monitor.findService( factoryInterface, serviceName );
     }
     
 }

@@ -41,6 +41,8 @@ public class JarUtil {
      *    we user user.dir (the current directory)
      *
      */
+    // Suppress warnings on Runtime.exec() introduced by JDK 18
+    @SuppressWarnings("deprecation")
     public static void unjar(String jarpath, String outputdir)
         throws ClassNotFoundException, IOException, InterruptedException
     {                

@@ -21,8 +21,6 @@
 
 package	org.apache.derby.impl.sql.compile;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
@@ -1599,27 +1597,11 @@ public abstract class QueryTreeNode implements Visitable
     }
 
     /**
-     * Privileged lookup of a Context. Must be package protected so that user code
+     * Must be package protected so that user code
      * can't call this entry point.
      */
     static  Context    getContext( final String contextID )
     {
-        if ( System.getSecurityManager() == null )
-        {
-            return ContextService.getContext( contextID );
-        }
-        else
-        {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedAction<Context>()
-                 {
-                     public Context run()
-                     {
-                         return ContextService.getContext( contextID );
-                     }
-                 }
-                 );
-        }
+        return ContextService.getContext( contextID );
     }
 }

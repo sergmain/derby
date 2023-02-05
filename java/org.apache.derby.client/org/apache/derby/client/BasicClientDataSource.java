@@ -30,10 +30,6 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedAction;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
@@ -663,31 +659,14 @@ public class BasicClientDataSource
 
 
     /**
-     * Read the value of the passed system property. If we are running under
-     * the Java security manager and permission to read the property is 
-     * missing,a null is returned, and no diagnostic is given (DERBY-6620).
+     * Read the value of the passed system property.
      * 
      * @param key name of the system property
      * @return value of the system property, null if there is no
      *         permission to read the property
      */
     private static String readSystemProperty(final String key) {
-        return AccessController.doPrivileged(new PrivilegedAction<String>() {
-                public String run() {
-                    try {
-                        return System.getProperty(key);
-                    } catch (SecurityException se) {
-                        // We do not want the connection to fail if the user
-                        // does not have permission to read the property, so
-                        // if a security exception occurs, just return null
-                        // and continue with the connection.
-                        // See also the discussion in DERBY-6620 on why we do
-                        // not write a warning message on the console here.
-                        return null;
-                    }
-                }
-            }
-            );
+        return System.getProperty(key);
     }
 
     // ---------------------------- traceFileAppend ---------------------------
@@ -856,29 +835,14 @@ public class BasicClientDataSource
             final boolean fileAppend) throws SqlException {
 
         PrintWriter printWriter = null;
-        //Using an anonymous class to deal with the PrintWriter because the  
-        //method java.security.AccessController.doPrivileged requires an 
-        //instance of a class(which implements 
-        //java.security.PrivilegedExceptionAction). Since getPrintWriter method
-        //is static, we can't simply pass "this" to doPrivileged method and 
-        //have LogWriter implement PrivilegedExceptionAction.
-        //To get around the static nature of method getPrintWriter, have an
-        //anonymous class implement PrivilegedExceptionAction. That class will 
-        //do the work related to PrintWriter in it's run method and return 
-        //PrintWriter object.
         try {
-            printWriter = AccessController.doPrivileged(
-                new PrivilegedExceptionAction<PrintWriter>(){
-                    public PrintWriter run() throws IOException {
-                        String fileCanonicalPath =
-                            new File(fileName).getCanonicalPath();
-                        return new PrintWriter(
-                                new BufferedOutputStream(
-                                        new FileOutputStream(
-                                                fileCanonicalPath, fileAppend), 4096), true);
-                        }
-                    });
-        } catch (PrivilegedActionException pae) {
+            String fileCanonicalPath =
+                new File(fileName).getCanonicalPath();
+            printWriter =  new PrintWriter(
+                new BufferedOutputStream(
+                    new FileOutputStream(
+                        fileCanonicalPath, fileAppend), 4096), true);
+        } catch (Exception pae) {
             throw new SqlException(null, 
                 new ClientMessageId(SQLState.UNABLE_TO_OPEN_FILE),
                 new Object[] { fileName, pae.getMessage() },

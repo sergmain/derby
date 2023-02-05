@@ -279,7 +279,6 @@ public interface ModuleFactory
 		Return a property from the JVM's system set.
 		In a Java2 environment this will be executed as a privileged block
 		if and only if the property starts with 'derby.'.
-		If a SecurityException occurs, null is returned.
 	*/
 	public String getJVMProperty(String key);
 

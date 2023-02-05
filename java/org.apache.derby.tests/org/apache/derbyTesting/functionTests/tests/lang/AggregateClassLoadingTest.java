@@ -30,7 +30,6 @@ import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.CleanDatabaseTestSetup;
 import org.apache.derbyTesting.junit.JDBC;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 
 /**
  * Test for ensuring the aggregate implementation classes are loaded correctly,
@@ -66,64 +65,58 @@ public class AggregateClassLoadingTest extends BaseJDBCTestCase {
 	public static Test suite() {
 		
 		
-		/* this test creates a class loader, adding that permission to
-		 * derbyTesting.jar would mean that permission was granted all
-		 * the way up the stack to the derby engine. Thus increasing
-		 * the chance that incorrectly a privileged block could be dropped
-		 * but the tests continue to pass. 
-		 */		
-		return SecurityManagerSetup.noSecurityManager(
+            return
             new CleanDatabaseTestSetup(
                 new BaseTestSuite(AggregateClassLoadingTest.class,
-                                   "AggregateClassLoadingTest")) {
-                            
-                            /**
-                             * Save the class loader upon entry to the
-                             * suite, some JVM's install the main loader
-                             * as the context loader.
-                             */
-                            private ClassLoader originalLoader;
-                            protected void setUp() throws Exception {                    
-                                originalLoader = Thread.currentThread().getContextClassLoader();
-                                super.setUp();
-                            }
-							protected void tearDown() throws Exception {
-								Thread.currentThread().setContextClassLoader(originalLoader);
-								super.tearDown();
-							}
+                                  "AggregateClassLoadingTest"))
+            {
+                /**
+                 * Save the class loader upon entry to the
+                 * suite, some JVM's install the main loader
+                 * as the context loader.
+                 */
+                private ClassLoader originalLoader;
+                protected void setUp() throws Exception {                    
+                    originalLoader = Thread.currentThread().getContextClassLoader();
+                    super.setUp();
+                }
+                protected void tearDown() throws Exception {
+                    Thread.currentThread().setContextClassLoader(originalLoader);
+                    super.tearDown();
+                }
 
-							/**
-							 * @see org.apache.derbyTesting.junit.CleanDatabaseTestSetup#decorateSQL(java.sql.Statement)
-							 */
-							protected void decorateSQL(Statement s)
-									throws SQLException {
-								s.execute("create table t (i int)");
-								s.execute("insert into t values 1,2,3,4,5,6,null,4,5,456,2,4,6,7,2144,44,2,-2,4");
+                /**
+                 * @see org.apache.derbyTesting.junit.CleanDatabaseTestSetup#decorateSQL(java.sql.Statement)
+                 */
+                protected void decorateSQL(Statement s)
+                    throws SQLException {
+                    s.execute("create table t (i int)");
+                    s.execute("insert into t values 1,2,3,4,5,6,null,4,5,456,2,4,6,7,2144,44,2,-2,4");
 
-								/*
-								 * Find the location of the code for the Derby
-								 * connection. The rest of the engine will be at
-								 * the same location!
-								 */
-								URL derbyURL = s.getConnection().getClass().getProtectionDomain().getCodeSource()
-										.getLocation();
+                    /*
+                     * Find the location of the code for the Derby
+                     * connection. The rest of the engine will be at
+                     * the same location!
+                     */
+                    URL derbyURL = s.getConnection().getClass().getProtectionDomain().getCodeSource()
+                        .getLocation();
 
-								/*
-								 * Create a new loader that loads from the same
-								 * location as the engine. Create it without a
-								 * parent, otherwise the parent will be the
-								 * class loader of this class which is most
-								 * likely the same as the engine. Since the
-								 * class loader delegates to its parent first
-								 * the bug would not show, as all the derby
-								 * engine classes would be from a single loader.
-								 */
-                                URLClassLoader cl = new URLClassLoader(new URL[] { derbyURL }, null);
-								Thread.currentThread().setContextClassLoader(cl);
+                    /*
+                     * Create a new loader that loads from the same
+                     * location as the engine. Create it without a
+                     * parent, otherwise the parent will be the
+                     * class loader of this class which is most
+                     * likely the same as the engine. Since the
+                     * class loader delegates to its parent first
+                     * the bug would not show, as all the derby
+                     * engine classes would be from a single loader.
+                     */
+                    URLClassLoader cl = new URLClassLoader(new URL[] { derbyURL }, null);
+                    Thread.currentThread().setContextClassLoader(cl);
 
-								super.decorateSQL(s);
-							}
-						});
+                    super.decorateSQL(s);
+                }
+            };
 		
 	}		
 		

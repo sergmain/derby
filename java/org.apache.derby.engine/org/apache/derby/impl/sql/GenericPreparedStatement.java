@@ -21,8 +21,6 @@
 
 package org.apache.derby.impl.sql;
 
-import java.security.PrivilegedAction;
-import java.security.AccessController;
 import java.sql.SQLWarning;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -1396,40 +1394,22 @@ recompileOutOfDatePlan:
     }
     
     /**
-     * Privileged lookup of the ContextService. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ContextService    getContextService()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ContextService>()
-             {
-                 public ContextService run()
-                 {
-                     return ContextService.getFactory();
-                 }
-             }
-             );
+        return ContextService.getFactory();
     }
 
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
 }

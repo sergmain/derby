@@ -22,8 +22,6 @@
 package org.apache.derbyTesting.unitTests.harness;
 
 import java.io.PrintWriter;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Properties;
 import org.apache.derby.iapi.services.monitor.Monitor;
 
@@ -40,27 +38,14 @@ import org.apache.derby.iapi.services.monitor.Monitor;
 
 public class UnitTestMain  { 
 
-	public static void main(String args[]) {
+    public static void main(String args[]) {
 
-        AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     Properties bootProperties = new Properties();
+        Properties bootProperties = new Properties();
 
-                     // request that a unit test manager service is started
-                     bootProperties.put("derby.service.unitTestManager", UnitTestManager.MODULE);
-                     Monitor.startMonitor(bootProperties, new PrintWriter(System.err, true));
-                     
-                     return null;
-                 }
-             }
-             );
-
-
-	}
+        // request that a unit test manager service is started
+        bootProperties.put("derby.service.unitTestManager", UnitTestManager.MODULE);
+        Monitor.startMonitor(bootProperties, new PrintWriter(System.err, true));
+    }
 
     
 }

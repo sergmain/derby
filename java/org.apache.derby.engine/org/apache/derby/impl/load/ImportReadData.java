@@ -33,7 +33,7 @@ import java.net.URL;
 import org.apache.derby.shared.common.sanity.SanityManager;
 import java.sql.SQLException;
 
-final class ImportReadData implements java.security.PrivilegedExceptionAction<Object> {
+final class ImportReadData {
   //Read data from this file
   private String inputFileName;
   //The number of header lines to be skipped.
@@ -230,16 +230,12 @@ final class ImportReadData implements java.security.PrivilegedExceptionAction<Ob
   }
 
   private void openFile() throws Exception {
-	try {
-		java.security.AccessController.doPrivileged(this);
-	} catch (java.security.PrivilegedActionException pae) {
-		throw pae.getException();
-	}
+      run();
   }
 
   public final Object run() throws Exception {
-	  realOpenFile();
-	  return null;
+      realOpenFile();
+      return null;
   }
 
   //open the input data file for reading
@@ -259,9 +255,7 @@ final class ImportReadData implements java.security.PrivilegedExceptionAction<Ob
       }
     } catch (FileNotFoundException ex) {
         throw LoadError.dataFileNotFound(inputFileName, ex);
-    } catch (SecurityException se) {
-		throw LoadError.dataFileNotFound(inputFileName, se);
-	}
+    }
     java.io.Reader rd = dataCodeset == null ?
     		new InputStreamReader(inputStream) : new InputStreamReader(inputStream, dataCodeset);    
     bufferedReader = new BufferedReader(rd, 32*1024);

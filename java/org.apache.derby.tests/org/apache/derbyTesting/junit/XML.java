@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 import java.lang.reflect.Method;
-import java.security.PrivilegedActionException;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -101,7 +100,7 @@ public class XML {
      */
     public static void insertFile(Connection conn, String tableName,
         String colName, String fName, int numRows)
-        throws IOException, SQLException, PrivilegedActionException
+        throws IOException, SQLException
     {
         // First we have to figure out many chars long the file is.
 
@@ -162,7 +161,7 @@ public class XML {
      */
     public static void insertDocWithDTD(Connection conn, String tableName,
         String colName, String fName, String dtdName, int numRows)
-        throws IOException, SQLException, PrivilegedActionException
+        throws IOException, SQLException
     {
         // Read the file into memory so we can update it.
         fName = HELPER_FILE_LOCATION + fName;

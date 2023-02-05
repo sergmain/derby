@@ -320,7 +320,7 @@ public class Sttest extends Thread {
 					MemCheck.showmem();
 				}
 				set_countlock(false);
-				yield();
+				Thread.yield();
 			} else if (mode == GROW && rowcount >= targetmax) {
 				d = new Date();
 				System.out.println("hit targetmax with " + rowcount + " " + d);
@@ -353,7 +353,7 @@ public class Sttest extends Thread {
 					}
 				}
 				set_countlock(false);
-				yield();
+				Thread.yield();
 			}
 			// don't interfere with count query
 			while (get_countlock() == true) {
@@ -380,7 +380,7 @@ public class Sttest extends Thread {
 						if (mode == INIT) {
 							inserts_to_try--;
 						}
-						yield();
+						Thread.yield();
 						changerowcount(1);
 					}
 					System.out.println(addrows + "  Rows inserted");
@@ -392,7 +392,7 @@ public class Sttest extends Thread {
 						Datatypes.update_one_row(conn, thread_id);
 						updaterow++;
 						conn.commit();
-						yield();
+						Thread.yield();
 					}
 					System.out.println(updaterow + "  rows updated");
 					break;
@@ -400,7 +400,7 @@ public class Sttest extends Thread {
 					ind2 = Math.abs(rand.nextInt() % deletesize);
 					int del_rows = 0;
 					del_rows = Datatypes.delete_some(conn, thread_id, ind2 + 1);
-					yield();
+					Thread.yield();
 					changerowcount(-1 * del_rows);
 					// commits are done inside delete_some()
 					System.out.println(del_rows + " rows deleted");

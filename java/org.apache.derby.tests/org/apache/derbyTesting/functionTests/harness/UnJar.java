@@ -40,6 +40,8 @@ public class UnJar
         uj.unjar(args[0], null, true);
     }
     
+    // Suppress warnings on Runtime.exec() introduced by JDK 18
+    @SuppressWarnings("deprecation")
     public static void unjar(String jarname, String outputdir, boolean useprocess)
         throws ClassNotFoundException, IOException
     {

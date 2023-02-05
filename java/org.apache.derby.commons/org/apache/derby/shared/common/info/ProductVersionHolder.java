@@ -112,7 +112,7 @@ import org.apache.derby.shared.common.reference.ModuleUtil;
   </PRE>
 
   */
-public final class ProductVersionHolder implements java.security.PrivilegedAction<Properties>
+public final class ProductVersionHolder
 {
 
 	//
@@ -215,7 +215,7 @@ public final class ProductVersionHolder implements java.security.PrivilegedActio
 	/**
 	  Get a ProductVersionHolder for a product of a given genus,
 	  that is available in the caller's environment. 
-	  Even though this uses a priv bock, it may stil fail when
+	  This may fail when
 	  the jar the version is being fetched from, is different to the
 	  one that loaded this class, AND the jars are in different security contexts.
 
@@ -231,7 +231,7 @@ public final class ProductVersionHolder implements java.security.PrivilegedActio
 		ProductVersionHolder tempPVH = new ProductVersionHolder();
 
 		tempPVH.productGenus = productGenus;
-		Properties p = (Properties) java.security.AccessController.doPrivileged(tempPVH);
+		Properties p = tempPVH.run();
 
 		if (p == null)
 			return null;

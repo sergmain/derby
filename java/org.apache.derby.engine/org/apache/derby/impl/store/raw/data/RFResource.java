@@ -25,9 +25,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 import org.apache.derby.shared.common.error.StandardException;
 import org.apache.derby.shared.common.reference.SQLState;
@@ -246,7 +243,7 @@ class RFResource implements FileResource {
 } // end of class RFResource
 
 
-final class RemoveFile implements Serviceable, PrivilegedExceptionAction<Object>
+final class RemoveFile implements Serviceable
 {
 	private final StorageFile fileToGo;
 
@@ -255,16 +252,12 @@ final class RemoveFile implements Serviceable, PrivilegedExceptionAction<Object>
 		this.fileToGo = fileToGo;
 	}
 
-	public int performWork(ContextManager context)
+    public int performWork(ContextManager context)
         throws StandardException
     {
-        try {
-            AccessController.doPrivileged(this);
-        } catch (PrivilegedActionException e) {
-            throw (StandardException) (e.getException());
-         }
+        run();
         return Serviceable.DONE;
-	}
+    }
 
 	public boolean serviceASAP()
     {

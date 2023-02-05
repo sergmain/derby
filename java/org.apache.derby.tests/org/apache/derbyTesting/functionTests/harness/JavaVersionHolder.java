@@ -29,6 +29,7 @@ import java.util.StringTokenizer;
   */
 public class JavaVersionHolder
 {
+    private static final String EARLY_ACCESS_SUFFIX = "-ea";
  
     private String majorVersion;
     private String minorVersion;
@@ -38,22 +39,42 @@ public class JavaVersionHolder
     public JavaVersionHolder(String javaVersion)
         throws java.lang.NumberFormatException
     {
+        //System.out.println("JavaVersionHolder() javaVersion = " + javaVersion);
+
+        // remove Open JDK early access indicator
+        javaVersion = stripEarlyAccessSuffix(javaVersion);
+        
         // handle early access versions of JDK 9
         if (javaVersion.startsWith( "9" ))
         {
             javaVersion = "1.9.0";
         }
 
-        // handle JDK 10
-        if (javaVersion.equals( "10" ))
-        {
-            javaVersion = "1.10.0";
-        }
-
         // handle JDK 11
         if (javaVersion.startsWith( "11" ))
         {
             javaVersion = "1.11.0";
+        }
+
+        // handle future java versions.
+        // rewrite version into the form 1.$javaVersion.0
+        switch(javaVersion)
+        {
+        case "10":
+        case "13":
+        case "14":
+        case "15":
+        case "16":
+        case "17":
+        case "18":
+        case "19":
+        case "20":
+        case "21":
+            javaVersion = "1." + javaVersion + ".0";
+            break;
+
+        default:
+            break;
         }
 
         // check for jdk12 or higher
@@ -119,6 +140,25 @@ public class JavaVersionHolder
             }
                 
         }
+    }
+
+    /**
+     * Remove the Open JDK early access suffix from a version string so
+     * that we can run tests against early access versions of the JDK
+     * and identify JDK regressions early on.
+     *
+     * @param javaVersion The original version string
+     *
+     * @return the version string after stripping off the suffix
+     */
+    private String stripEarlyAccessSuffix(String javaVersion)
+    {
+        int suffixIndex = javaVersion.indexOf(EARLY_ACCESS_SUFFIX);
+
+        // nothing to do if this isn't an early access version
+        if (suffixIndex < 0) { return javaVersion; }
+
+        return javaVersion.substring(0, suffixIndex);
     }
 
     public String getMajorVersion()

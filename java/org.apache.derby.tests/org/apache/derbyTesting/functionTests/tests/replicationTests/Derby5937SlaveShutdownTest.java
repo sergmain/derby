@@ -32,7 +32,6 @@ import org.apache.derbyTesting.junit.BaseTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.JDBCDataSource;
 import org.apache.derbyTesting.junit.NetworkServerTestSetup;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
 /**
@@ -76,10 +75,9 @@ public class Derby5937SlaveShutdownTest extends BaseJDBCTestCase {
         // The default security policy doesn't allow derby.jar to do
         // networking, which is needed for replication, so install a custom
         // policy for this test.
-        return new SecurityManagerSetup(
+        return 
             TestConfiguration.singleUseDatabaseDecorator(
-                TestConfiguration.embeddedSuite(klass), MASTER_DB),
-            klass.getName().replace('.', '/') + ".policy", true);
+                TestConfiguration.embeddedSuite(klass), MASTER_DB);
     }
 
     public void testSlaveFailoverLeak() throws Exception {

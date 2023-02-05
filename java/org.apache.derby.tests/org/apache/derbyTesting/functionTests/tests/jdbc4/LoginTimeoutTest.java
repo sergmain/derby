@@ -396,8 +396,9 @@ public class LoginTimeoutTest extends BaseJDBCTestCase
         vetServerTimeout( controlConnection, connector, LONG_TIMEOUT, SUCCEED );
         vetServerTimeout( controlConnection, connector, 0, SUCCEED );
 
-        // reset server timeout to default
+        // reset server timeout to default and drop the procedure
         setServerTimeout( controlConnection, 0 );
+        controlConnection.prepareStatement( "drop procedure setLoginTimeout" ).execute();
         controlConnection.close();
     }
     private void    vetServerTimeout

@@ -25,7 +25,6 @@ import java.sql.SQLException;
 import junit.framework.Test;
 import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 
 public class Derby5652 extends BaseJDBCTestCase
 {
@@ -65,9 +64,6 @@ public class Derby5652 extends BaseJDBCTestCase
         BaseTestSuite suite = new BaseTestSuite( "Derby5652" );
 
         Test    test = new Derby5652( "basicTest" );
-
-        // turn off security manager so that we can change system properties
-        test = SecurityManagerSetup.noSecurityManager( test );
 
         suite.addTest( test );
 

@@ -718,7 +718,6 @@ public class StatementTest
                 return method.invoke( _wrappedStatement, argValues );
             }
             catch (NoSuchMethodException nsme) { throw wrap( nsme ); }
-            catch (SecurityException se) { throw wrap( se ); }
             catch (IllegalAccessException iae) { throw wrap( iae ); }
             catch (IllegalArgumentException iare) { throw wrap( iare ); }
             catch (InvocationTargetException ite) { throw wrap( ite ); }

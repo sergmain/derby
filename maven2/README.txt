@@ -117,10 +117,10 @@ Description of the required steps:
     Some time after you have released the artifacts from the temporary Apache
     staging repository in step (f), they should appear in the central Maven
     repository:
-        http://repo1.maven.org/maven2/org/apache/derby/
+        https://repo1.maven.org/maven2/org/apache/derby/
     After a few more days, the artifacts may also have propagated to other
     repositories / services, for instance the one below:
-        http://mvnrepository.com/artifact/org.apache.derby
+        https://mvnrepository.com/artifact/org.apache.derby
 
     Note that for the 10.6.1 release, within a day the artifacts turned up in
     the central Maven repository (the first link). It took 6 days for the

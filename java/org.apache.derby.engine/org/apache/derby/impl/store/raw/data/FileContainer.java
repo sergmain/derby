@@ -62,9 +62,6 @@ import org.apache.derby.iapi.util.ByteArray;
 import java.io.IOException;
 import java.io.DataInput;
 
-import java.security.PrivilegedAction;
-import java.security.AccessController;
-
 import java.util.Properties;
 import java.util.zip.CRC32;
 
@@ -3551,39 +3548,21 @@ abstract class FileContainer
 	    throws StandardException;
     
     /**
-     * Privileged lookup of the ContextService. Must be limited to
+     * Must be limited to
      * package visibility so that user code
      * can't call this entry point.
      */
     static  ContextService    getContextService()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ContextService>()
-             {
-                 public ContextService run()
-                 {
-                     return ContextService.getFactory();
-                 }
-             }
-             );
+        return ContextService.getFactory();
     }
     /**
-     * Privileged module lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private static  Object getServiceModule( final Object serviceModule, final String factoryInterface )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     return Monitor.getServiceModule( serviceModule, factoryInterface );
-                 }
-             }
-             );
+        return Monitor.getServiceModule( serviceModule, factoryInterface );
     }
 
 }

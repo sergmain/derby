@@ -35,8 +35,8 @@ import org.apache.derby.shared.common.reference.ModuleUtil;
 import org.apache.derbyTesting.junit.BaseTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.Derby;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.SystemPropertyTestSetup;
+import org.apache.derbyTesting.junit.TestConfiguration;
 
 /**
  * This test verifies that <code>sysinfo</code> correctly localizes its
@@ -134,11 +134,7 @@ public class SysinfoLocaleTest extends BaseTestCase {
         suite.addTest(createTest(Locale.GERMANY, "it_IT", false));
         suite.addTest(createTest(Locale.GERMANY, "de_DE", true));
 
-        // This test creates a class loader. We don't want to grant that
-        // permission to derbyTesting.jar since that means none of the tests
-        // will notice if one of the product jars misses a privileged block
-        // around the creation of a class loader.
-        return SecurityManagerSetup.noSecurityManager(suite);
+        return suite;
     }
 
     /**
@@ -167,7 +163,7 @@ public class SysinfoLocaleTest extends BaseTestCase {
      * <code>derby.ui.locale</code> (happens when the class is loaded).
      */
     private static void runSysinfo() throws Exception {
-        URL sysinfoURL = SecurityManagerSetup.getURL(SYSINFO_CLASS_NAME);
+        URL sysinfoURL = TestConfiguration.getURL(SYSINFO_CLASS_NAME);
         URL emmaURL = getEmmaJar();
         URL[] urls = null;
         if(emmaURL != null) {

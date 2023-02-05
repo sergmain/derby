@@ -28,10 +28,6 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 
-import java.security.AccessControlException;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Properties;
 import java.util.logging.Logger;
 
@@ -266,40 +262,21 @@ public class AutoloadedDriver implements Driver
 	}
 
     private static void deregisterDriver(final AutoloadedDriver driver)
-            throws SQLException {
+        throws SQLException {
         // DERBY-6224: DriverManager.deregisterDriver() requires a special
         // permission in JDBC 4.2 and later. Call it in a privileged block
         // so that the permission doesn't have to be granted to code that
         // invokes engine shutdown.
-        try {
-            AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<Void>() {
-                public Void run() throws SQLException {
-                    // Requires SQLPermission("deregisterDriver")
-                    DriverManager.deregisterDriver(driver);
-                    return null;
-                }
-            });
-        } catch (PrivilegedActionException pae) {
-            throw (SQLException) pae.getCause();
-        } catch (AccessControlException ace) {
-            // Since no permission was needed for deregisterDriver() before
-            // Java 8, applications may be surprised to find that engine
-            // shutdown fails because of it. For backward compatibility,
-            // don't fail shutdown if the permission is missing. Instead,
-            // log a message saying the driver could not be deregistered.
-            Monitor.logTextMessage(MessageId.CONN_DEREGISTER_NOT_PERMITTED);
-            Monitor.logThrowable(ace);
-        }
+        DriverManager.deregisterDriver(driver);
     }
 
-	/*
-	** Return true if the engine has been booted.
-	*/
-	private	static	boolean	isBooted()
-	{
-		return ( _driverModule != null );
-	}
+    /*
+    ** Return true if the engine has been booted.
+    */
+    private	static	boolean	isBooted()
+    {
+        return ( _driverModule != null );
+    }
 	
     /**
      * Load the most capable driver available.

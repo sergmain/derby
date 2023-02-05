@@ -235,19 +235,11 @@ public class ClassSizeCrawler
     private void crawl( File curDir, StringBuffer className)
     {
         if( verbose)
-            System.out.println( "Searching directory " + curDir.getPath());
+        { System.out.println( "Searching directory " + curDir.getPath()); }
 
-        try
+        if( ! curDir.isDirectory())
         {
-            if( ! curDir.isDirectory())
-            {
-                System.err.println( "*** " + curDir.getPath() + " is not a directory.");
-                System.exit(1);
-            }
-        }
-        catch( SecurityException se)
-        {
-            System.err.println( "Cannot access " + curDir.getPath());
+            System.err.println( "*** " + curDir.getPath() + " is not a directory.");
             System.exit(1);
         }
         String[] filenames = curDir.list( );

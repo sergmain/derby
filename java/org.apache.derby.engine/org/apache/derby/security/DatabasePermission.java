@@ -22,10 +22,6 @@
 package org.apache.derby.security;
 
 import java.security.Permission;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
-import java.security.AccessController;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -316,12 +312,7 @@ final public class DatabasePermission extends Permission {
             // doPrivileged() block to allow for confined codebase permission
             // grants
             if (p.startsWith(URL_PATH_RELATIVE_PREFIX)) {
-                final String cwd = AccessController.doPrivileged(
-                    new PrivilegedAction<String>() {
-                        public String run() {
-                            return System.getProperty("user.dir");
-                        }
-                    });
+                final String cwd = System.getProperty("user.dir");
                 // concatenated path "<cwd>/./<path>" will be canonicalized
                 p = cwd + URL_PATH_SEPARATOR_STRING + p;
             }
@@ -331,19 +322,7 @@ final public class DatabasePermission extends Permission {
             // may throw IOException; canonicalization reads the "user.dir"
             // system property, which we encapsulate in a doPrivileged()
             // block to allow for confined codebase permission grants
-            final File f;
-            try {
-                f = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<File>() {
-                        public File run() throws IOException {
-                            return (new File(absPath)).getCanonicalFile();
-                        }
-                    });
-            } catch (PrivilegedActionException pae) {
-                // pae.getCause() should be an instance of IOException,
-                // as only checked exceptions will be wrapped
-                throw (IOException)pae.getCause();
-            }
+            final File f = (new File(absPath)).getCanonicalFile();
             path = f.getPath();
 
             // store canonicalized path of parent file as required for

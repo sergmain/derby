@@ -21,8 +21,6 @@
 package org.apache.derbyTesting.functionTests.tests.management;
 
 import java.lang.management.ManagementFactory;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import javax.management.MBeanServerConnection;
 
@@ -41,11 +39,7 @@ class PlatformConnectionGetter implements JMXConnectionGetter {
     public MBeanServerConnection getMBeanServerConnection(String user,
             String password) throws Exception {
         
-        return AccessController.doPrivileged(new PrivilegedAction<MBeanServerConnection>() {
-
-            public MBeanServerConnection run() {
-                return ManagementFactory.getPlatformMBeanServer(); 
-            }});     
+        return ManagementFactory.getPlatformMBeanServer(); 
     }
 
     public void close(MBeanServerConnection jmxConnection)  {

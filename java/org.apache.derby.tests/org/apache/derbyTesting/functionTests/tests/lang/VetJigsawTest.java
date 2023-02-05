@@ -32,7 +32,7 @@ import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.CleanDatabaseTestSetup;
 import org.apache.derbyTesting.junit.JDBC;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
+import org.apache.derbyTesting.junit.TestConfiguration;
 
 /**
  * Test to verify that jigsaw module rules are applied.
@@ -81,14 +81,12 @@ public class VetJigsawTest extends BaseJDBCTestCase
 	 *         run.
 	 */
 	public static Test suite()
-    {
-        // no need to install a security manager. we're just
-        // verifying the jar file contents.
-        BaseTestSuite baseTest = new BaseTestSuite( VetJigsawTest.class, "VetJigsawTest" );
-        Test        cleanDatabaseWrapper = new CleanDatabaseTestSetup( baseTest );
-        Test        noSecurityWrapper = SecurityManagerSetup.noSecurityManager( cleanDatabaseWrapper );
+        {
+            BaseTestSuite baseTest = new BaseTestSuite( VetJigsawTest.class, "VetJigsawTest" );
+            Test        cleanDatabaseWrapper = new CleanDatabaseTestSetup( baseTest );
+            Test        noSecurityWrapper = cleanDatabaseWrapper;
 
-        return noSecurityWrapper;
+            return noSecurityWrapper;
 	}		
 
     ////////////////////////////////////////////////
@@ -103,7 +101,7 @@ public class VetJigsawTest extends BaseJDBCTestCase
 	public void test_jarContents() throws Exception
     {
         final String className = "org.apache.derby.impl.jdbc.EmbedConnection";
-        URL derbyURL = SecurityManagerSetup.getURL(className);
+        URL derbyURL = TestConfiguration.getURL(className);
         String derbyJarFileName = derbyURL.toURI().getPath();
         String jarFileDirectory = derbyJarFileName.substring(0, derbyJarFileName.indexOf("derby.jar"));
 

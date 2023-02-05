@@ -25,10 +25,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectStreamClass;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Properties;
 import org.apache.derby.shared.common.error.StandardException;
 import org.apache.derby.shared.common.reference.MessageId;
@@ -166,42 +162,32 @@ abstract class DatabaseClasses
 
     private static void WriteClassFile(String fullyQualifiedName, ByteArray bytecode, Throwable t) {
 
-		// get the un-qualified name and add the extension
+        // get the un-qualified name and add the extension
         int lastDot = fullyQualifiedName.lastIndexOf((int)'.');
         String filename = fullyQualifiedName.substring(lastDot+1,fullyQualifiedName.length()).concat(".class");
 
-		Object env = getMonitor().getEnvironment();
-		File dir = env instanceof File ? (File) env : null;
+        Object env = getMonitor().getEnvironment();
+        File dir = env instanceof File ? (File) env : null;
 
         final File classFile = new File(dir, filename);
 
-		// find the error stream
-		HeaderPrintWriter errorStream = Monitor.getStream();
+        // find the error stream
+        HeaderPrintWriter errorStream = Monitor.getStream();
 
-		try {
-            FileOutputStream fis;
-            try {
-                fis = AccessController.doPrivileged(
-                        new PrivilegedExceptionAction<FileOutputStream>() {
-                            public FileOutputStream run() throws IOException {
-                                return new FileOutputStream(classFile);
-                            }
-                        });
-            } catch (PrivilegedActionException pae) {
-                throw (IOException) pae.getCause();
+        try {
+            FileOutputStream fis = new FileOutputStream(classFile);
+            fis.write(bytecode.getArray(),
+                      bytecode.getOffset(), bytecode.getLength());
+            fis.flush();
+            if (t!=null) {				
+                errorStream.printlnWithHeader(MessageService.getTextMessage(MessageId.CM_WROTE_CLASS_FILE, fullyQualifiedName, classFile, t));
             }
-			fis.write(bytecode.getArray(),
-				bytecode.getOffset(), bytecode.getLength());
-			fis.flush();
-			if (t!=null) {				
-				errorStream.printlnWithHeader(MessageService.getTextMessage(MessageId.CM_WROTE_CLASS_FILE, fullyQualifiedName, classFile, t));
-			}
-			fis.close();
-		} catch (IOException e) {
-			if (SanityManager.DEBUG)
-				SanityManager.THROWASSERT("Unable to write .class file", e);
-		}
-	}
+            fis.close();
+        } catch (IOException e) {
+            if (SanityManager.DEBUG)
+                SanityManager.THROWASSERT("Unable to write .class file", e);
+        }
+    }
 
 	public ClassInspector getClassInspector() {
 		return classInspector;
@@ -308,21 +294,12 @@ abstract class DatabaseClasses
 	abstract LoadedGeneratedClass loadGeneratedClassFromData(String fullyQualifiedName, ByteArray classDump); 
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
 }

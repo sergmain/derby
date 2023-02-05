@@ -22,8 +22,6 @@
 package org.apache.derbyTesting.functionTests.tests.management;
 
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.util.Set;
 
 import javax.management.InstanceNotFoundException;
@@ -77,13 +75,7 @@ public class JMXTest extends MBeanTest {
             // Every Derby MBean has a type.
             assertNotNull(type);
             
-            MBeanInfo mbeanInfo = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<MBeanInfo>() {
-                        public MBeanInfo run() throws InstanceNotFoundException, IntrospectionException, ReflectionException, IOException {
-                            return jmx.getMBeanInfo(name);
-                       }   
-                    }
-                );
+            MBeanInfo mbeanInfo = jmx.getMBeanInfo(name);
             
             String mbeanClassName = mbeanInfo.getClassName();
             // Is the class name in the public api

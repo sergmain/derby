@@ -46,10 +46,8 @@ public class _Suite extends BaseTestCase {
 
         suite.addTest(ArrayInputStreamTest.suite());
         suite.addTest(FormatableBitSetTest.suite());
-        suite.addTest(SystemPrivilegesPermissionTest.suite());
         suite.addTest(UTF8UtilTest.suite());
         suite.addTestSuite(CompressedNumberTest.class);
-        suite.addTest(AssertFailureTest.suite());
         suite.addTest(InputStreamUtilTest.suite());
         suite.addTest(CharacterStreamDescriptorTest.suite());
         suite.addTest(BlockedByteArrayTest.suite());
@@ -58,7 +56,6 @@ public class _Suite extends BaseTestCase {
         suite.addTest(ReaderToUTF8StreamTest.suite());
         suite.addTest(DataInputUtilTest.suite());
         suite.addTest(DerbyVersionTest.suite());
-        suite.addTest(MissingPermissionsTest.suite());
 
         return suite;
     }

@@ -30,7 +30,6 @@ import org.apache.derby.tools.dblook;
 import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.CleanDatabaseTestSetup;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.SupportFilesSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
@@ -92,7 +91,7 @@ public class Test_6661 extends BaseJDBCTestCase
         Test        singleUseWrapper = TestConfiguration.singleUseDatabaseDecorator( baseTest );
         Test        cleanDatabaseWrapper = new CleanDatabaseTestSetup( singleUseWrapper );
         Test        supportFileWrapper = new SupportFilesSetup( cleanDatabaseWrapper );
-        Test        noSecurityWrapper = SecurityManagerSetup.noSecurityManager( supportFileWrapper );
+        Test        noSecurityWrapper = supportFileWrapper;
 
         return noSecurityWrapper;
 	}

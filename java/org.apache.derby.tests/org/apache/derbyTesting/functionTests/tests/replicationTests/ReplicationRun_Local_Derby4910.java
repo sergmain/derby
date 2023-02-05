@@ -22,8 +22,6 @@ package org.apache.derbyTesting.functionTests.tests.replicationTests;
 
 import junit.framework.Test;
 import org.apache.derbyTesting.junit.BaseTestSuite;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
-
 
 /**
  * Test that the startSlave command doesn't fail if it takes more than a
@@ -50,7 +48,7 @@ public class ReplicationRun_Local_Derby4910 extends ReplicationRun
         
         suite.addTestSuite( ReplicationRun_Local_Derby4910.class );
         
-        return SecurityManagerSetup.noSecurityManager(suite);
+        return suite;
 
     }
 

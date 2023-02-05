@@ -45,9 +45,8 @@ public class RollingFileStreamProvider {
      *
      * @return The configured OutputStream
      * @throws IOException
-     * @throws SecurityException  
      */
-    public static OutputStream getOutputStream() throws IOException, SecurityException {
+    public static OutputStream getOutputStream() throws IOException {
         OutputStream res = null;
 
         String pattern = PropertyUtil.getSystemProperty(Property.ERRORLOG_ROLLINGFILE_PATTERN_PROPERTY, "%d/derby-%g.log");

@@ -21,9 +21,6 @@ package org.apache.derbyTesting.functionTests.tests.demo;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -176,24 +173,15 @@ public class CheckToursDBTest extends BaseJDBCTestCase {
         JDBC.assertSingleValueResultSet(ps.executeQuery(), "over");
 
     }
-/**
- * Inserts rows in the Maps table. Calls insertMaps().
- * @throws Exception
- */
+    
+    /**
+     * Inserts rows in the Maps table. Calls insertMaps().
+     * @throws Exception
+     */
     public void insertMapsPrivileged() throws Exception {
-        try {
-
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
-                public Object run() throws SQLException, FileNotFoundException,
-                        IOException {
-                    insertMaps();
-                    return null;
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            throw e.getException();
-        }
+        insertMaps();
     }
+    
 /**
  * Method to select rows from ToursDB tables
  * @throws SQLException

@@ -28,9 +28,6 @@ import org.apache.derby.iapi.services.monitor.Monitor;
 import org.apache.derby.shared.common.error.StandardException;
 import org.apache.derby.iapi.services.daemon.*;
 
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Random;
 import java.util.Vector;
 /**
@@ -326,28 +323,13 @@ public class T_DaemonService extends T_MultiThreadedIterations
 
     
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object  startSystemModule( final String factoryInterface )
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.startSystemModule( factoryInterface );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.startSystemModule( factoryInterface );
     }
 
 }

@@ -32,9 +32,6 @@ import org.apache.derby.iapi.db.DatabaseContext;
 import org.apache.derby.shared.common.error.StandardException;
 import org.apache.derby.shared.common.error.ExceptionSeverity;
 
-import java.security.PrivilegedAction;
-import java.security.AccessController;
-
 /**
 	A context that shutdowns down the database on a databsae exception.
 */
@@ -95,39 +92,21 @@ final class DatabaseContextImpl extends ContextImpl implements DatabaseContext
 	public Database getDatabase() {return db;}
     
     /**
-     * Privileged lookup of the ContextService. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ContextService    getContextService()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ContextService>()
-             {
-                 public ContextService run()
-                 {
-                     return ContextService.getFactory();
-                 }
-             }
-             );
+        return ContextService.getFactory();
     }
 
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
 }

@@ -138,6 +138,8 @@ class ij {
 	   (system properties). Used when ij is being run
 	   as a command line program.
 	*/
+    // AccessController.doPrivileged() deprecated for removal by JEP 411 https://openjdk.java.net/jeps/411
+    @SuppressWarnings("removal")
 	void initFromEnvironment() {
 
 		// load all protocols specified via properties
@@ -309,6 +311,17 @@ class ij {
 		else
 			namedProtocols.put(name, value);
 	}
+
+        /**
+        * Create a Process to run a command. This method exists just so that we can
+        * suppress the deprecation warning on Runtime.exec(String) which was introduced
+        * by JDK 18.
+        */
+        @SuppressWarnings("deprecation")
+        private static Process execProcess(String command) throws IOException
+        {
+            return Runtime.getRuntime().exec(command);
+        }
 	
 	void haveConnection() {
 		JDBCDisplayUtil.checkNotNull(theConnection, "connection");
@@ -2967,7 +2980,7 @@ Bang() :
 	{
 	  ijResult result = null;
 	  try {
-		Process p = Runtime.getRuntime().exec(stringValue(cmd.image));
+		Process p = ij.execProcess(stringValue(cmd.image));
 		LocalizedInput in = new LocalizedInput(p.getInputStream());
 		int c;
 		Vector<Object> v = new Vector<Object>();

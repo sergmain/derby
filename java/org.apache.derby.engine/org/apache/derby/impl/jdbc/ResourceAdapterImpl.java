@@ -35,10 +35,6 @@ import org.apache.derby.iapi.store.access.AccessFactory;
 import org.apache.derby.iapi.store.access.xa.XAResourceManager;
 import org.apache.derby.iapi.store.access.xa.XAXactId;
 
-
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Properties;
 import java.util.Hashtable;
 import java.util.Enumeration;
@@ -146,28 +142,13 @@ public class ResourceAdapterImpl
 		return rm;
 	}
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object findServiceModule( final Object serviceModule, final String factoryInterface)
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.findServiceModule( serviceModule, factoryInterface );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.findServiceModule( serviceModule, factoryInterface );
     }
 
 }

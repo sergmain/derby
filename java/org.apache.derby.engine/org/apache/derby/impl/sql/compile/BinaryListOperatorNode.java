@@ -52,7 +52,7 @@ public abstract class BinaryListOperatorNode extends ValueNode
             ValueNodeList rightOperandList,
             String operator,
             String methodName,
-            ContextManager cm) throws SecurityException {
+            ContextManager cm) {
         super(cm);
         this.leftOperand = leftOperand;
         this.rightOperandList = rightOperandList;

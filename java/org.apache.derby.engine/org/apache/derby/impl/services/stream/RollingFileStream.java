@@ -28,10 +28,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -140,11 +136,10 @@ public class RollingFileStream extends OutputStream {
      * </ul>
      *
      * @exception IOException if there are IO problems opening the files.
-     * @exception SecurityException if a security manager exists and if the caller does not have
      * <tt>LoggingPermission("control"))</tt>.
      * @exception NullPointerException if pattern property is an empty String.
      */
-    public RollingFileStream() throws IOException, SecurityException {
+    public RollingFileStream() throws IOException {
         this("%d/derby-%g.log", 0, 1, false);
     }
 
@@ -158,14 +153,12 @@ public class RollingFileStream extends OutputStream {
      * @param count the number of files to use
      * @param append specifies append mode
      * @exception IOException if there are IO problems opening the files.
-     * @exception SecurityException if a security manager exists and if the caller does not have
-     * <tt>LoggingPermission("control")</tt>.
      * @exception IllegalArgumentException if limit &lt; 0, or count &lt; 1.
      * @exception IllegalArgumentException if pattern is an empty string
      *
      */
     public RollingFileStream(String pattern, int limit, int count, boolean append)
-            throws IOException, SecurityException {
+            throws IOException {
         if (limit < 0 || count < 1 || pattern.length() < 1) {
             throw new IllegalArgumentException();
         }
@@ -376,11 +369,8 @@ public class RollingFileStream extends OutputStream {
 
     /**
      * Close all the files.
-     *
-     * @exception SecurityException if a security manager exists and if the caller does not have
-     * <tt>LoggingPermission("control")</tt>.
      */
-    public synchronized void close() throws SecurityException {
+    public synchronized void close() {
         // Close the underlying file
         if (null != meter) {
             try {
@@ -409,114 +399,60 @@ public class RollingFileStream extends OutputStream {
     }
 
     /**
-     * Gets a system property in a privileged block
+     * Gets a system property.
      * @param property The propety to get
      * @return The property value
      */
     private String getSystemProperty(final String property) {
-        // Try to get the derby.system.home property.  This requires privileges if run with a security manager
-        String value = AccessController.doPrivileged(new PrivilegedAction<String>() {
-
-            public String run() {
-                return System.getProperty(property);
-            }
-
-        });
-
-        return value;
+        return System.getProperty(property);
     }
 
     /**
-     * Opens a file in the privileged block
+     * Opens a file.
      * @param filename The name of the file to open
      * @param append if <code>true</code> open the file in append mode
      * @return The FileOutputStream for the file
      * @throws IOException 
      */
     private FileOutputStream openFile(final String filename, final boolean append) throws IOException {
-        FileOutputStream fis = null;
-        try {
-            fis = AccessController.doPrivileged(new PrivilegedExceptionAction<FileOutputStream>() {
-
-                public FileOutputStream run() throws FileNotFoundException {
-                    FileOutputStream res = new FileOutputStream(filename, append);
-                    return res;
-                }
-
-            });
-            return fis;
-        } catch (PrivilegedActionException x) {
-            // An exception occurs, rethrow it
-            throw (IOException) x.getException();
-        }
+        FileOutputStream fis = new FileOutputStream(filename, append);
+        return fis;
     }
     
     /**
-     * Check to see if a file exists in a privilege block
+     * Check to see if a file exists.
      * @param file The file to check
      * @return <code>true</code> if the file exists or <code>false</code> otherwise
      */
     private boolean fileExists(final File file) {
-        // Try to get the derby.system.home property.  This requires privileges if run with a security manager
-        Boolean value = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-
-            public Boolean run() {
-                return file.exists();
-            }
-
-        });
-
-        return value.booleanValue();        
+        return file.exists();
     }
 
     /**
-     * Delete a file in a privilege block
+     * Delete a file.
      * @param file The file to delete
      */
     private void fileDelete(final File file) {
-        // Try to get the derby.system.home property.  This requires privileges if run with a security manager
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
-
-            public Object run() {
-                file.delete();
-                return null;
-            }
-        });
+        file.delete();
     }
 
     /**
-     * Rename a file in a privilege block
+     * Rename a file.
      * @param file1 The file to rename
      * @param file2 The file to rename it to
      * @return <code>true</code> if the file was renamed or </code>false</code> otherwise
      */
     private boolean fileRename(final File file1, final File file2) {
-        // Try to get the derby.system.home property.  This requires privileges if run with a security manager
-        Boolean value = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-
-            public Boolean run() {
-                return file1.renameTo(file2);
-            }
-        });
-
-        return value.booleanValue();        
+        return file1.renameTo(file2);
     }
     
     /**
-     * Get the length of a file in a privilege block
+     * Get the length of a file.
      * @param file The file to get the length of
      * @return The length of the file
      */
     private long fileLength(final File file) {
-        // Try to get the derby.system.home property.  This requires privileges if run with a security manager
-        Long value = AccessController.doPrivileged(new PrivilegedAction<Long>() {
-
-            public Long run() {
-                return file.length();
-            }
-        });
-
-        return value.longValue();                
+        return file.length();
     }
 
     /**

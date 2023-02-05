@@ -33,8 +33,6 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -56,7 +54,7 @@ import javax.sql.DataSource;
 
 	@see org.apache.derby.tools.JDBCDisplayUtil
  */
-public final class util implements java.security.PrivilegedAction<String> {
+public final class util {
 	
 	private util() {}
 
@@ -165,7 +163,7 @@ public final class util implements java.security.PrivilegedAction<String> {
 	  @return a buffered stream for the resource if it exists and null otherwise.
 	  */
     static InputStream getResourceAsStream(String resourceName)
-	{
+    {
         boolean isModuleAware = JVMInfo.isModuleAware();
       
 		final Class c = util.class;
@@ -186,23 +184,13 @@ public final class util implements java.security.PrivilegedAction<String> {
         }
         else
         {
-            is = AccessController.doPrivileged
-              (
-               new PrivilegedAction<InputStream>()
-               {
-                   public InputStream run()
-                   { 
-                      InputStream locis = c.getResourceAsStream(resource);
-                      return locis;
-                   }
-               }
-               );
+            is = c.getResourceAsStream(resource);
         }
 
-		if (is != null) 
-			is = new BufferedInputStream(is, utilMain.BUFFEREDFILESIZE);
-		return is;
-	}
+        if (is != null) 
+            is = new BufferedInputStream(is, utilMain.BUFFEREDFILESIZE);
+        return is;
+    }
 
 	/**
 	  Return the name of the ij command file or null if none is
@@ -665,21 +653,16 @@ AppUI.out.println("SIZE="+l);
 	}
 
 	static final String getSystemProperty(String propertyName) {
-		try
-		{
-			if (propertyName.startsWith("ij.") || propertyName.startsWith("derby."))
-			{
-				util u = new util();
-				u.key = propertyName;
-				return java.security.AccessController.doPrivileged(u);
-			}
-			else
-			{
-				return System.getProperty(propertyName);
-			}
-		} catch (SecurityException se) {
-			return null;
-		}
+            if (propertyName.startsWith("ij.") || propertyName.startsWith("derby."))
+            {
+                util u = new util();
+                u.key = propertyName;
+                return u.run();
+            }
+            else
+            {
+                return System.getProperty(propertyName);
+            }
 	}
 
 	private String key;

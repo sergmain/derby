@@ -30,7 +30,6 @@ import org.apache.derbyTesting.junit.DatabasePropertyTestSetup;
 import org.apache.derbyTesting.junit.Derby;
 import org.apache.derbyTesting.junit.JDBC;
 import org.apache.derbyTesting.junit.NetworkServerTestSetup;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.SystemPropertyTestSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
@@ -139,7 +138,7 @@ public class SysinfoTest extends BaseJDBCTestCase {
     }
 
     /**
-     * Decorate a test with SecurityManagerSetup, clientServersuite, and
+     * Decorate a test with clientServersuite and
      * SupportFilesSetup.
      * 
      * @return the decorated test
@@ -147,9 +146,7 @@ public class SysinfoTest extends BaseJDBCTestCase {
     private static Test decorateTest() {
         Test test = TestConfiguration.clientServerSuite(SysinfoTest.class);
 
-        // Install a security manager using the initial policy file.
-        return TestConfiguration.singleUseDatabaseDecorator(
-                new SecurityManagerSetup(test, POLICY_FILE_NAME));
+        return TestConfiguration.singleUseDatabaseDecorator(test);
     }
 
     /**
@@ -219,7 +216,7 @@ public class SysinfoTest extends BaseJDBCTestCase {
     }
 
     private static String findClassDir() {
-        URL url = SecurityManagerSetup.getURL("org.apache.derbyTesting." +
+        URL url = TestConfiguration.getURL("org.apache.derbyTesting." +
                     "functionTests.tests.derbynet.SysinfoTest");
         return url.getPath();
     }

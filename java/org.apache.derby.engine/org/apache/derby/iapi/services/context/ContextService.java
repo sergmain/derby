@@ -21,8 +21,6 @@
 
 package org.apache.derby.iapi.services.context;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashSet;
 import java.util.Stack;
 
@@ -562,39 +560,28 @@ public final class ContextService //OLD extends Hashtable
 		return cm;
 	}
 
-	public void notifyAllActiveThreads(Context c) {
-		Thread me = Thread.currentThread();
+    public void notifyAllActiveThreads(Context c) {
+        Thread me = Thread.currentThread();
 
-		synchronized (this) {
+        synchronized (this) {
             for (ContextManager cm : allContexts) {
 
-				Thread active = cm.activeThread;
+                Thread active = cm.activeThread;
 
-				if (active == me)
-					continue;
+                if (active == me)
+                    continue;
 
-				if (active == null)
-					continue;
+                if (active == null)
+                    continue;
 
                 final Thread fActive = active;
-				if (cm.setInterrupted(c))
+                if (cm.setInterrupted(c))
                 {
-                    try {
-                        AccessController.doPrivileged(
-                                new PrivilegedAction<Void>() {
-                                    public Void run()  {
-                                        fActive.interrupt();
-                                        return null;
-                                    }
-                                });
-                    } catch (java.security.AccessControlException ace) {
-                        // DERBY-6352; if we see an exception here, just
-                        // swallow it, leaving the thread to finish
-                    }
+                    fActive.interrupt();
                 }
-			}
-		}
-	}
+            }
+        }
+    }
 
     /**
      * Remove a ContextManager from the list of all active
@@ -603,7 +590,7 @@ public final class ContextService //OLD extends Hashtable
     synchronized void removeContext(ContextManager cm)
     {
         if (allContexts != null)
-            allContexts.remove( cm);
+        { allContexts.remove( cm); }
     }
 
     /** Specialized stack class that contains context managers. */

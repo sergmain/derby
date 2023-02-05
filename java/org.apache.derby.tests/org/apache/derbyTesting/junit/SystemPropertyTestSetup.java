@@ -19,7 +19,6 @@
  */
 package org.apache.derbyTesting.junit;
 
-import java.security.PrivilegedActionException;
 import java.util.Enumeration;
 import java.util.Properties;
 
@@ -161,7 +160,6 @@ public class SystemPropertyTestSetup extends TestSetup {
     }
 
     private void setProperties(Properties values)
-        throws PrivilegedActionException
     {
     	for (Enumeration e = values.propertyNames(); e.hasMoreElements();)
     	{

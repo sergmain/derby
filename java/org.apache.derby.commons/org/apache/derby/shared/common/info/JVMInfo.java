@@ -24,8 +24,6 @@ package org.apache.derby.shared.common.info;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 
 // As an exception to the rule we import SanityManager from the shared package
 // here, because the JVMInfo class is included in both derby.jar and
@@ -89,13 +87,8 @@ public abstract class JVMInfo
         // version 1.8, which is the lowest level we support.
 		//
         String javaVersion = "1.8";
-		try {
             javaVersion =
                 System.getProperty("java.specification.version", javaVersion);
-		} catch (SecurityException se) {
-			// some vms do not know about this property so they
-			// throw a security exception when access is restricted.
-		}
 
         if (javaVersion.equals("1.8")) {
             id = J2SE_18;
@@ -153,15 +146,7 @@ public abstract class JVMInfo
      */
     private static String getSystemProperty(final String name) {
         
-        return AccessController
-                .doPrivileged(new java.security.PrivilegedAction<String>() {
-                    
-                    public String run() {
-                        return System.getProperty(name);
-                        
-                    }
-                    
-                });
+        return System.getProperty(name);
     }
     
     /**
@@ -217,13 +202,7 @@ public abstract class JVMInfo
                 ibmc = Class.forName("com.ibm.jvm.Dump");
                 final Method ibmm = ibmc.getMethod("JavaDump", new Class<?>[] {});
                 
-                AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
-                    public Object run() throws IllegalAccessException,
-                            MalformedURLException, InstantiationException,
-                            InvocationTargetException {
-                        return ibmm.invoke(null, new Object[] {});
-                    }
-                });
+                ibmm.invoke(null, new Object[] {});
             } catch (Exception e) {
                 if (SanityManager.DEBUG) {
                     SanityManager

@@ -20,8 +20,6 @@
  */
 package org.apache.derby.impl.sql.catalog;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashMap;
 
 import org.apache.derby.catalog.SequencePreallocator;
@@ -607,54 +605,21 @@ public abstract class SequenceUpdater implements Cacheable
     }
 
     /**
-     * Privileged lookup of the ContextService. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ContextService    getContextService()
     {
-        if ( System.getSecurityManager() == null )
-        {
-            return ContextService.getFactory();
-        }
-        else
-        {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedAction<ContextService>()
-                 {
-                     public ContextService run()
-                     {
-                         return ContextService.getFactory();
-                     }
-                 }
-                 );
-        }
+        return ContextService.getFactory();
     }
 
-    
     /**
-     * Privileged lookup of a Context. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Context    getContextOrNull( final String contextID )
     {
-        if ( System.getSecurityManager() == null )
-        {
-            return ContextService.getContextOrNull( contextID );
-        }
-        else
-        {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedAction<Context>()
-                 {
-                     public Context run()
-                     {
-                         return ContextService.getContextOrNull( contextID );
-                     }
-                 }
-                 );
-        }
+        return ContextService.getContextOrNull( contextID );
     }
 
     ///////////////////////////////////////////////////////////////////////////////////

@@ -19,8 +19,6 @@
 package org.osgi.framework;
 
 import java.lang.reflect.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * Framework Utility class.
@@ -47,7 +45,7 @@ public class FrameworkUtil {
 	 * will delegate method calls to the vendor FrameworkUtil instance.
 	 */
 
-	private static class ImplHolder implements PrivilegedAction<Method> {
+	private static class ImplHolder {
 		private static final String	packageProperty	= "org.osgi.vendor.framework";
 		
 		/*
@@ -56,13 +54,13 @@ public class FrameworkUtil {
 		static final Method	createFilter;
 		
 		static {
-			createFilter = AccessController.doPrivileged(new ImplHolder());
+			createFilter = run();
 		}
 		
 		private ImplHolder() {
 		}
 
-		public Method run() {
+		public static Method run() {
 			String packageName = System
 			.getProperty(packageProperty);
 			if (packageName == null) {

@@ -24,9 +24,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import javax.net.SocketFactory;
 import org.apache.derby.shared.common.error.StandardException;
 import org.apache.derby.shared.common.reference.SQLState;
@@ -118,22 +115,13 @@ public class ReplicationMessageTransmit {
         Socket s = null;
         
         final int timeout_ = timeout;
-        try {
-            //create a connection to the slave.
-            s = AccessController.doPrivileged(new PrivilegedExceptionAction<Socket>() {
-                public Socket run() throws IOException {
-                    SocketFactory sf = SocketFactory.getDefault();
-                    InetSocketAddress sockAddr = new InetSocketAddress(
-                            slaveAddress.getHostAddress(), 
-                            slaveAddress.getPortNumber());
-                    Socket s_temp = sf.createSocket();
-                    s_temp.connect(sockAddr, timeout_);
-                    return s_temp;
-                }
-            });
-        } catch(PrivilegedActionException pea) {
-            throw (IOException) pea.getException();
-        }
+        SocketFactory sf = SocketFactory.getDefault();
+        InetSocketAddress sockAddr = new InetSocketAddress(
+            slaveAddress.getHostAddress(), 
+            slaveAddress.getPortNumber());
+        Socket s_temp = sf.createSocket();
+        s_temp.connect(sockAddr, timeout_);
+        s = s_temp;
         
         // keep socket alive even if no log is shipped for a long time
         s.setKeepAlive(true);

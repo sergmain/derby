@@ -40,9 +40,6 @@ import org.apache.derby.iapi.util.IdUtil;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.HashSet;
 import java.util.Properties;
 
@@ -847,28 +844,13 @@ public	class DD_Version implements	Formatable
 	}
 
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  boolean isFullUpgrade( final Properties startParams, final String oldVersionInfo )
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Boolean>()
-                 {
-                     public Boolean run()
-                         throws StandardException
-                     {
-                         return Monitor.isFullUpgrade( startParams, oldVersionInfo );
-                     }
-                 }
-                 ).booleanValue();
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.isFullUpgrade( startParams, oldVersionInfo );
     }
 
 }

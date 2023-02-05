@@ -37,8 +37,6 @@ import org.apache.derby.impl.jdbc.EmbedCallableStatement;
 import org.apache.derby.iapi.jdbc.EmbeddedDataSourceInterface;
 
 import java.sql.Connection;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -649,20 +647,11 @@ public class EmbedPooledConnection implements javax.sql.PooledConnection, Broker
         }
     }
     
-	/**
-	  *	Gets the LanguageConnectionContext for this connection.
-	  */
-	private static LanguageConnectionContext	getLanguageConnectionContext( final EmbedConnection conn )
-	{
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<LanguageConnectionContext>()
-             {
-                 public LanguageConnectionContext run()
-                 {
-                     return conn.getLanguageConnection();
-                 }
-             }
-             );
-	}
+    /**
+     *	Gets the LanguageConnectionContext for this connection.
+     */
+    private static LanguageConnectionContext	getLanguageConnectionContext( final EmbedConnection conn )
+    {
+        return conn.getLanguageConnection();
+    }
 }

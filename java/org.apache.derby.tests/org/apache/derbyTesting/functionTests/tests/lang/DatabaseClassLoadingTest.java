@@ -29,7 +29,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AccessController;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -48,7 +47,6 @@ import org.apache.derbyTesting.junit.CleanDatabaseTestSetup;
 import org.apache.derbyTesting.junit.JDBC;
 import org.apache.derbyTesting.junit.JDBCDataSource;
 import org.apache.derbyTesting.junit.LoginTimeoutTestSetup;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.SupportFilesSetup;
 
 /**
@@ -125,11 +123,8 @@ public class DatabaseClassLoadingTest extends BaseJDBCTestCase {
                         SupportFilesSetup.getReadOnlyURL("dclt.jar")));
             }
            
-           // No security manager because the test uses getClass().getClassLoader()
-           // in an installed jar to ensure that the class loader for
-           // specific classes is correct. This operation is not allowed in general.
-           suite.addTest(SecurityManagerSetup.noSecurityManager(
-                   new DatabaseClassLoadingTest("testClassLoadOrdering")));
+           suite.addTest(
+                   new DatabaseClassLoadingTest("testClassLoadOrdering"));
 
            // Add test cases accessing a classpath database when a login
            // timeout has been specified.
@@ -520,10 +515,10 @@ public class DatabaseClassLoadingTest extends BaseJDBCTestCase {
      * The jar was signed with a self signed certificate
      * <code>
         keytool -delete -alias emccto -keystore emcks -storepass ab987c
-        keytool -genkey -dname "cn=EMC CTO, ou=EMC APP, o=Easy Mail Company, c=US" -alias emccto -keypass kpi135 -keystore emcks -storepass ab987c
-        keytool -selfcert -alias emccto -keypass kpi135 -validity 36500 -keystore emcks -storepass ab987c
-        keytool -keystore emcks -storepass ab987c -list -v
-        jarsigner -keystore emcks -storepass ab987c -keypass kpi135 -signedjar dcl_emc2s.jar dcl_emc2.jar emccto
+        keytool -delete -alias emccto -keystore emcks -storepass ab987c
+        keytool -genkey -keyalg "DSA"  -validity 2555000 -dname "cn=EMC CTO, ou=EMC APP, o=Easy Mail Company, c=US" -alias emccto -keystore emcks -storepass ab987c
+        keytool -selfcert -alias emccto -validity 36500 -keystore emcks -storepass ab987c
+        jarsigner -keystore emcks -storepass ab987c -signedjar dcl_emc2s.jar dcl_emc2.jar emccto
         keytool -delete -alias emccto -keystore emcks -storepass ab987c
         </code>
      * @throws SQLException
@@ -566,7 +561,14 @@ public class DatabaseClassLoadingTest extends BaseJDBCTestCase {
     /**
      * Replace the signed jar with a hacked jar. emc.class modified to diable
      * valid e-mail address check but using same signatures within jar.
-     * Class loader should reject.
+     * Class loader should reject. Construct the hacked file as follows:
+     *
+     * <ul>
+     * <li>Extract the hacked class org/apache/derbyTesting/databaseclassloader/emc.class from dcl_emc2sm.jar</li>
+     * <li>Copy dcl_emc2s.jar to dcl_emc2sm.jar</li>
+     * <li>Poke the hacked class org/apache/derbyTesting/databaseclassloader/emc.class into the new dcl_emc2sm.jar using "jar -uf"</li>
+     * <li></li>
+     * </ul>
      * 
      * rejects it.
      * @throws SQLException
@@ -661,14 +663,7 @@ public class DatabaseClassLoadingTest extends BaseJDBCTestCase {
         cs.close();
         
         final String db = getTestConfiguration().getDefaultDatabaseName();
-        AccessController.doPrivileged
-        (new java.security.PrivilegedExceptionAction<Void>() {
-            public Void run() throws Exception {
-                createArchive("dclt.jar", new File(backupDir, db), "dbro");;
-              return null;
-            }
-        });
-        
+        createArchive("dclt.jar", new File(backupDir, db), "dbro");;
     }
     
     /**

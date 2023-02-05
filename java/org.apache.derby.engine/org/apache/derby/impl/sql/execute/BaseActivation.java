@@ -21,8 +21,6 @@
 
 package org.apache.derby.impl.sql.execute;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
@@ -1904,21 +1902,12 @@ public abstract class BaseActivation implements CursorActivation, GeneratedByteC
 	}
     
     /**
-     * Privileged Monitor lookup. Must be package private so that user code
+     * Must be package private so that user code
      * can't call this entry point.
      */
     static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
 }

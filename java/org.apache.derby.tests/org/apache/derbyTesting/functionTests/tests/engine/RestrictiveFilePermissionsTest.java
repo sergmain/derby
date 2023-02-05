@@ -30,8 +30,6 @@ import java.nio.file.attribute.AclFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.UserPrincipal;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -535,8 +533,6 @@ public class RestrictiveFilePermissionsTest extends BaseJDBCTestCase {
             final File file,
             final boolean doContents,
             final int expectedOutcome) throws Exception {
-        // Needs to be called in security context since tests run with security
-        // manager.
         if (doContents) {
             // visit immediately contained file in this directory also
             checkAccessToOwner(file, false, expectedOutcome);
@@ -545,63 +541,60 @@ public class RestrictiveFilePermissionsTest extends BaseJDBCTestCase {
             }
         }
 
-        return AccessController.
-            doPrivileged((PrivilegedExceptionAction<Boolean>) () -> {
-                // Only used with expectedOutcome == UNKNOWN, otherwise
-                // we throw:
-                boolean someThingBeyondOwnerFound = false;
+        // Only used with expectedOutcome == UNKNOWN, otherwise
+        // we throw:
+        boolean someThingBeyondOwnerFound = false;
 
-                Path fileP = Paths.get(file.getPath());
+        Path fileP = Paths.get(file.getPath());
 
-                // ACLs supported on this platform? Check the current
-                // file system:
-                AclFileAttributeView aclView = Files.getFileAttributeView(
-                        fileP, AclFileAttributeView.class);
+        // ACLs supported on this platform? Check the current
+        // file system:
+        AclFileAttributeView aclView = Files.getFileAttributeView(
+            fileP, AclFileAttributeView.class);
 
-                PosixFileAttributeView posixView = Files.getFileAttributeView(
-                        fileP, PosixFileAttributeView.class);
+        PosixFileAttributeView posixView = Files.getFileAttributeView(
+            fileP, PosixFileAttributeView.class);
 
-                if (posixView != null) {
-                    // Unixen
-                    for (PosixFilePermission perm :
-                            posixView.readAttributes().permissions()) {
-                        if (UNWANTED_PERMISSIONS.contains(perm)) {
-                            if (expectedOutcome == POSITIVE) {
-                                fail("unwanted permission " + perm +
-                                     " for file " + file);
-                            }
-                            someThingBeyondOwnerFound = true;
-                            break;
-                        }
+        if (posixView != null) {
+            // Unixen
+            for (PosixFilePermission perm :
+                     posixView.readAttributes().permissions()) {
+                if (UNWANTED_PERMISSIONS.contains(perm)) {
+                    if (expectedOutcome == POSITIVE) {
+                        fail("unwanted permission " + perm +
+                             " for file " + file);
                     }
-                } else if (aclView != null) {
-                    // Windows
-                    UserPrincipal owner = Files.getOwner(fileP);
-                    for (AclEntry ace : aclView.getAcl()) {
-                        UserPrincipal princ = ace.principal();
-                        // NTFS, hopefully
-                        if (!princ.equals(owner)) {
-                            if (expectedOutcome == POSITIVE) {
-                                fail("unexpected uid " + princ.getName() +
-                                        " can access file " + file);
-                            }
-                            someThingBeyondOwnerFound = true;
-                            break;
-                        }
+                    someThingBeyondOwnerFound = true;
+                    break;
+                }
+            }
+        } else if (aclView != null) {
+            // Windows
+            UserPrincipal owner = Files.getOwner(fileP);
+            for (AclEntry ace : aclView.getAcl()) {
+                UserPrincipal princ = ace.principal();
+                // NTFS, hopefully
+                if (!princ.equals(owner)) {
+                    if (expectedOutcome == POSITIVE) {
+                        fail("unexpected uid " + princ.getName() +
+                             " can access file " + file);
                     }
-                } else {
-                    fail();
+                    someThingBeyondOwnerFound = true;
+                    break;
                 }
+            }
+        } else {
+            fail();
+        }
 
-                if (expectedOutcome == NEGATIVE && !someThingBeyondOwnerFound) {
-                    fail("unexpected restrictive access: " + file);
-                }
+        if (expectedOutcome == NEGATIVE && !someThingBeyondOwnerFound) {
+            fail("unexpected restrictive access: " + file);
+        }
 
-                if (expectedOutcome != UNKNOWN) {
-                    println("checked perms on: " + file);
-                }
+        if (expectedOutcome != UNKNOWN) {
+            println("checked perms on: " + file);
+        }
 
-                return expectedOutcome == UNKNOWN && someThingBeyondOwnerFound;
-        });
+        return expectedOutcome == UNKNOWN && someThingBeyondOwnerFound;
     }
 }

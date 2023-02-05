@@ -35,9 +35,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 /**
  * This is a common superclass for the various impls.
@@ -63,49 +60,39 @@ public abstract class GClass implements ClassBuilder {
 		return cf.loadGeneratedClass(qualifiedName, getClassBytecode());
 	}
 
-	protected void writeClassFile(String dir, boolean logMessage, Throwable t)
-		throws StandardException {
+    protected void writeClassFile(String dir, boolean logMessage, Throwable t)
+        throws StandardException {
 
-		if (SanityManager.DEBUG) {
+        if (SanityManager.DEBUG) {
 
-		if (bytecode ==  null) getClassBytecode(); // not recursing...
+            if (bytecode ==  null) getClassBytecode(); // not recursing...
 
-		if (dir == null) dir="";
+            if (dir == null) dir="";
 
-		String filename = getName(); // leave off package
+            String filename = getName(); // leave off package
 
-		filename = filename + ".class";
+            filename = filename + ".class";
 
-		final File classFile = new File(dir,filename);
+            final File classFile = new File(dir,filename);
 
-		FileOutputStream fos = null;
-		try {
-			try {
-				fos =  AccessController.doPrivileged(
-						new PrivilegedExceptionAction<FileOutputStream>() {
-							public FileOutputStream run()
-							throws FileNotFoundException {
-								return new FileOutputStream(classFile);
-							}
-						});
-			} catch (PrivilegedActionException pae) {
-				throw (FileNotFoundException)pae.getCause();
-			}
-			fos.write(bytecode.getArray(),
-				bytecode.getOffset(), bytecode.getLength());
-			fos.flush();
-			if (logMessage) {
-		        // find the error stream
-		        HeaderPrintWriter errorStream = Monitor.getStream();
-				errorStream.printlnWithHeader("Wrote class "+getFullName()+" to file "+classFile.toString()+". Please provide support with the file and the following exception message: "+t);
-			}
-			fos.close();
-		} catch (IOException e) {
-			if (SanityManager.DEBUG)
-				SanityManager.THROWASSERT("Unable to write .class file", e);
-		}
-		}
-	}
+            FileOutputStream fos = null;
+            try {
+                fos = new FileOutputStream(classFile);
+                fos.write(bytecode.getArray(),
+                          bytecode.getOffset(), bytecode.getLength());
+                fos.flush();
+                if (logMessage) {
+                    // find the error stream
+                    HeaderPrintWriter errorStream = Monitor.getStream();
+                    errorStream.printlnWithHeader("Wrote class "+getFullName()+" to file "+classFile.toString()+". Please provide support with the file and the following exception message: "+t);
+                }
+                fos.close();
+            } catch (IOException e) {
+                if (SanityManager.DEBUG)
+                    SanityManager.THROWASSERT("Unable to write .class file", e);
+            }
+        }
+    }
 
 	final void validateType(String typeName1)
 	{

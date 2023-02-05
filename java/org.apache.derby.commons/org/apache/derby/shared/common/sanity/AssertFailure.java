@@ -26,10 +26,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.AccessControlException;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 /**
  * AssertFailure is raised when an ASSERT check fails. Because assertions are
@@ -178,34 +174,16 @@ public class AssertFailure extends RuntimeException {
 
         //Try to get a thread dump and deal with various situations.
         try {
-            String dump = (String) AccessController.doPrivileged
-            (new PrivilegedExceptionAction<Object>(){
-                public Object run() throws
-                        IllegalArgumentException,
-                        IllegalAccessException,
-                        InvocationTargetException {
-                    return m.invoke(null, (Object[])null);
-                }
-            }
-            );
+            String dump = (String) m.invoke(null, (Object[])null);
 
             //Print the dump to the message string. That went OK.
             p.print("---------------\nStack traces for all live threads:");
             p.println("\n" + dump);
             p.println("---------------");
-        } catch (PrivilegedActionException pae) {
-            Throwable cause = pae.getCause();
-            if (cause instanceof InvocationTargetException &&
-                cause.getCause() instanceof AccessControlException) {
-
-                p.println("(Skipping thread dump "
-                    + "because of insufficient permissions:\n"
-                    + cause.getCause() + ")\n");
-            } else {
-                p.println("\nAssertFailure tried to do a thread dump, "
-                    + "but there was an error:");
-                cause.printStackTrace(p);
-            }
+        } catch (Exception pae) {
+            p.println("\nAssertFailure tried to do a thread dump, "
+                      + "but there was an error:");
+            pae.printStackTrace(p);
         }
         return out.toString();
     }

@@ -23,6 +23,7 @@ import org.apache.derby.shared.common.info.JVMInfo;
 import org.apache.derby.shared.common.reference.ModuleUtil;
 import org.apache.derbyTesting.functionTests.harness.JavaVersionHolder;
 import org.apache.derbyTesting.functionTests.util.PrivilegedFileOpsForTests;
+import org.apache.derbyTesting.junit.NetworkServerTestSetup;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 import junit.framework.AssertionFailedError;
@@ -42,11 +43,6 @@ import java.io.RandomAccessFile;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.sql.SQLException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
-
-import java.security.PrivilegedActionException;
 import java.util.ArrayList;
 
 
@@ -82,13 +78,9 @@ public abstract class BaseTestCase
     }
     
     /**
-     * Run the test and force installation of a security
-     * manager with the default test policy file.
-     * Individual tests can run without a security
-     * manager or with a different policy file using
-     * the decorators obtained from SecurityManagerSetup.
+     * Run the test.
      * <BR>
-     * Method is final to ensure security manager is
+     * Method was final to ensure that the security manager was
      * enabled by default. Tests should not need to
      * override runTest, instead use test methods
      * setUp, tearDown methods and decorators.
@@ -106,16 +98,6 @@ public abstract class BaseTestCase
             junitClassName=Utilities.formatTestClassNames(junitClassName);
             out.print(traceClientType());
             out.print(junitClassName+"."+getName() + " ");
-        }
-
-        // install a default security manager if one has not already been
-        // installed
-        if ( System.getSecurityManager() == null )
-        {
-            if (config.defaultSecurityManagerSetup())
-            {
-                assertSecurityManager();
-            }
         }
 
         try {
@@ -262,12 +244,7 @@ public abstract class BaseTestCase
      * @param out the new stream
      */
     protected static void setSystemOut(final PrintStream out) {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                System.setOut(out);
-                return null;
-            }
-        });
+        System.setOut(out);
     }
 
     /**
@@ -276,12 +253,7 @@ public abstract class BaseTestCase
      * @param err the new stream
      */
     protected static void setSystemErr(final PrintStream err) {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                System.setErr(err);
-                return null;
-            }
-        });
+        System.setErr(err);
     }
 
     /**
@@ -293,12 +265,7 @@ public abstract class BaseTestCase
     protected static void setSystemProperty(final String name, 
 					    final String value)
     {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                System.setProperty(name, value);
-                return null;
-            }
-        });
+        System.setProperty(name, value);
     }
 
     /**
@@ -307,13 +274,8 @@ public abstract class BaseTestCase
      * @param name name of the property
      */
     public static void removeSystemProperty(final String name)
-	{
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                System.getProperties().remove(name);
-                return null;
-            }
-        });
+    {
+        System.getProperties().remove(name);
     }
 
     /**
@@ -322,12 +284,8 @@ public abstract class BaseTestCase
      * @param name name of the property
      */
     protected static String getSystemProperty(final String name)
-	{
-        return AccessController.doPrivileged(new PrivilegedAction<String>() {
-            public String run() {
-                return System.getProperty(name);
-            }
-        });
+    {
+        return System.getProperty(name);
     }
     
     /**
@@ -340,19 +298,15 @@ public abstract class BaseTestCase
      * @return The list indicates files with certain prefix.
      */
     protected static String[] getFilesWith(final File dir, String prefix) {
-        return AccessController.doPrivileged(new PrivilegedAction<String[]>() {
-                    public String[] run() {
-                        //create a FilenameFilter and override its accept-method to file
-                        //files start with "javacore"*
-                        FilenameFilter filefilter = new FilenameFilter() {
-                            public boolean accept(File dir, String name) {
-                                //if the file has prefix javacore return true, else false
-                                return name.startsWith("javacore");
-                            }
-                        };
-                        return dir.list(filefilter);
-                    }
-                });
+        //create a FilenameFilter and override its accept-method to file
+        //files start with "javacore"*
+        FilenameFilter filefilter = new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                    //if the file has prefix javacore return true, else false
+                    return name.startsWith("javacore");
+                }
+            };
+        return dir.list(filefilter);
     }
     
     /**
@@ -362,12 +316,8 @@ public abstract class BaseTestCase
      * @return URL to the resource, null if it does not exist.
      */
     protected static URL getTestResource(final String name)
-	{
-        return AccessController.doPrivileged(new PrivilegedAction<URL>() {
-            public URL run() {
-                return BaseTestCase.class.getClassLoader().getResource(name);
-            }
-        });
+    {
+        return BaseTestCase.class.getClassLoader().getResource(name);
     }
   
     /**
@@ -376,27 +326,11 @@ public abstract class BaseTestCase
      * @param url URL obtained from getTestResource
      * @return An open stream
     */
-    protected static InputStream openTestResource(final URL url)
-        throws PrivilegedActionException
+    protected static InputStream openTestResource(final URL url) throws IOException
     {
-        return AccessController.doPrivileged(
-                new PrivilegedExceptionAction<InputStream>() {
-            public InputStream run() throws IOException {
-                return url.openStream();
-            }
-        });
+        return url.openStream();
     }
     
-    /**
-     * Assert a security manager is installed.
-     *
-     */
-    public static void assertSecurityManager()
-    {
-    	assertNotNull("No SecurityManager installed",
-    			System.getSecurityManager());
-    }
-
     /**
      * Compare the contents of two streams.
      * The streams are closed after they are exhausted.
@@ -560,26 +494,20 @@ public abstract class BaseTestCase
      * @param file1 the first file to compare
      * @param file2 the second file to compare
      */
-	public static void assertEquals(final File file1, final File file2) {
-		AccessController.doPrivileged
-        (new PrivilegedAction<Void>() {
-        	public Void run() {
-        		try {
-					InputStream f1 = new BufferedInputStream(new FileInputStream(file1));
-					InputStream f2 = new BufferedInputStream(new FileInputStream(file2));
+    public static void assertEquals(final File file1, final File file2) {
+        try {
+            InputStream f1 = new BufferedInputStream(new FileInputStream(file1));
+            InputStream f2 = new BufferedInputStream(new FileInputStream(file2));
 
-					assertEquals(f1, f2);
-				} catch (FileNotFoundException e) {
-					fail("FileNotFoundException in assertEquals(File,File): " + e.getMessage());
-					e.printStackTrace();
-				} catch (IOException e) {
-					fail("IOException in assertEquals(File, File): " + e.getMessage());
-					e.printStackTrace();
-				}
-				return null;
-        	}
-        });
-	}
+            assertEquals(f1, f2);
+        } catch (FileNotFoundException e) {
+            fail("FileNotFoundException in assertEquals(File,File): " + e.getMessage());
+            e.printStackTrace();
+        } catch (IOException e) {
+            fail("IOException in assertEquals(File, File): " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
     
 	/**
 	 * Execute command using 'java' executable and verify that it completes
@@ -690,6 +618,7 @@ public abstract class BaseTestCase
         final boolean isJarInvocation = cmd.length > 0 && cmd[0].equals("-jar");
 
 	    ArrayList<String> cmdlist = new ArrayList<String>();
+
         cmdlist.add(jvm == null ? getJavaExecutableName() : jvm);
 	    if (isJ9Platform())
 	    {
@@ -789,14 +718,9 @@ public abstract class BaseTestCase
 	        println("command[" + i + "]" + command[i]);
 	    }
 	    try {
-            return AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<Process>() {
-                public Process run() throws IOException {
-                    return Runtime.getRuntime().exec(
-                            command, (String[]) null, dir);
-	            }
-	        });
-	    } catch (PrivilegedActionException pe) {
+                return Runtime.getRuntime().exec(
+                    command, (String[]) null, dir);
+	    } catch (IOException pe) {
             println("Failed to run command: " + pe.getMessage());
             if (TestConfiguration.getCurrent().isVerbose())
             {
@@ -804,7 +728,7 @@ public abstract class BaseTestCase
                 out.flush();
             }
             
-            throw (IOException) pe.getException();
+            throw pe;
 	    }
 	}
 
@@ -965,7 +889,7 @@ public abstract class BaseTestCase
     }
 
     public static boolean runsWithJaCoCo() {
-        return SecurityManagerSetup.jacocoEnabled;
+        return TestConfiguration.jacocoEnabled;
     }
 
     /**
@@ -1006,7 +930,7 @@ public abstract class BaseTestCase
      * tests are not running with EMMA.
      */
     public static URL getEmmaJar() {
-        return SecurityManagerSetup.getURL("com.vladium.emma.EMMAException");
+        return TestConfiguration.getURL("com.vladium.emma.EMMAException");
     }
 
     /**
@@ -1052,42 +976,34 @@ public abstract class BaseTestCase
         boolean interruptibleIO = false;
 
         try {
-            AccessController.doPrivileged(
-                new PrivilegedExceptionAction<Void>() {
-                    public Void run() throws
-                        IOException, InterruptedIOException {
+            TestConfiguration curr = TestConfiguration.getCurrent();
 
-                        TestConfiguration curr = TestConfiguration.getCurrent();
+            String sysHome = getSystemProperty("derby.system.home");
 
-                        String sysHome = getSystemProperty("derby.system.home");
+            StringBuffer arbitraryRAFFileNameB = new StringBuffer();
 
-                        StringBuffer arbitraryRAFFileNameB = new StringBuffer();
+            arbitraryRAFFileNameB.append(sysHome);
+            arbitraryRAFFileNameB.append(File.separatorChar);
+            arbitraryRAFFileNameB.append("derby.log");
 
-                        arbitraryRAFFileNameB.append(sysHome);
-                        arbitraryRAFFileNameB.append(File.separatorChar);
-                        arbitraryRAFFileNameB.append("derby.log");
+            String arbitraryRAFFileName =
+                arbitraryRAFFileNameB.toString();
+            // Create if it does not exist:
+            new File(sysHome).mkdirs(); // e.g. "system"
+            new File(arbitraryRAFFileName).createNewFile();
 
-                        String arbitraryRAFFileName =
-                            arbitraryRAFFileNameB.toString();
-                        // Create if it does not exist:
-                        new File(sysHome).mkdirs(); // e.g. "system"
-                        new File(arbitraryRAFFileName).createNewFile();
+            RandomAccessFile f = new RandomAccessFile(
+                arbitraryRAFFileName, "r");
 
-                        RandomAccessFile f = new RandomAccessFile(
-                            arbitraryRAFFileName, "r");
-
-                        try {
-                            Thread.currentThread().interrupt();
-                            f.read();
-                        } finally {
-                            Thread.interrupted(); // clear flag
-                            f.close();
-                        }
-
-                        return null;
-                    }});
-        } catch (PrivilegedActionException e) {
-            if (e.getCause() instanceof InterruptedIOException) {
+            try {
+                Thread.currentThread().interrupt();
+                f.read();
+            } finally {
+                Thread.interrupted(); // clear flag
+                f.close();
+            }
+        } catch (Exception e) {
+            if (e instanceof InterruptedIOException) {
                 interruptibleIO = true;
             } else {
                 // Better to assume nothing when the test fails. Then, tests
@@ -1095,7 +1011,7 @@ public abstract class BaseTestCase
                 // amiss.
                 println("Could not test for interruptible IO," +
                         " so assuming we don't have it: " + e);
-                e.getCause().printStackTrace();
+                e.printStackTrace();
                 return false;
             }
         }
@@ -1304,14 +1220,7 @@ public abstract class BaseTestCase
     /** Return true if the JVM is at least at the indicated rev level */
     public static boolean vmAtLeast( int major, int minor )
     {
-        String version = AccessController.doPrivileged
-            (new PrivilegedAction<String>(){
-                public String run(){
-                    return System.getProperty( "java.version" );
-                }
-            }
-                );
-                   
+        String version = System.getProperty( "java.version" );
         JavaVersionHolder jvh =  new JavaVersionHolder( version );
 
         return jvh.atLeast( major, minor );

@@ -32,8 +32,6 @@ import java.net.Socket;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -46,7 +44,6 @@ import org.apache.derbyTesting.functionTests.util.ProtocolTestGrammar;
 import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.BaseTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.SupportFilesSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
@@ -172,19 +169,12 @@ public class ProtocolTest
         Socket socket = null;
         final TestConfiguration cfg = TestConfiguration.getCurrent();
         try {
-            socket = AccessController.doPrivileged (
-                new java.security.PrivilegedExceptionAction<Socket>() {
-                    public Socket run()
-                            throws IOException, UnknownHostException {
-                        return new Socket(cfg.getHostName(), cfg.getPort());
-                    }
-                }
-            );
-        } catch (PrivilegedActionException pae) {
-            if (pae.getCause() instanceof IOException) {
-                throw (IOException)pae.getCause();
-            } else if (pae.getCause() instanceof UnknownHostException) {
-                throw (UnknownHostException)pae.getCause();
+            socket = new Socket(cfg.getHostName(), cfg.getPort());
+        } catch (Exception pae) {
+            if (pae instanceof IOException) {
+                throw (IOException)pae;
+            } else if (pae instanceof UnknownHostException) {
+                throw (UnknownHostException)pae;
             }
             fail("Unhandled exception", pae);
         }
@@ -886,11 +876,11 @@ public class ProtocolTest
         }
         bIn.close();
 
-        // Install a security policy and copy the required include files.
+        // copy the required include files.
         final String resourcePath = "functionTests/tests/derbynet";
-        return new SecurityManagerSetup(
-                TestConfiguration.clientServerDecorator(
-                    new SupportFilesSetup(suite, new String[] {
+        return 
+            TestConfiguration.clientServerDecorator(
+                new SupportFilesSetup(suite, new String[] {
                         resourcePath + "/connect.inc",
                         resourcePath + "/excsat_accsecrd1.inc",
                         resourcePath + "/excsat_accsecrd2.inc",
@@ -899,8 +889,6 @@ public class ProtocolTest
                         resourcePath + "/excsat_secchk.inc",
                         resourcePath + "/values1.inc",
                         resourcePath + "/values64kblksz.inc",
-                    })),
-                PREFIX + "ProtocolTest.policy",
-                true);
+                    }));
     }
 }

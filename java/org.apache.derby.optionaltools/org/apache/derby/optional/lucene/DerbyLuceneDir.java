@@ -23,9 +23,6 @@ package org.apache.derby.optional.lucene;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -372,37 +369,25 @@ class DerbyLuceneDir extends Directory
         return indexDir;
     }
 
-	/**
-	 * Create the path if necessary.
-	 */
+    /**
+     * Create the path if necessary.
+     */
     private static StorageFile createPathLeg
         ( final StorageFactory storageFactory, final StorageFile parentDir, final String fileName )
         throws SQLException
     {
-        try {
-            return AccessController.doPrivileged(
-             new PrivilegedExceptionAction<StorageFile>()
-             {
-                 public StorageFile run() throws SQLException
-                 {
-                     String         normalizedName = ToolUtilities.derbyIdentifier( fileName );
-                     StorageFile    file = parentDir == null ?
-                         storageFactory.newStorageFile( normalizedName  ) :
-                         storageFactory.newStorageFile( parentDir, normalizedName );
+        String         normalizedName = ToolUtilities.derbyIdentifier( fileName );
+        StorageFile    file = parentDir == null ?
+            storageFactory.newStorageFile( normalizedName  ) :
+            storageFactory.newStorageFile( parentDir, normalizedName );
 
-                     if ( !file.exists() ) { file.mkdir(); }
-                     if ( !file.exists() )
-                     {
-                         throw ToolUtilities.newSQLException
-                             ( SQLState.SERVICE_DIRECTORY_CREATE_ERROR, normalizedName );
-                     }
-                     else { return file; }
-                 }
-             }
-             );
-        } catch (PrivilegedActionException pae) {
-            throw (SQLException) pae.getCause();
+        if ( !file.exists() ) { file.mkdir(); }
+        if ( !file.exists() )
+        {
+            throw ToolUtilities.newSQLException
+                ( SQLState.SERVICE_DIRECTORY_CREATE_ERROR, normalizedName );
         }
+        else { return file; }
     }
     
 }

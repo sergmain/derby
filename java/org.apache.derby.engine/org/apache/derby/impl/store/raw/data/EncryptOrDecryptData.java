@@ -33,8 +33,6 @@ import org.apache.derby.iapi.store.access.TransactionController;
 
 import org.apache.derby.io.StorageFactory;
 import org.apache.derby.io.StorageFile;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 
 /**
@@ -58,7 +56,7 @@ import java.security.PrivilegedAction;
  *      after a successful checkpoint with a new key or on a rollback.
  */
 
-public class EncryptOrDecryptData implements PrivilegedAction<Boolean> {
+public class EncryptOrDecryptData  {
 
     private BaseDataFileFactory dataFactory;
     private StorageFactory storageFactory;
@@ -367,18 +365,17 @@ public class EncryptOrDecryptData implements PrivilegedAction<Boolean> {
     {
         actionCode = STORAGE_FILE_EXISTS_ACTION;
         actionStorageFile = file;
-        Boolean ret = AccessController.doPrivileged(this);
+        Boolean ret = run();
         actionStorageFile = null;
         return ret.booleanValue();
 
     }
 
-
     private synchronized boolean privDelete(StorageFile file)
     {
         actionCode = STORAGE_FILE_DELETE_ACTION;
         actionStorageFile = file;
-        Boolean ret = AccessController.doPrivileged(this);
+        Boolean ret = run();
         actionStorageFile = null;
         return ret.booleanValue();
 
@@ -390,16 +387,14 @@ public class EncryptOrDecryptData implements PrivilegedAction<Boolean> {
         actionCode = STORAGE_FILE_RENAME_ACTION;
         actionStorageFile = fromFile;
         actionDestStorageFile = destFile;
-        Boolean ret = AccessController.doPrivileged(this);
+        Boolean ret = run();
         actionStorageFile = null;
         actionDestStorageFile = null;
         return ret.booleanValue();
-
     }
 
 
 
-    // PrivilegedAction method
     public Boolean run()
     {
         switch(actionCode)

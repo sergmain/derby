@@ -1490,6 +1490,8 @@ public class ReplicationRun extends BaseTestCase
         
     }
 
+    // Suppress warnings on Runtime.exec() introduced by JDK 18
+    @SuppressWarnings("deprecation")
     private String runUserCommandRemotely(String command,
             String host,
             String testUser,

@@ -24,8 +24,6 @@ package org.apache.derby.iapi.sql.dictionary;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import org.apache.derby.catalog.IndexDescriptor;
 import org.apache.derby.catalog.types.IndexDescriptorImpl;
@@ -437,28 +435,12 @@ public class IndexRowGenerator implements IndexDescriptor, Formatable
 
     
     /**
-     * Privileged lookup of a Context. Must be private so that user code
+     *  Must be private so that user code
      * can't call this entry point.
      */
     private  static  Context    getContext( final String contextID )
     {
-        if ( System.getSecurityManager() == null )
-        {
-            return ContextService.getContext( contextID );
-        }
-        else
-        {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedAction<Context>()
-                 {
-                     public Context run()
-                     {
-                         return ContextService.getContext( contextID );
-                     }
-                 }
-                 );
-        }
+        return ContextService.getContext( contextID );
     }
 
 }

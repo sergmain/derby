@@ -20,7 +20,6 @@
  */
 
 package org.apache.derbyTesting.functionTests.tests.store;
-import java.security.AccessController;
 import java.sql.Connection;
 import java.sql.SQLException;
 import org.apache.derby.tools.ij;
@@ -95,19 +94,7 @@ public class MaxLogNumberRecovery extends MaxLogNumber {
     private static void setSystemProperty(final String name, 
                         final String value)
     {
-    
-    AccessController.doPrivileged
-        (new java.security.PrivilegedAction<Void>(){
-            
-            public Void run(){
-            System.setProperty( name, value);
-            return null;
-            
-            }
-            
-        }
-         );
-    
+        System.setProperty( name, value);
     }
 	public static void main(String[] argv) throws Throwable {
 		

@@ -24,9 +24,6 @@ package org.apache.derby.optional.lucene;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.SQLException;
@@ -408,8 +405,8 @@ class LuceneQueryVTI extends StringColumnVTI
     // This method in java.lang.Object was deprecated as of build 167
     // of JDK 9. See DERBY-6932.
     //
-    @SuppressWarnings("deprecation")
-	protected void finalize()
+    @SuppressWarnings({"deprecation","removal"})
+    protected void finalize()
     {
 		try {
 			if ( _indexReader != null ) { _indexReader.close(); }
@@ -488,7 +485,6 @@ class LuceneQueryVTI extends StringColumnVTI
         }
         catch (IOException ioe) { throw ToolUtilities.wrap( ioe ); }
         catch (ParseException pe) { throw ToolUtilities.wrap( pe ); }
-        catch (PrivilegedActionException pae) { throw ToolUtilities.wrap( pae ); }
     }
 
     /**
@@ -545,94 +541,45 @@ class LuceneQueryVTI extends StringColumnVTI
         return ( (columnid > 0) && (columnid <= _maxKeyID) );
     }
     
-	/**
-	 * Returns a Lucene IndexReader, which reads from the indicated Lucene index.
-	 * 
-	 * @param dir The directory holding the Lucene index.
-	 */
-	private static IndexReader getIndexReader( final DerbyLuceneDir dir )
-        throws IOException, PrivilegedActionException
+    /**
+     * Returns a Lucene IndexReader, which reads from the indicated Lucene index.
+     * 
+     * @param dir The directory holding the Lucene index.
+     */
+    private static IndexReader getIndexReader( final DerbyLuceneDir dir )
+        throws IOException
     {
-        try {
-            return AccessController.doPrivileged
-            (
-             new PrivilegedExceptionAction<IndexReader>()
-             {
-                 public IndexReader run() throws IOException
-                 {
-                     return DirectoryReader.open( dir );
-                 }
-             }
-             );
-        } catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getCause();
-        }
-	}
+        return DirectoryReader.open( dir );
+    }
 	
     /** Read the index properties file */
     private static  Properties readIndexProperties( final StorageFile file )
         throws IOException
     {
-        try {
-            return AccessController.doPrivileged
-            (
-             new PrivilegedExceptionAction<Properties>()
-             {
-                public Properties run() throws IOException
-                {
-                    return LuceneSupport.readIndexPropertiesNoPrivs( file );
-                }
-             }
-             );
-        } catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getCause();
-        }
+        return LuceneSupport.readIndexPropertiesNoPrivs( file );
     }
 
-	/**
-	 * Invoke a static method (possibly supplied by the user) to instantiate an index descriptor.
+    /**
+     * Invoke a static method (possibly supplied by the user) to instantiate an index descriptor.
      * The method has no arguments.
-	 */
-	private static LuceneIndexDescriptor getIndexDescriptor( final String indexDescriptorMaker )
-        throws PrivilegedActionException, SQLException
+     */
+    private static LuceneIndexDescriptor getIndexDescriptor( final String indexDescriptorMaker )
+        throws SQLException
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedExceptionAction<LuceneIndexDescriptor>()
-             {
-                 public LuceneIndexDescriptor run()
-                     throws ClassNotFoundException, IllegalAccessException,
-                     InvocationTargetException, NoSuchMethodException,
-                     SQLException
-                 {
-                     return LuceneSupport.getIndexDescriptorNoPrivs( indexDescriptorMaker );
-                 }
-             }
-             );
-	}
+        try
+        {
+            return LuceneSupport.getIndexDescriptorNoPrivs( indexDescriptorMaker );
+        }
+        catch (Exception se) { throw ToolUtilities.wrap(se); }
+    }
 	
     /** Read the index properties file */
     private void    searchAndScore( final Query luceneQuery, final TopScoreDocCollector tsdc )
         throws IOException
     {
-        try {
-            AccessController.doPrivileged
-            (
-             new PrivilegedExceptionAction<Object>()
-             {
-                public Object run() throws IOException
-                {
-                    _searcher.search( luceneQuery, tsdc );
-                    TopDocs topdocs = tsdc.topDocs();
-                    _hits = topdocs.scoreDocs;
-
-                    return null;
-                }
-             }
-             );
-        } catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getCause();
-        }
+        _searcher.search( luceneQuery, tsdc );
+        TopDocs topdocs = tsdc.topDocs();
+        _hits = topdocs.scoreDocs;
     }
 
 }

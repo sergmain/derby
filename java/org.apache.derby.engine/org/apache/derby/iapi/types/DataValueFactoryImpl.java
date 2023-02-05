@@ -34,9 +34,6 @@ import org.apache.derby.iapi.services.monitor.Monitor;
 import org.apache.derby.shared.common.reference.Attribute;
 import org.apache.derby.shared.common.reference.SQLState;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.Date;
@@ -1156,39 +1153,21 @@ public final class DataValueFactoryImpl implements DataValueFactory, ModuleContr
         }
     
     /**
-     * Privileged lookup of a Context. Package protected so that user code
+     * Package protected so that user code
      * can't call this entry point.
      */
     static  Context    getContext( final String contextID )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Context>()
-             {
-                 public Context run()
-                 {
-                     return ContextService.getContext( contextID );
-                 }
-             }
-             );
+        return ContextService.getContext( contextID );
     }
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
 }

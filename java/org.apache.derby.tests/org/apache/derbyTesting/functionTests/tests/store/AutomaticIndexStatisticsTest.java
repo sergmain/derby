@@ -22,8 +22,6 @@ package org.apache.derbyTesting.functionTests.tests.store;
 
 import java.io.File;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -533,13 +531,7 @@ public class AutomaticIndexStatisticsTest
         // We expect the security manager to stop us from creating directories
         // where we aren't supposed to.
         if (!PrivilegedFileOpsForTests.exists(dest.getParentFile())) {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-
-                public Void run() {
-                    assertTrue(dest.getParentFile().mkdirs());
-                    return null;
-                }
-            });
+            assertTrue(dest.getParentFile().mkdirs());
         }
 
         PrivilegedFileOpsForTests.copy(master, dest);

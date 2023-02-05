@@ -35,12 +35,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
-import java.security.AccessControlException;
-import java.security.AccessController;
 import java.security.Permission;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.SQLException;
@@ -830,17 +825,8 @@ public final class NetworkServerControlImpl {
         }
         // Open a server socket listener      
         try{
-            serverSocket = 
-                AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<ServerSocket>() {
-                        public ServerSocket run() throws IOException
-                        {
-                            return createServerSocket();
-                        }
-                    });
-        } catch (PrivilegedActionException e) {
-            Exception e1 = e.getException();
-
+            serverSocket = createServerSocket();
+        } catch (Exception e1) {
             // Test for UnknownHostException first since it's a
             // subbclass of IOException (and consolePropertyMessage
             // throws an exception when the severity is S (or U).
@@ -859,12 +845,10 @@ public final class NetworkServerControlImpl {
                                            // string to the user.
                                            e1.toString()}); 
             } else {
-                throw e1;
+                // If we find other (unexpected) errors, we ultimately exit--so make
+                // sure we print the error message before doing so (Beetle 5033).
+                throwUnexpectedException(e1);
             }
-        } catch (Exception e) {
-        // If we find other (unexpected) errors, we ultimately exit--so make
-        // sure we print the error message before doing so (Beetle 5033).
-            throwUnexpectedException(e);
         }
         
         switch (getSSLMode()) {
@@ -909,12 +893,7 @@ public final class NetworkServerControlImpl {
 
         // We accept clients on a separate thread so we don't run into a problem
         // blocking on the accept when trying to process a shutdown
-        final ClientThread clientThread = AccessController.doPrivileged(
-                new PrivilegedExceptionAction<ClientThread>() {
-                    public ClientThread run() throws Exception {
-                        return new ClientThread(thisControl, serverSocket);
-                    }
-                });
+        final ClientThread clientThread = new ClientThread(thisControl, serverSocket);
         clientThread.start();
 
         try {
@@ -932,19 +911,12 @@ public final class NetworkServerControlImpl {
             }
             
             try {
-                AccessController.doPrivileged(
-                        new PrivilegedAction<Void>() {
-                            public Void run() {
-                            // Need to interrupt the memcheck thread if it is sleeping.
-                                if (mc != null)
-                                    mc.interrupt();
+                // Need to interrupt the memcheck thread if it is sleeping.
+                if (mc != null)
+                    mc.interrupt();
 
-                                //interrupt client thread
-                                clientThread.interrupt();
-
-                                return null;
-                           }
-                        });
+                //interrupt client thread
+                clientThread.interrupt();
             } catch (Exception exception) {
                 consolePrintAndIgnore("DRDA_UnexpectedException.S", exception, true);
             }
@@ -968,13 +940,7 @@ public final class NetworkServerControlImpl {
                 {
                     try {
                         threadi.close();
-                        AccessController.doPrivileged(
-                                new PrivilegedAction<Void>() {
-                                    public Void run() {
-                                        threadi.interrupt();
-                                        return null;
-                                    }
-                                });
+                        threadi.interrupt();
                     } catch (Exception exception) {
                         consolePrintAndIgnore("DRDA_UnexpectedException.S", exception, true);
                     }
@@ -1261,7 +1227,7 @@ public final class NetworkServerControlImpl {
      * @throws SQLException if the privileges check fails
      */
     /**
-     * @throws SQLException if authentication or privileges check fails
+     * @throws SQLException if authentication check fails
      */
     public void checkShutdownPrivileges() throws SQLException {    
         // get the system's authentication service
@@ -1287,21 +1253,7 @@ public final class NetworkServerControlImpl {
             }
         }
 
-        // approve action if not running under a security manager
-        if (System.getSecurityManager() == null) {
-            return;
-        }
-
-        // the check
-        try {
-            final Permission sp  = new SystemPermission(
-                  SystemPermission.SERVER, SystemPermission.SHUTDOWN);
-            // SecurityUtil.checkUserHasPermission(userArg, sp);
-        } catch (AccessControlException ace) {
-            throw Util.generateCsSQLException(
-                SQLState.AUTH_SHUTDOWN_MISSING_PERMISSION,
-                userArg, (Object)ace); // overloaded method
-        }
+        // FIXME!! this is where we used to check for SHUTDOWN privilege
     }
 
     /*
@@ -2704,61 +2656,44 @@ public final class NetworkServerControlImpl {
     {
         
         try {
-            clientSocket = AccessController.doPrivileged(
-                                new PrivilegedExceptionAction<Socket>() {
+            if (hostAddress == null)
+                hostAddress = InetAddress.getByName(hostArg);
                                         
-                                    public Socket run()
-                                        throws UnknownHostException,
-                                               IOException, 
-                                               java.security.NoSuchAlgorithmException,
-                                               java.security.KeyManagementException,
-                                               java.security.NoSuchProviderException,
-                                               java.security.KeyStoreException,
-                                               java.security.UnrecoverableKeyException,
-                                               java.security.cert.CertificateException
-                                    {
-                                        if (hostAddress == null)
-                                            hostAddress = InetAddress.getByName(hostArg);
-                                        
-                                        switch(getSSLMode()) {
-                                        case SSL_BASIC:
-                                           Properties sslProperties = getSSLProperties();
-                                           SSLSocket s1 = (SSLSocket)
-                                             NaiveTrustManager.getSocketFactory(sslProperties).
-                                                createSocket(hostAddress, portNumber);
-                                            //DERBY-6764(analyze impact of poodle security alert on 
-                                            // Derby client - server ssl support)
-                                            String[] removeTwoProtocols = 
-                                            		removeSSLv3andSSLv2Hello(s1.getEnabledProtocols());
-                                            s1.setEnabledProtocols(
-                                            		removeTwoProtocols);
-                                            // Need to handshake now to get proper error reporting.
-                                            s1.startHandshake();
-                                            return s1;
+            switch(getSSLMode()) {
+            case SSL_BASIC:
+                Properties sslProperties = getSSLProperties();
+                SSLSocket s1 = (SSLSocket)
+                    NaiveTrustManager.getSocketFactory(sslProperties).
+                    createSocket(hostAddress, portNumber);
+                //DERBY-6764(analyze impact of poodle security alert on 
+                // Derby client - server ssl support)
+                String[] removeTwoProtocols = 
+                    removeSSLv3andSSLv2Hello(s1.getEnabledProtocols());
+                s1.setEnabledProtocols(
+                    removeTwoProtocols);
+                // Need to handshake now to get proper error reporting.
+                s1.startHandshake();
+                clientSocket = s1;
 
-                                        case SSL_PEER_AUTHENTICATION:
-                                            SSLSocket s2 = (SSLSocket)SSLSocketFactory.getDefault().
-                                                createSocket(hostAddress, portNumber);
-                                            //DERBY-6764(analyze impact of poodle security alert on 
-                                            // Derby client - server ssl support)
-                                            removeTwoProtocols = 
-                                            		removeSSLv3andSSLv2Hello(s2.getEnabledProtocols());
-                                            s2.setEnabledProtocols(
-                                            		removeTwoProtocols);
-                                            // Need to handshake now to get proper error reporting.
-                                            s2.startHandshake();
-                                            return s2;
+            case SSL_PEER_AUTHENTICATION:
+                SSLSocket s2 = (SSLSocket)SSLSocketFactory.getDefault().
+                    createSocket(hostAddress, portNumber);
+                //DERBY-6764(analyze impact of poodle security alert on 
+                // Derby client - server ssl support)
+                removeTwoProtocols = 
+                    removeSSLv3andSSLv2Hello(s2.getEnabledProtocols());
+                s2.setEnabledProtocols(
+                    removeTwoProtocols);
+                // Need to handshake now to get proper error reporting.
+                s2.startHandshake();
+                clientSocket = s2;
 
-                                        case SSL_OFF:
-                                        default:
-                                            return SocketFactory.getDefault().
-                                                createSocket(hostAddress, portNumber);
-                                        }
-                                    }
-                                }
-                            );
-        } catch (PrivilegedActionException pae) {
-            Exception e1 = pae.getException();
+            case SSL_OFF:
+            default:
+                clientSocket = SocketFactory.getDefault().
+                    createSocket(hostAddress, portNumber);
+            }
+        } catch (Exception e1) {
             if (e1 instanceof UnknownHostException) {
                     consolePropertyMessage("DRDA_UnknownHost.S", hostArg);
             }
@@ -2770,10 +2705,10 @@ public final class NetworkServerControlImpl {
                             e1.getMessage()
                         });
             }
-        } catch (Exception e) {
-        // If we find other (unexpected) errors, we ultimately exit--so make
-        // sure we print the error message before doing so (Beetle 5033).
-            throwUnexpectedException(e);
+            else
+            {
+                throwUnexpectedException(e1);
+            }
         }
 
         try
@@ -4275,58 +4210,33 @@ public final class NetworkServerControlImpl {
     {
         ProductVersionHolder myPVH= null;
         try {
-            myPVH = AccessController.doPrivileged(
-                new PrivilegedExceptionAction<ProductVersionHolder>() {
-                    public ProductVersionHolder run()
-                            throws UnknownHostException, IOException {
                         InputStream versionStream =
                             getClass().getResourceAsStream(
                                 "/" + ProductGenusNames.NET_INFO);
-                        return ProductVersionHolder.
+                        myPVH = ProductVersionHolder.
                                 getProductVersionHolderFromMyEnv(versionStream);
-                    }
-                });
-        } catch (PrivilegedActionException e) {
-            Exception e1 = e.getException();
+        } catch (Exception e1) {
             consolePropertyMessage("DRDA_ProductVersionReadError.S", e1.getMessage());
         }
         return myPVH;
     }
     
     /**
-     * Privileged module lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private static  Object getSystemModule( final String factoryInterface )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     return Monitor.getSystemModule( factoryInterface );
-                 }
-             }
-             );
+        return Monitor.getSystemModule( factoryInterface );
     }
 
     /**
-     * Privileged service lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private static  Object findService( final String factoryInterface, final String serviceName )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     return Monitor.findService( factoryInterface, serviceName );
-                 }
-             }
-             );
+        return Monitor.findService( factoryInterface, serviceName );
     }
     
 }

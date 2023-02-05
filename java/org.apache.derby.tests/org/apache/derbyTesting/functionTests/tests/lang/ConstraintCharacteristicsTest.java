@@ -21,8 +21,6 @@
 
 package org.apache.derbyTesting.functionTests.tests.lang;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -2925,19 +2923,10 @@ public class ConstraintCharacteristicsTest extends BaseJDBCTestCase
      */
     public  static  LanguageConnectionContext    getLCC( final Connection conn )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<LanguageConnectionContext>()
-             {
-                 public LanguageConnectionContext run()
-                 {
-                     final ContextManager contextManager =
-                         ((EmbedConnection)conn).getContextManager();
-                     return (LanguageConnectionContext)
-                         contextManager.getContext( "LanguageConnectionContext" );
-                 }
-             }
-             );
+        final ContextManager contextManager =
+            ((EmbedConnection)conn).getContextManager();
+        return (LanguageConnectionContext)
+            contextManager.getContext( "LanguageConnectionContext" );
     }
 }
 

@@ -35,7 +35,6 @@ import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.DatabasePropertyTestSetup;
 import org.apache.derbyTesting.junit.JDBC;
 import org.apache.derbyTesting.junit.JDBCDataSource;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
 // tests that appropriate and invalid connections can be made to 
@@ -53,9 +52,6 @@ public class LDAPAuthenticationTest extends BaseJDBCTestCase {
     private static String ldapContextFactory; // optional initial context factory
         // if not passed in with -DderbyTesting.ldapContextFactory, uses sun's
 
-    // create own policy file, so we can connect to the ldap server
-    private static final String POLICY_FILE_NAME =
-        "org/apache/derbyTesting/functionTests/tests/jdbcapi/LDAPTests.policy";
     
     /** Creates a new instance of the Test */
     public LDAPAuthenticationTest(String name) {
@@ -123,9 +119,7 @@ public class LDAPAuthenticationTest extends BaseJDBCTestCase {
         suite.addTest(TestConfiguration.clientServerDecorator(
             baseSuite("LDAPAuthenticationTest:client", "testLDAPConnection")));
 
-        // Grant ALL FILES execute, and getPolicy permissions, as well as
-        // resolve/connect for the LDAP server identified with the property.
-        return new SecurityManagerSetup(suite, POLICY_FILE_NAME);
+        return suite;
     }
 
     public static Test baseSuite(String name, String fixture) {

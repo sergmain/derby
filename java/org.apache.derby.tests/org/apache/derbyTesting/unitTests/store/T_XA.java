@@ -42,10 +42,6 @@ import org.apache.derby.iapi.services.io.FormatIdUtil;
 
 import org.apache.derby.shared.common.error.StandardException; 
 
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedAction;
-import java.security.AccessController;
 import java.util.Properties; 
 
 import javax.transaction.xa.XAResource;
@@ -1186,46 +1182,22 @@ public class T_XA extends T_Generic
 
     
     /**
-     * Privileged lookup of the ContextService. Package protected so that user code
+     * Package protected so that user code
      * can't call this entry point.
      */
     static  ContextService    getContextService()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ContextService>()
-             {
-                 public ContextService run()
-                 {
-                     return ContextService.getFactory();
-                 }
-             }
-             );
+        return ContextService.getFactory();
     }
 
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object createPersistentService( final String factoryInterface, final String serviceName, final Properties properties ) 
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.createPersistentService( factoryInterface, serviceName, properties );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.createPersistentService( factoryInterface, serviceName, properties );
     }
 }
 

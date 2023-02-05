@@ -377,7 +377,7 @@ public abstract class ClientConnection
     // This method in java.lang.Object was deprecated as of build 167
     // of JDK 9. See DERBY-6932.
     //
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation","removal"})
     protected void finalize() throws Throwable {
         if (agent_.loggingEnabled()) {
             agent_.logWriter_.traceEntry(this, "finalize");
@@ -2717,21 +2717,6 @@ public abstract class ClientConnection
 
             throw se.getSQLException();
         }
-
-        //
-        // Must have privilege to invoke this method.
-        //
-        // The derby jars should be granted this permission. We deliberately
-        // do not wrap this check in an AccessController.doPrivileged() block.
-        // If we did so, that would absolve outer code blocks of the need to
-        // have this permission granted to them too. It is critical that the
-        // outer code blocks enjoy this privilege. That is what allows
-        // connection pools to prevent ordinary code from calling abort()
-        // and restrict its usage to privileged tools.
-        //
-        SecurityManager securityManager = System.getSecurityManager();
-        if ( securityManager != null )
-        { securityManager.checkPermission( new SQLPermission( "callAbort" ) ); }
 
         // Mark the Connection as closed. Set the "aborting" flag to allow internal
         // processing in close() to proceed.
