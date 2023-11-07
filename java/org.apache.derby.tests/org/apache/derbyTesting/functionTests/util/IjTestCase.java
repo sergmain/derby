@@ -23,8 +23,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.OutputStream;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import org.apache.derby.tools.ij;
 import org.apache.derbyTesting.junit.SupportFilesSetup;
@@ -85,18 +83,12 @@ public class IjTestCase extends ScriptTestCase {
 			+ getName() + ".out";
 		
 		final File out = outfile;
-		FileInputStream fis = AccessController.doPrivileged(
-                new PrivilegedAction<FileInputStream>() {
-			public FileInputStream run() {
-				FileInputStream fis = null;
-				try {
-					fis = new FileInputStream(out);
-				} catch (FileNotFoundException e) {
-					fail("Could not open ij output file.");
-				}				
-				return fis;
-			}
-		});
+		FileInputStream fis = null;
+                try {
+                    fis = new FileInputStream(out);
+                } catch (FileNotFoundException e) {
+                    fail("Could not open ij output file.");
+                }				
 		OutputStream os = getOutputStream();
 		int b;
 		while ((b = fis.read()) != -1) {

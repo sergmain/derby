@@ -21,9 +21,6 @@
 
 package org.apache.derbyTesting.unitTests.util;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import org.apache.derby.iapi.services.monitor.ModuleFactory;
 import org.apache.derby.iapi.services.monitor.Monitor;
 import org.apache.derby.shared.common.sanity.SanityManager;
@@ -98,16 +95,7 @@ public class MsgTrace implements Runnable {
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
 }

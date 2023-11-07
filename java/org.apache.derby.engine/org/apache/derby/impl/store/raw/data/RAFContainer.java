@@ -43,17 +43,13 @@ import java.io.IOException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.RandomAccessFile;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 
 /**
 	RAFContainer (short for RandomAccessFileContainer) is a concrete subclass of FileContainer
 	for FileContainers which are implemented on java.io.RandomAccessFile.
 */
 
-class RAFContainer extends FileContainer implements PrivilegedExceptionAction<Object>
+class RAFContainer extends FileContainer
 {
 
 	/*
@@ -727,24 +723,22 @@ class RAFContainer extends FileContainer implements PrivilegedExceptionAction<Ob
 	}
 
 
-	 synchronized StorageFile getFileName(ContainerKey identity, boolean stub,
-											 boolean errorOK, boolean tryAlternatePath)
-		 throws StandardException
-	 {
-         // RESOLVE - READ ONLY
+    synchronized StorageFile getFileName(ContainerKey identity, boolean stub,
+                                         boolean errorOK, boolean tryAlternatePath)
+        throws StandardException
+    {
+        // RESOLVE - READ ONLY
 
-         actionCode = GET_FILE_NAME_ACTION;
-         actionIdentity = identity;
-         actionStub = stub;
-         actionErrorOK = errorOK;
-         actionTryAlternatePath = tryAlternatePath;
-         try
-         {
-             return (StorageFile) AccessController.doPrivileged( this);
-         }
-         catch( PrivilegedActionException pae){ throw (StandardException) pae.getException();}
-         finally{ actionIdentity = null; }
-	 }
+        actionCode = GET_FILE_NAME_ACTION;
+        actionIdentity = identity;
+        actionStub = stub;
+        actionErrorOK = errorOK;
+        actionTryAlternatePath = tryAlternatePath;
+        try {
+            return (StorageFile) run();
+        }
+        finally{ actionIdentity = null; }
+    }
 
     protected StorageFile privGetFileName(ContainerKey identity, boolean stub,
                                     boolean errorOK, boolean tryAlternatePath)
@@ -804,22 +798,21 @@ class RAFContainer extends FileContainer implements PrivilegedExceptionAction<Ob
     } // end of privGetFileName
 
 
-	synchronized void createContainer(ContainerKey newIdentity)
+    synchronized void createContainer(ContainerKey newIdentity)
         throws StandardException
     {
 
-		if (SanityManager.DEBUG) {
-			if ((spareSpace < 0) || (spareSpace > 100))
-				SanityManager.THROWASSERT("invalid spare space " + spareSpace);
-		}
+        if (SanityManager.DEBUG) {
+            if ((spareSpace < 0) || (spareSpace > 100))
+                SanityManager.THROWASSERT("invalid spare space " + spareSpace);
+        }
 
         actionCode = CREATE_CONTAINER_ACTION;
         actionIdentity = newIdentity;
         try
         {
-            AccessController.doPrivileged( this);
+            run();
         }
-        catch( PrivilegedActionException pae){ throw (StandardException) pae.getException();}
         finally{ actionIdentity = null; }
     } // end of createContainer
 
@@ -831,10 +824,8 @@ class RAFContainer extends FileContainer implements PrivilegedExceptionAction<Ob
      * @throws StandardException if the copying failed
      */
     private void copyFile(final StorageFile from, final File to)
-            throws StandardException {
-        PrivilegedAction<Boolean> pa = () ->
-                FileUtil.copyFile(dataFactory.getStorageFactory(), from, to);
-        boolean success = AccessController.doPrivileged(pa);
+        throws StandardException {
+        boolean success = FileUtil.copyFile(dataFactory.getStorageFactory(), from, to);
         if (!success) {
             throw StandardException.newException(
                     SQLState.RAWSTORE_ERROR_COPYING_FILE,
@@ -848,24 +839,22 @@ class RAFContainer extends FileContainer implements PrivilegedExceptionAction<Ob
      * @throws StandardException if the file could not be removed
      */
     private void removeFile(final File file) throws StandardException {
-        PrivilegedAction<Boolean> pa = () -> !file.exists() || file.delete();
-        boolean success = AccessController.doPrivileged(pa);
+        boolean success = !file.exists() || file.delete();
         if (!success) {
             throw StandardException.newException(
                     SQLState.UNABLE_TO_DELETE_FILE, file);
         }
     }
 
-	synchronized boolean removeFile(StorageFile file)
-        throws SecurityException, StandardException
+    synchronized boolean removeFile(StorageFile file)
+        throws StandardException
     {
         actionCode = REMOVE_FILE_ACTION;
         actionFile = file;
         try
         {
-            return AccessController.doPrivileged( this) != null;
+            return run() != null;
         }
-        catch( PrivilegedActionException pae){ throw (StandardException) pae.getException();}
         finally{ actionFile = null; }
     } // end of removeFile
 
@@ -890,18 +879,14 @@ class RAFContainer extends FileContainer implements PrivilegedExceptionAction<Ob
 
 
     synchronized boolean openContainer(ContainerKey newIdentity)
-            throws StandardException {
+        throws StandardException {
         actionCode = OPEN_CONTAINER_ACTION;
         actionIdentity = newIdentity;
         try
         {
-            return AccessController.doPrivileged( this) != null;
+            return run() != null;
         }
-        catch( PrivilegedActionException pae) {
-            closeContainer();
-            throw (StandardException) pae.getException();
-        }
-        catch (RuntimeException e) {
+        catch (Exception e) {
             closeContainer();
             throw e;
         }
@@ -925,11 +910,8 @@ class RAFContainer extends FileContainer implements PrivilegedExceptionAction<Ob
         actionIdentity = currentIdentity;
 
         try {
-            AccessController.doPrivileged(this);
-        } catch (PrivilegedActionException pae) {
-            closeContainer();
-            throw (StandardException) pae.getException();
-        } catch (RuntimeException e) {
+            run();
+        } catch (Exception e) {
             closeContainer();
             throw e;
         } finally {
@@ -937,68 +919,67 @@ class RAFContainer extends FileContainer implements PrivilegedExceptionAction<Ob
         }
     }
 
-	private synchronized void stubbify(LogInstant instant)
+    private synchronized void stubbify(LogInstant instant)
         throws StandardException
-	{
-         // update header, synchronized this in case the cache is cleaning
-         // this container at the same time.  Make sure the clean and
-         // stubbify is mutually exclusive.
-         setDroppedState(true);
-         setCommittedDropState(true);
+    {
+        // update header, synchronized this in case the cache is cleaning
+        // this container at the same time.  Make sure the clean and
+        // stubbify is mutually exclusive.
+        setDroppedState(true);
+        setCommittedDropState(true);
 
-		 // The whole container should be shrunk into a 'stub'.
-		 // If the file system supports truncation, we can just truncate the
-		 // file after the header.  Since it doesn't, we need to write out a
-		 // seperate file (the stub), then reset fileData to point to that,
-		 // then remove the current file.
-		 //
-		 // There may still be dirty pages that belongs to this file which are
-		 // still in the page cache.  They need not really
-		 // be written since they don't really exist anymore
-		 //
-		 // there are 3 pieces of information on disk :
-		 // 1) the log operation that caused this file to be stubbified
-		 // 2) the stub
-		 // 3) the file
-		 //
-		 // The order of event, as far as persisent store is concerned, is
-		 // A) stub shows up
-		 // B) the file disappear
-		 // C) the log operation got flushed
-		 // (B and C may swap order)
-		 //
-		 // If neither A or B happens (we crashed before the sync call),
-		 // then nothing happened.
-		 //
-		 // if A happened but B and C did not, then when we recover, we will not
-		 // know the file has been stubbified.  Hopefully, it will be stubbified
-		 // again if the post-commit queue manager is alerted to the fact.
-		 //
-		 // if A and B happened but C did not, then the file is stubbified but
-		 // there is no log record to indicate that.  This is undesirable but
-		 // still safe because the only time we stubbify is on a post commit
-		 // operation, i.e., either a create container has rolled back or a
-		 // dropped container has committed.  We end up having a a container
-		 // stub which behaves the same as a dropped container - only that all
-		 // the redo work is unnecessary because we 'know' it will
-		 // eventually be dropped and committed.
-		 //
-		 // If A and C happened and not B, then during redo, this stubbify
-		 // routine will be called again and the file will be deleted again
-		 //
-		 // The reason why A has to be sync'ed out is that we don't want B to
-		 // happen but A did not and the system crashed.  Then we are left
-		 // with neither the file nor the stub and maybe even no log record.
-		 // Then the system is not recoverable.
+        // The whole container should be shrunk into a 'stub'.
+        // If the file system supports truncation, we can just truncate the
+        // file after the header.  Since it doesn't, we need to write out a
+        // seperate file (the stub), then reset fileData to point to that,
+        // then remove the current file.
+        //
+        // There may still be dirty pages that belongs to this file which are
+        // still in the page cache.  They need not really
+        // be written since they don't really exist anymore
+        //
+        // there are 3 pieces of information on disk :
+        // 1) the log operation that caused this file to be stubbified
+        // 2) the stub
+        // 3) the file
+        //
+        // The order of event, as far as persisent store is concerned, is
+        // A) stub shows up
+        // B) the file disappear
+        // C) the log operation got flushed
+        // (B and C may swap order)
+        //
+        // If neither A or B happens (we crashed before the sync call),
+        // then nothing happened.
+        //
+        // if A happened but B and C did not, then when we recover, we will not
+        // know the file has been stubbified.  Hopefully, it will be stubbified
+        // again if the post-commit queue manager is alerted to the fact.
+        //
+        // if A and B happened but C did not, then the file is stubbified but
+        // there is no log record to indicate that.  This is undesirable but
+        // still safe because the only time we stubbify is on a post commit
+        // operation, i.e., either a create container has rolled back or a
+        // dropped container has committed.  We end up having a a container
+        // stub which behaves the same as a dropped container - only that all
+        // the redo work is unnecessary because we 'know' it will
+        // eventually be dropped and committed.
+        //
+        // If A and C happened and not B, then during redo, this stubbify
+        // routine will be called again and the file will be deleted again
+        //
+        // The reason why A has to be sync'ed out is that we don't want B to
+        // happen but A did not and the system crashed.  Then we are left
+        // with neither the file nor the stub and maybe even no log record.
+        // Then the system is not recoverable.
 
-		actionIdentity = (ContainerKey)getIdentity();
+        actionIdentity = (ContainerKey)getIdentity();
         actionInstant = instant;
         actionCode = STUBBIFY_ACTION;
         try
         {
-            AccessController.doPrivileged( this);
+            run();
         }
-        catch( PrivilegedActionException pae){ throw (StandardException) pae.getException();}
         finally
         {
             actionIdentity = null;
@@ -1312,42 +1293,29 @@ class RAFContainer extends FileContainer implements PrivilegedExceptionAction<Ob
      * @throws IOException if some other I/O error happens
      */
     private RandomAccessFile getRandomAccessFile(final File file)
-            throws IOException {
-        try {
-            return AccessController.doPrivileged(
-                new PrivilegedExceptionAction<RandomAccessFile>() {
-                    public RandomAccessFile run() throws IOException {
-                        boolean preExisting = file.exists();
-                        RandomAccessFile raf = new RandomAccessFile(file, "rw");
-                        if (!preExisting) {
-                            FileUtil.limitAccessToOwner(file);
-                        }
-                        return raf;
-                    }
-                });
-        } catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getCause();
+        throws IOException {
+        boolean preExisting = file.exists();
+        RandomAccessFile raf = new RandomAccessFile(file, "rw");
+        if (!preExisting) {
+            FileUtil.limitAccessToOwner(file);
         }
+        return raf;
     }
 
     synchronized StorageRandomAccessFile getRandomAccessFile(StorageFile file)
-        throws SecurityException, StandardException
+        throws StandardException
     {
         actionCode = GET_RANDOM_ACCESS_FILE_ACTION;
         actionFile = file;
         try
         {
-            return (StorageRandomAccessFile)AccessController.doPrivileged(this);
-        }
-        catch( PrivilegedActionException pae){ 
-            throw (StandardException) pae.getException();
+            return (StorageRandomAccessFile) run();
         }
         finally{ actionFile = null; }
     }
 
 
 
-     // PrivilegedExceptionAction method
     public Object run() throws StandardException
      {
          switch( actionCode)
@@ -1359,14 +1327,10 @@ class RAFContainer extends FileContainer implements PrivilegedExceptionAction<Ob
          {
              StorageFile file = privGetFileName( actionIdentity, false, false, false);
 
-             try {
-                 if (file.exists()) {
-                     // note I'm left in the no-identity state as fillInIdentity()
-                     // hasn't been called.
-                     throw StandardException.newException( SQLState.FILE_EXISTS, file);
-                 }
-             } catch (SecurityException se) {
-                 throw StandardException.newException( SQLState.FILE_CREATE, se, file);
+             if (file.exists()) {
+                 // note I'm left in the no-identity state as fillInIdentity()
+                 // hasn't been called.
+                 throw StandardException.newException( SQLState.FILE_EXISTS, file);
              }
 
              try {
@@ -1425,15 +1389,7 @@ class RAFContainer extends FileContainer implements PrivilegedExceptionAction<Ob
                  canUpdate = false;
 
                  boolean fileDeleted;
-                 try {
-                     fileDeleted = privRemoveFile(file);
-                 } catch (SecurityException se) {
-                     throw StandardException.newException(
-                         SQLState.FILE_CREATE_NO_CLEANUP,
-                         ioe,
-                         file,
-                         se.toString());
-                 }
+                 fileDeleted = privRemoveFile(file);
 
                  if (!fileDeleted) {
                      throw StandardException.newException(
@@ -1461,27 +1417,18 @@ class RAFContainer extends FileContainer implements PrivilegedExceptionAction<Ob
              if (file == null)
                  return null;
 
-             try {
-                 if (!file.exists()) {
+             if (!file.exists()) {
 
-                     // file does not exist, may be it has been stubbified
-                     file = privGetFileName( actionIdentity, true, true, true);
-                     if (!file.exists())
-                         return null;
-                     isStub = true;
-                 }
-             } catch (SecurityException se) {
-                 throw StandardException.newException(
-                     SQLState.DATA_UNEXPECTED_EXCEPTION, se);
+                 // file does not exist, may be it has been stubbified
+                 file = privGetFileName( actionIdentity, true, true, true);
+                 if (!file.exists())
+                     return null;
+                 isStub = true;
              }
 
              canUpdate = false;
-             try {
-                 if (!dataFactory.isReadOnly() && file.canWrite())
-                     canUpdate = true;
-             } catch (SecurityException se) {
-                 // just means we can't write to it.
-             }
+             if (!dataFactory.isReadOnly() && file.canWrite())
+             { canUpdate = true; }
              fileName = file.toString();
 
              try {
@@ -1646,12 +1593,6 @@ class RAFContainer extends FileContainer implements PrivilegedExceptionAction<Ob
                  privRemoveFile(file);
 
              }
-             catch (SecurityException se)
-             {
-                 throw StandardException.
-                     newException(SQLState.FILE_CANNOT_REMOVE_FILE, se, file, 
-                                  se.toString());
-             }
              catch (IOException ioe)
              {
                  // exception thrown while in creating the stub.  Remove the
@@ -1675,11 +1616,6 @@ class RAFContainer extends FileContainer implements PrivilegedExceptionAction<Ob
                  {
                      throw StandardException.newException(
                          SQLState.FILE_CANNOT_REMOVE_FILE, ioe2, file, ioe.toString());
-                 }
-                 catch (SecurityException se)
-                 {
-                     throw StandardException.newException(
-                         SQLState.FILE_CANNOT_REMOVE_FILE, se, file, se.toString());
                  }
              }
 	

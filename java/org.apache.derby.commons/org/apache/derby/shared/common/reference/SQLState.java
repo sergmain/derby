@@ -1896,6 +1896,7 @@ public interface SQLState {
     */
     String POLICY_NOT_RELOADED                                     ="XK000.S";
     String NO_SUCH_USER                                                  ="XK001.S";
+    String SECURITY_MANAGER_NOT_SUPPORTED                          ="XK002.S";
 
     /*
     ** Replication XRExx

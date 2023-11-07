@@ -27,9 +27,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import javax.sql.DataSource;
 import junit.framework.Test;
 import org.apache.derbyTesting.junit.BaseJDBCTestCase;
@@ -239,18 +236,7 @@ public class DataSourceSerializationTest
 
         // De-serialize the data source.
         InputStream is;
-        try {
-            is = AccessController.doPrivileged(
-                  new PrivilegedExceptionAction<InputStream>() {
-                public InputStream run() throws FileNotFoundException {
-                    return new FileInputStream(
-                            SupportFilesSetup.getReadOnly(fname.toString()));
-                }
-            });
-            } catch (PrivilegedActionException e) {
-                // e.getException() should be a FileNotFoundException.
-                throw (FileNotFoundException)e.getException();
-            }
+        is = new FileInputStream(SupportFilesSetup.getReadOnly(fname.toString()));
 
         assertNotNull("FileInputStream is null", is);
         Object dsObj = null;

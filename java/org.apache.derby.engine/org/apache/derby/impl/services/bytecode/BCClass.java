@@ -23,7 +23,6 @@ package org.apache.derby.impl.services.bytecode;
 
 import java.io.IOException;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
 import org.apache.derby.shared.common.error.StandardException;
 import org.apache.derby.shared.common.reference.Property;
 import org.apache.derby.shared.common.reference.SQLState;
@@ -97,71 +96,63 @@ class BCClass extends GClass {
 		return new BCLocalField(type, cpi);
 	}
 
-	/**
-	 * At the time the class is completed and bytecode
-	 * generated, if there are no constructors then
-	 * the default no-arg constructor will be defined.
-	 */
-	public ByteArray getClassBytecode() throws StandardException {
+    /**
+     * At the time the class is completed and bytecode
+     * generated, if there are no constructors then
+     * the default no-arg constructor will be defined.
+     */
+    public ByteArray getClassBytecode() throws StandardException {
 
-		// return if already done
-		if (bytecode != null) return bytecode;
+        // return if already done
+        if (bytecode != null) return bytecode;
 		
-		try {
+        try {
 
-			if (SanityManager.DEBUG) {
-				if (SanityManager.DEBUG_ON("ClassLineNumbers")) {
+            if (SanityManager.DEBUG) {
+                if (SanityManager.DEBUG_ON("ClassLineNumbers")) {
 
-					ClassFormatOutput sout = new ClassFormatOutput(2);
+                    ClassFormatOutput sout = new ClassFormatOutput(2);
 
-					int cpiUTF = classHold.addUtf8("GC.java");
+                    int cpiUTF = classHold.addUtf8("GC.java");
 
-					sout.putU2(cpiUTF);
+                    sout.putU2(cpiUTF);
 
-					classHold.addAttribute("SourceFile", sout);
-				}
-			}
+                    classHold.addAttribute("SourceFile", sout);
+                }
+            }
 
-			// the class is now complete, get its bytecode.
-			bytecode = classHold.getFileFormat();
+            // the class is now complete, get its bytecode.
+            bytecode = classHold.getFileFormat();
 			
-		} catch (IOException ioe) {
-			throw StandardException.newException(
-					SQLState.GENERATED_CLASS_LINKAGE_ERROR, ioe, getFullName());
-		}
+        } catch (IOException ioe) {
+            throw StandardException.newException(
+                SQLState.GENERATED_CLASS_LINKAGE_ERROR, ioe, getFullName());
+        }
 
-		// release resources, we have the code now.
-		// name is not released, it may still be accessed.
-		classHold = null;
+        // release resources, we have the code now.
+        // name is not released, it may still be accessed.
+        classHold = null;
 
-		if (SanityManager.DEBUG) {
-			if (SanityManager.DEBUG_ON("DumpClassFile")) {
-				/* Dump the file in derby.system.home */
-				String systemHome = AccessController.doPrivileged
-				(new java.security.PrivilegedAction<String>(){
+        if (SanityManager.DEBUG) {
+            if (SanityManager.DEBUG_ON("DumpClassFile")) {
+                /* Dump the file in derby.system.home */
+                String systemHome = System.getProperty(Property.SYSTEM_HOME_PROPERTY,".");
+                writeClassFile(systemHome,false,null);
+            }
+        }
 
-					public String run(){
-						return System.getProperty(Property.SYSTEM_HOME_PROPERTY,".");
-
-					}
-				}
-				);				
-				writeClassFile(systemHome,false,null);
-			}
-		}
-
-		if (SanityManager.DEBUG) {
-		  if (SanityManager.DEBUG_ON("ByteCodeGenInstr")) {
-			SanityManager.DEBUG("ByteCodeGenInstr",
-				"GEN complete for class "+name);
-		  }
-		}
+        if (SanityManager.DEBUG) {
+            if (SanityManager.DEBUG_ON("ByteCodeGenInstr")) {
+                SanityManager.DEBUG("ByteCodeGenInstr",
+                                    "GEN complete for class "+name);
+            }
+        }
 		
-		if (limitMsg != null)
-			throw StandardException.newException(
-					SQLState.GENERATED_CLASS_LIMIT_EXCEEDED, getFullName(), limitMsg);
-		return bytecode;
-	}
+        if (limitMsg != null)
+            throw StandardException.newException(
+                SQLState.GENERATED_CLASS_LIMIT_EXCEEDED, getFullName(), limitMsg);
+        return bytecode;
+    }
 
 
 	/**

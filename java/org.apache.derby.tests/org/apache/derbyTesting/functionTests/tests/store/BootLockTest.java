@@ -31,7 +31,6 @@ import org.apache.derby.iapi.store.raw.data.DataFactory;
 import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.JDBC;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.SystemPropertyTestSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
@@ -107,7 +106,7 @@ public class BootLockTest extends BaseJDBCTestCase {
 
         test = TestConfiguration.singleUseDatabaseDecorator(test, dbName);
 
-        test = SecurityManagerSetup.noSecurityManager(test);
+        test = test;
 
         return test;
     }

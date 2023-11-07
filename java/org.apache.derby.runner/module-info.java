@@ -21,6 +21,10 @@
 
 /**
  * <p>
+ * This module corresponds to <i>derbyrun.jar</i>.
+ * </p>
+ * 
+ * <p>
  * This convenience module makes it easy to run several tools and to
  * administer the network server. Optional functionality includes:
  * </p>

@@ -21,8 +21,6 @@
 
 package org.apache.derby.impl.drda;
 
-import java.security.AccessControlException;
-import java.security.AccessController;
 import org.apache.derby.drda.NetworkServerControl;
 import org.apache.derby.shared.common.reference.Property;
 import org.apache.derby.iapi.services.monitor.Monitor;
@@ -78,15 +76,6 @@ class NetworkServerMBeanImpl implements NetworkServerMBean {
     
     private static void checkPermission(SystemPermission permission)
     {
-        try {
-            if (System.getSecurityManager() != null)
-                AccessController.checkPermission(permission);
-        } catch (AccessControlException e) {
-            // Need to throw a simplified version as AccessControlException
-            // will have a reference to Derby's SystemPermission which most likely
-            // will not be available on the client.
-            throw new SecurityException(e.getMessage());
-        }  
     }
 
     // Some of the code is disabled (commented out) due to security concerns,

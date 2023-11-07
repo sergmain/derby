@@ -26,8 +26,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.StreamCorruptedException;
-import java.security.PrivilegedAction;
-import java.security.AccessController;
 import org.apache.derby.iapi.services.monitor.Monitor;
 import org.apache.derby.shared.common.error.StandardException;
 import org.apache.derby.iapi.services.loader.ClassFactory;
@@ -260,28 +258,12 @@ public final class FormatIdInputStream extends DataInputStream
     }
     
     /**
-     * Privileged lookup of a Context. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Context    getContextOrNull( final String contextID )
     {
-        if ( System.getSecurityManager() == null )
-        {
-            return ContextService.getContextOrNull( contextID );
-        }
-        else
-        {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedAction<Context>()
-                 {
-                     public Context run()
-                     {
-                         return ContextService.getContextOrNull( contextID );
-                     }
-                 }
-                 );
-        }
+        return ContextService.getContextOrNull( contextID );
     }
 
 }

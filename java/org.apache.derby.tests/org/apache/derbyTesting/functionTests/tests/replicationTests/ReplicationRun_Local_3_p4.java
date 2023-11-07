@@ -26,8 +26,6 @@ import junit.framework.Test;
 import org.apache.derby.client.ClientDataSourceInterface;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.JDBC;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
-
 
 /**
  * Verify that "internal_stopslave=true" is
@@ -55,7 +53,7 @@ public class ReplicationRun_Local_3_p4 extends ReplicationRun
         
         suite.addTestSuite( ReplicationRun_Local_3_p4.class        );
         
-        return SecurityManagerSetup.noSecurityManager(suite);
+        return suite;
 
     }
     

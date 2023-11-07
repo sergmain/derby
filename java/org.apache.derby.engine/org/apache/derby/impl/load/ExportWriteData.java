@@ -38,7 +38,7 @@ import org.apache.derby.iapi.services.io.FileUtil;
 //FIXED FORMAT: if length of nullstring is greater than column width, throw execption
 
 final class ExportWriteData extends ExportWriteDataAbstract
-	implements java.security.PrivilegedExceptionAction<Object> {
+{
 
 	private String outputFileName;
 	private String lobsFileName;
@@ -80,13 +80,8 @@ final class ExportWriteData extends ExportWriteDataAbstract
 
 	private void init() throws Exception 
 	{
-		loadPropertiesInfo();
-		try {
-			java.security.AccessController.doPrivileged(this);
-		} catch (java.security.PrivilegedActionException pae) {
-			throw pae.getException();
-		}
-
+            loadPropertiesInfo();
+            run();
 	}
 
   public final Object run() throws Exception {

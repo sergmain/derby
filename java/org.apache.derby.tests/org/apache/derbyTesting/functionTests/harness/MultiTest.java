@@ -191,7 +191,10 @@ public class MultiTest
 	** there is no memory, this doesn't seem to do anything
 	** either.  Also, we grab some memory up front and release
 	** that after telling the threads to stop themselves.
+    ** Suppress deprecation warnings for ThreadGroup.isDestroyed();
+    ** see https://issues.apache.org/jira/browse/DERBY-7094
 	*/
+    @SuppressWarnings("removal")
 	private static long execTesters(mtTester[] testers)
 			throws FileNotFoundException, IOException
 	{
@@ -287,7 +290,7 @@ public class MultiTest
 	
 		/*	
 		** Now stop everyone that hasn't already stopped.
-		* First get thread dumps for jdk 15.
+		* First get thread dumps for jdk 15. 
 		*/
 		TestUtil.dumpAllStackTracesIfSupported(log);
 		for (i = 0; i < MAX_WAIT_FOR_COMPLETION && (tg.isDestroyed() == false ); i++) 

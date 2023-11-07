@@ -33,7 +33,6 @@ import org.apache.derby.shared.common.reference.Property;
 import org.apache.derbyTesting.functionTests.tests.jdbcapi.DatabaseMetaDataTest;
 import org.apache.derbyTesting.junit.BaseTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.SystemPropertyTestSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
@@ -160,7 +159,7 @@ class UpgradeRun extends UpgradeClassLoader
         
         setup = new SystemPropertyTestSetup(setup, preReleaseUpgrade);
    
-        return SecurityManagerSetup.noSecurityManager(setup);
+        return setup;
     }
 
     /**

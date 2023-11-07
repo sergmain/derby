@@ -21,8 +21,6 @@
 
 package org.apache.derby.impl.services.cache;
 
-import java.security.AccessControlException;
-import java.security.AccessController;
 import org.apache.derby.mbeans.CacheManagerMBean;
 import org.apache.derby.shared.common.security.SystemPermission;
 
@@ -86,17 +84,7 @@ final class ConcurrentCacheMBeanImpl implements CacheManagerMBean {
         return cache.getUsedEntries();
     }
 
+    /** This method used to do a permission check in a privileged block */
     private static void checkPermission() {
-        if (System.getSecurityManager() != null) {
-            try {
-                AccessController.checkPermission(
-                        SystemPermission.ENGINE_MONITOR);
-            } catch (AccessControlException ace) {
-                // Need to throw a simplified version as AccessControlException
-                // will have a reference to Derby's SystemPermission class,
-                // which most likely will not be available on the client.
-                throw new SecurityException(ace.getMessage());
-            }
-        }
     }
 }

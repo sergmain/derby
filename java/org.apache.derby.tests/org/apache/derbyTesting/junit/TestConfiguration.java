@@ -24,9 +24,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -39,6 +37,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 
 import org.apache.derby.shared.common.info.JVMInfo;
+import org.apache.derby.shared.common.reference.Property;
 import org.apache.derbyTesting.functionTests.util.PrivilegedFileOpsForTests;
 
 /**
@@ -62,6 +61,23 @@ import org.apache.derbyTesting.functionTests.util.PrivilegedFileOpsForTests;
  *
  */
 public final class TestConfiguration {
+    // codebase variables used in derby_tests.policy
+    public static final String DERBY_ENGINE = "derbyTesting.engine";
+    public static final String DERBY_CLIENT = "derbyTesting.client";
+    public static final String DERBY_SHARED = "derbyTesting.shared";
+    public static final String DERBY_NETSERVER = "derbyTesting.netserver";
+    public static final String DERBY_TOOLS = "derbyTesting.tools";
+    public static final String DERBY_OPTIONAL_TOOLS = "derbyTesting.optionaltools";
+    public static final String DERBY_TESTING = "derbyTesting.testing";
+
+    public static final String TESTING_JUNIT = "derbyTesting.junit";
+    public static final String TESTING_ANTJUNIT = "derbyTesting.antjunit";
+    public static final String TESTING_ANT = "derbyTesting.ant";
+
+    public static final String LUCENE_CORE = "derbyTesting.lucene.core";
+    public static final String JAXP = "derbyTesting.jaxpjar";
+    public static final String PACKAGE_PRIVATE_CLASSES = "derbyTesting.ppcodeclasses";
+  
     /**
      * Default values for configurations
      */
@@ -132,6 +148,25 @@ public final class TestConfiguration {
     private final static String KEY_JMX_PORT = "jmxPort";
     
     /**
+     * True if the classes are loaded from jars.
+     */
+    static boolean isJars;
+	
+    /**
+     * True if a security manager was installed outside of the
+     * control of this class and BaseTestCase.
+     */
+    static final boolean externalSecurityManagerInstalled;
+	
+    static final Properties classPathSet = new Properties();
+    
+    static {
+        // Determine what the set of properties
+        // describing the environment is.
+        externalSecurityManagerInstalled = determineClasspath();
+    }
+    
+    /**
      * Simple count to provide a unique number for database
      * names.
      */
@@ -163,6 +198,28 @@ public final class TestConfiguration {
                 "derby.system.home", absolutePath);
      }
     
+    static final boolean jacocoEnabled = checkIfJacocoIsRunning();
+
+    private static boolean checkIfJacocoIsRunning() {
+        try {
+            // Check if some arbitrary class from jacocoagent.jar
+            // is available.
+            Class.forName("org.jacoco.agent.rt.RT");
+
+            // If we got here, it means the tests are running
+            // under JaCoCo. Set the jacoco.active property to
+            // the empty string in order to activate the
+            // JaCoCo-specific permissions in derby_tests.policy,
+            // and return true.
+            System.setProperty("jacoco.active", "");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        } catch (LinkageError e) {
+            return false;
+        }
+    }
+
     /**
      * Current configuration is stored in a ThreadLocal to
      * allow the potential for multiple tests to be running
@@ -1390,13 +1447,7 @@ public final class TestConfiguration {
      * @return the system properties.
      */
     public  static final Properties getSystemProperties() {
-        // Fetch system properties in a privileged block.
-        return AccessController.doPrivileged(
-                new PrivilegedAction<Properties>() {
-            public Properties run() {
-                return System.getProperties();
-            }
-        });
+        return System.getProperties();
     }
 
     /**
@@ -1894,21 +1945,15 @@ public final class TestConfiguration {
             NetworkServerControlWrapper networkServer =
                     new NetworkServerControlWrapper();
 
- 	    serverOutput = AccessController.doPrivileged(
-                            new PrivilegedAction<FileOutputStream>() {
-                public FileOutputStream run() {
-                    File logs = new File("logs");
-                    logs.mkdir();
-                    File console = new File(logs, "serverConsoleOutput.log");
-                    FileOutputStream fos = null;
-                    try {
-                        fos = new FileOutputStream(console.getPath(), true);
-                    } catch (FileNotFoundException ex) {
-                        ex.printStackTrace();
-                    }
-                    return fos;
-                }
-            });
+            File logs = new File("logs");
+            logs.mkdir();
+            File console = new File(logs, "serverConsoleOutput.log");
+            FileOutputStream fos = null;
+            try {
+                serverOutput = new FileOutputStream(console.getPath(), true);
+            } catch (FileNotFoundException ex) {
+                ex.printStackTrace();
+            }
 
             networkServer.start(new PrintWriter(serverOutput));
 
@@ -1993,7 +2038,7 @@ public final class TestConfiguration {
 	 */
 	public static boolean loadingFromJars()
 	{
-        return SecurityManagerSetup.isJars;
+        return isJars;
 	}
     
     /**
@@ -2058,14 +2103,10 @@ public final class TestConfiguration {
         // Create the folder
         // TODO: Dump this configuration in some human readable format
         synchronized (base) {
-            AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-                public Boolean run() {
-                    if (folder.exists()) {
-                        // do something
-                    }
-                    return folder.mkdirs();
-                }
-            });
+            if (folder.exists()) {
+                // do something
+            }
+            folder.mkdirs();
         }
 
         return folder;
@@ -2119,32 +2160,6 @@ public final class TestConfiguration {
      * SecurityManager related configuration.
      */
     
-    /**
-     * Install the default security manager setup,
-     * for the current configuration.
-     * @throws PrivilegedActionException 
-     */
-    boolean defaultSecurityManagerSetup() {
-    	
-    	// Testing with the DB2 client has not been performed
-    	// under the security manager since it's not part
-    	// of Derby so no real interest in tracking down issues.
-    	if (jdbcClient.isDB2Client()) {
-    		SecurityManagerSetup.noSecurityManager();
-    		return false;
-    	} else {
-            if (SecurityManagerSetup.NO_POLICY.equals(
-                    BaseTestCase.getSystemProperty("java.security.policy")))
-            {
-                // Explict setting of no security manager
-                return false;
-            }
-    		SecurityManagerSetup.installSecurityManager();
-    		return true;
-    	}
-    }
-    
-    
     /*
     ** BUILTIN password handling.
     */
@@ -2178,4 +2193,178 @@ public final class TestConfiguration {
         }
         return dbName;
     }
+
+    /**
+     * Determine the settings of the classpath in order to configure
+     * the variables used in the testing policy files.
+     * Looks for three items:
+     * 
+     * Location of derbyTesting.jar via this class
+     * Location of derby.jar via org.apache.derby.jdbc.EmbeddedDataSource
+     * Location of derbyclient.jar via org.apache.derby.jdbc.ClientDataSource
+     * 
+     * Two options are supported, either all are in jar files or
+     * all are on the classpath. Properties are set as follows:
+     * 
+     * <P>
+     * Classpath:
+     * <BR>
+     * derbyTesting.codeclasses set to URL of classes folder
+     * <BR>
+     * derbyTesting.ppcodeclasses set to URL of the 'classes.pptesting' folder
+     * if it exists on the classpath. The existence of the package private tests
+     * is determined via org.apache.derby.PackagePrivateTestSuite
+     * <P>
+     * Jar files:
+     * <BR>
+     * derbyTesting.codejar - URL of derby.jar, derbyshared.jar,
+     * derbynet.jar and derbytools.jar, all assumed to be in the
+     * same location.
+     * <BR>
+     * derbyTesting.clientjar - URL of derbyclient.jar
+     * <BR>
+     * derbyTesting.testjar - URL of derbyTesting.jar
+     * <BR>
+     * derbyTesting.testjarpath - File system path to derbyTesting.jar
+     * if the jar has a URL with a file protocol.
+     * 
+     */
+    private static boolean determineClasspath()
+    {
+        //We need the junit classes to instantiate this class, so the
+        //following should not cause runtime errors.
+        setCodebase(TESTING_JUNIT, getURL(junit.framework.Test.class));
+	
+        // Load indirectly so we don't need ant-junit.jar at compile time.
+        setCodebase(TESTING_ANTJUNIT, "org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner");
+
+        setCodebase(TESTING_ANT, "org.apache.tools.ant.Task");
+
+        // variables for lucene jar files
+        URL luceneCore = getURL( "org.apache.lucene.store.FSDirectory" );
+        if ( luceneCore != null )
+        {
+            setCodebase(LUCENE_CORE, luceneCore);
+            classPathSet.setProperty( "derbyTesting.lucene.core.jar.file", luceneCore.getFile() );
+        }
+
+        // Load indirectly, normally no EMMA jars in the classpath.
+        // This property is needed to set correct permissions in policy files.
+        URL emma = getURL("com.vladium.emma.EMMAException");
+        if (emma != null) {
+            classPathSet.setProperty("emma.active", "");
+        }
+
+        /* When inserting XML values that use external DTD's, the JAXP
+         * parser needs permission to read the DTD files.  So here we set
+         * a property to hold the location of the JAXP implementation
+         * jar file.  We can then grant the JAXP impl the permissions
+         * needed for reading the DTD files.
+         */
+        setCodebase(JAXP, XML.getJAXPParserLocation());
+
+        URL testing = getURL(TestConfiguration.class);
+        URL ppTesting = null;
+        // Only try to load PackagePrivateTestSuite if the running JVM is
+        // Java 1.5 or newer (class version 49 = Java 1.5).
+        if (BaseTestCase.getClassVersionMajor() >= 49) {
+            ppTesting = getURL("org.apache.derby.PackagePrivateTestSuite");
+        }
+        boolean isClasspath = testing.toExternalForm().endsWith("/");
+        if (isClasspath) {
+            // ppTesting can be null, for instance if 'classes.pptesting' is
+            // not on the classpath.
+            setCodebase(PACKAGE_PRIVATE_CLASSES, ppTesting);
+            isJars = false;
+        }
+        else
+        {
+            isJars = true;
+        }
+        
+        setCodebase(DERBY_TESTING, testing);
+        if (testing.getProtocol().equals("file")) {
+            File f = new File(testing.getPath());
+            classPathSet.setProperty("derbyTesting.testjarpath", f.getAbsolutePath());
+            classPathSet.setProperty(Property.DERBY_INSTALL_PATH, f.getParentFile().getAbsolutePath());
+        }
+
+        setCodebase(DERBY_ENGINE, "org.apache.derby.database.Database");
+        setCodebase(DERBY_CLIENT, "org.apache.derby.client.ClientAutoloadedDriver");
+        setCodebase(DERBY_SHARED, "org.apache.derby.shared.common.error.MessageUtils");
+        setCodebase(DERBY_NETSERVER, "org.apache.derby.drda.NetworkServerControl");
+        setCodebase(DERBY_TOOLS, "org.apache.derby.tools.ij");
+        setCodebase(DERBY_OPTIONAL_TOOLS, "org.apache.derby.optional.utils.ToolUtilities");
+
+        return false;
+    }
+
+    /**
+     * Set the System property which identifies the
+     * location of a codebase referenced by derby_tests.policy.
+     *
+     * @param codebaseProperty Name of codebase variable.
+     * @param className Name of class used to locate the codebase URL.
+     */
+    private static void setCodebase
+      (
+       String codebaseProperty,
+       String className
+       )
+    {
+        if (className != null)
+        {
+            setCodebase(codebaseProperty, getURL(className));
+        }
+    }
+
+    /**
+     * Set the System property which identifies the
+     * location of a codebase referenced by derby_tests.policy.
+     *
+     * @param codebaseProperty Name of codebase variable.
+     * @param codebaseURL URL of codebase
+     */
+    private static void setCodebase
+      (
+       String codebaseProperty,
+       URL codebaseURL
+       )
+    {
+        if (codebaseURL != null)
+        {
+            classPathSet.setProperty(codebaseProperty, codebaseURL.toExternalForm());
+        }
+    }
+  
+    /**
+     * Get the URL of the code base from a class name.
+     * If the class cannot be loaded, null is returned.
+     */
+    public static URL getURL(String className) {
+        try {
+            return getURL(Class.forName(className));
+        } catch (ClassNotFoundException e) {
+            return null;
+        } catch (NoClassDefFoundError e) {
+            return null;
+        }
+    }
+	
+    /**
+     * Get the URL of the code base from a class.
+     */
+    static URL getURL(final Class cl)
+    {
+        /* It's possible that the class does not have a "codeSource"
+         * associated with it (ex. if it is embedded within the JVM,
+         * as can happen with Xalan and/or a JAXP parser), so in that
+         * case we just return null.
+         */
+        if (cl.getProtectionDomain().getCodeSource() == null)
+            return null;
+
+        return cl.getProtectionDomain().getCodeSource().getLocation();
+    }
+
 }

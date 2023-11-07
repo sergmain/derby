@@ -21,9 +21,6 @@
 
 package org.apache.derby.mbeans;
 
-import java.security.AccessControlException;
-import java.security.AccessController;
-
 import org.apache.derby.mbeans.VersionMBean;
 import org.apache.derby.shared.common.info.ProductVersionHolder;
 import org.apache.derby.shared.common.security.SystemPermission;
@@ -55,21 +52,9 @@ public class Version implements VersionMBean {
     */
     
     /**
-     * Ensure caller has permission to monitor Derby.
+     * Ensure caller has permission to monitor Derby. NOP now that Derby doesn't use the SecurityManager.
      */
     private void checkMonitor() {
-
-        try {
-            if (System.getSecurityManager() != null)
-                AccessController.checkPermission(
-                        new SystemPermission(permissionName,
-                                SystemPermission.MONITOR));
-        } catch (AccessControlException e) {
-            // Need to throw a simplified version as AccessControlException
-            // will have a reference to Derby's SystemPermission which most likely
-            // will not be available on the client.
-            throw new SecurityException(e.getMessage());
-        }
     }
     
     // ------------------------- MBEAN ATTRIBUTES  ----------------------------

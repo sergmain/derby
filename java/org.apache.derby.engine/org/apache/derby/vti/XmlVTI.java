@@ -26,8 +26,6 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -272,19 +270,11 @@ public  class   XmlVTI  extends StringColumnVTI
         ( final String fileName, String rowTag, ArrayList<String> parentTags, ArrayList<String> childTags )
         throws Exception
     {
-        FileInputStream fis = AccessController.doPrivileged
-            (
-             new PrivilegedAction<FileInputStream>()
-             {
-                 public FileInputStream run()
-                 {
-                     try {
-                         return new FileInputStream( new File( fileName ) );
-                     }
-                     catch (IOException ioe) { throw new IllegalArgumentException( ioe.getMessage(), ioe ); }
-                 }  
-             }
-           );
+        FileInputStream fis = null;
+        try {
+            fis = new FileInputStream( new File( fileName ) );
+        }
+        catch (IOException ioe) { throw new IllegalArgumentException( ioe.getMessage(), ioe ); }
         return xmlVTI( fis, rowTag, parentTags, childTags );
     }
 
@@ -303,19 +293,11 @@ public  class   XmlVTI  extends StringColumnVTI
         ( final String urlString, String rowTag, ArrayList<String> parentTags, ArrayList<String> childTags )
         throws Exception
     {
-        InputStream is = AccessController.doPrivileged
-            (
-             new PrivilegedAction<InputStream>()
-             {
-                 public InputStream run()
-                 {
-                     try {
-                         return (new URL( urlString )).openStream();
-                     }
-                     catch (IOException ioe) { throw new IllegalArgumentException( ioe.getMessage(), ioe ); }
-                 }  
-             }
-           );
+        InputStream is = null;
+        try {
+            is = (new URL( urlString )).openStream();
+        }
+        catch (IOException ioe) { throw new IllegalArgumentException( ioe.getMessage(), ioe ); }
         return xmlVTI( is, rowTag, parentTags, childTags );
     }
 

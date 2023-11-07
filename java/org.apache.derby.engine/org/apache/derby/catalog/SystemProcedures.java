@@ -21,8 +21,6 @@
 
 package org.apache.derby.catalog;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.Policy;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -2037,7 +2035,8 @@ public class SystemProcedures  {
 	}
 	
     /**
-     * Reload the policy file.
+     * Reload the policy file. This routine is a NOP now because Derby
+     * no longer supports the deprecated Java SecurityManager.
      * <p>
      * System procedure called thusly:
      *
@@ -2048,34 +2047,8 @@ public class SystemProcedures  {
     public static void SYSCS_RELOAD_SECURITY_POLICY()
         throws SQLException
     {
-        try {
-            // make sure that application code doesn't bypass security checks
-            // by calling this public entry point
-            SecurityUtil.authorize( Securable.RELOAD_SECURITY_POLICY );
-        }
-        catch (StandardException se) { throw PublicAPI.wrapStandardException( se ); }
-
-        // If no security manager installed then there
-        // is no policy to refresh. Calling Policy.getPolicy().refresh()
-        // without a SecurityManager seems to lock in a policy with
-        // no permissions thus ignoring the system property java.security.policy
-        // when later installing a SecurityManager.
-        if (System.getSecurityManager() == null)
-        {
-            return;
-        }
-        
-        try {
-            AccessController.doPrivileged(
-                    new PrivilegedAction<Object>() {
-                        public Object run() {
-                            Policy.getPolicy().refresh();
-                            return null;
-                        }
-                    });
-        } catch (SecurityException se) {
-            throw Util.policyNotReloaded(se);
-        }
+        throw PublicAPI.wrapStandardException
+            (StandardException.newException(SQLState.SECURITY_MANAGER_NOT_SUPPORTED));
     }
 
 	/**
@@ -2821,16 +2794,7 @@ public class SystemProcedures  {
      */
     private static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
 }

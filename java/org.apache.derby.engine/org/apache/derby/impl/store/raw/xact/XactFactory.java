@@ -61,10 +61,6 @@ import org.apache.derby.shared.common.error.StandardException;
 
 import org.apache.derby.iapi.util.InterruptStatus;
 
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.AccessController;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -1168,44 +1164,26 @@ public class XactFactory implements TransactionFactory, ModuleControl, ModuleSup
 	
     
     /**
-     * Privileged lookup of the ContextService. Private so that user code
+     * Private so that user code
      * can't call this entry point.
      */
     private static  ContextService    getContextService()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ContextService>()
-             {
-                 public ContextService run()
-                 {
-                     return ContextService.getFactory();
-                 }
-             }
-             );
+        return ContextService.getFactory();
     }
 
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object bootServiceModule
@@ -1215,47 +1193,17 @@ public class XactFactory implements TransactionFactory, ModuleControl, ModuleSup
          )
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.bootServiceModule( create, serviceModule, factoryInterface, properties );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.bootServiceModule( create, serviceModule, factoryInterface, properties );
     }
 
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object findServiceModule( final Object serviceModule, final String factoryInterface)
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.findServiceModule( serviceModule, factoryInterface );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.findServiceModule( serviceModule, factoryInterface );
     }
 
 }

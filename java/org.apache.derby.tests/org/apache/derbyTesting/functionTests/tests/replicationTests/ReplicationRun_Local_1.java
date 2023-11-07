@@ -22,8 +22,6 @@ package org.apache.derbyTesting.functionTests.tests.replicationTests;
 
 import junit.framework.Test;
 import org.apache.derbyTesting.junit.BaseTestSuite;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
-
 
 /**
  * Run a replication test on localhost
@@ -51,8 +49,7 @@ public class ReplicationRun_Local_1 extends ReplicationRun
         
         suite.addTestSuite( ReplicationRun_Local_1.class );
         
-        return SecurityManagerSetup.noSecurityManager(suite);
-
+        return suite;
     }
     
     public void testReplication_Local_1_InsertUpdateDeleteOnMaster()

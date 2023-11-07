@@ -24,9 +24,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import org.apache.derby.iapi.services.io.FileUtil;
 
 // Generic process and error tracing encapsulation.
@@ -182,62 +179,48 @@ public class DssTrace
             for (int attempt=0; attempt <2; attempt++) {
                 try {
                     // The writer will be buffered for effeciency.
-                    comBufferWriter =
-                        (AccessController.doPrivileged(
-                            new PrivilegedExceptionAction<PrintWriter>() {
-                                public PrintWriter run()
-                                        throws SecurityException, IOException {
-                                    File f = new File(fileName);
-                                    boolean exists = f.exists();
-                                    PrintWriter pw =
-                                        new PrintWriter(
-                                            new java.io.BufferedWriter(
-                                                new java.io.FileWriter(
-                                                    fileName),
-                                                4096));
-                                    if (!exists) {
-                                        FileUtil.limitAccessToOwner(f);
-                                    }
-                                    return pw;
-                                }
-                            }));
+                    File f = new File(fileName);
+                    boolean exists = f.exists();
+                    PrintWriter pw =
+                        new PrintWriter(
+                            new java.io.BufferedWriter(
+                                new java.io.FileWriter(
+                                    fileName),
+                                4096));
+                    if (!exists) {
+                        FileUtil.limitAccessToOwner(f);
+                    }
+                    comBufferWriter = pw;
                     // If we successfully made the file. break out here and don't retry
                     break;
-                } catch (PrivilegedActionException pae) {
-                    Exception e = pae.getException();
+                } catch (Exception e) {
                     // If we got a FileNotFoundException on the first attempt,
                     // it is likely that the directory did not exist. 
                     //We will try to make it.
                     if (attempt == 0 && (e instanceof FileNotFoundException)) {
                         final File traceDirectory = new File(fileName).getParentFile();
                         if (traceDirectory != null) {
-                            AccessController.doPrivileged(
-                                    new PrivilegedExceptionAction<Void>() {
-                                        public Void run() throws IOException {
-                                            // DERBY-4128: First try to create the
-                                            // directory with mkdir(), as that doesn't
-                                            // require read permission for the parent
-                                            // directory. It will only succeed if the
-                                            // parent directory exists. If mkdir()
-                                            // fails, retry with mkdirs(), which will
-                                            // create the parent directories as needed,
-                                            // but which also requires that read
-                                            // permission for the parent directory
-                                            // has been granted.
-                                            boolean created = traceDirectory.mkdir();
-                                            if (!created) {
-                                                created =
-                                                        traceDirectory.mkdirs();
-                                            }
 
-                                            if (created) {
-                                                FileUtil.limitAccessToOwner(
-                                                        traceDirectory);
-                                            }
-                                            return null;
-                                        }
-                                    });
+                            // DERBY-4128: First try to create the
+                            // directory with mkdir(), as that doesn't
+                            // require read permission for the parent
+                            // directory. It will only succeed if the
+                            // parent directory exists. If mkdir()
+                            // fails, retry with mkdirs(), which will
+                            // create the parent directories as needed,
+                            // but which also requires that read
+                            // permission for the parent directory
+                            // has been granted.
+                            boolean created = traceDirectory.mkdir();
+                            if (!created) {
+                                created =
+                                    traceDirectory.mkdirs();
+                            }
 
+                            if (created) {
+                                FileUtil.limitAccessToOwner(
+                                    traceDirectory);
+                            }
                         }
                     } else {
                         // This is our second attempt or we got some other exception besides

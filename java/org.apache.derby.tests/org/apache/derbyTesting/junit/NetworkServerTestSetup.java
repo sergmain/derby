@@ -27,10 +27,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -352,40 +348,25 @@ final public class NetworkServerTestSetup extends BaseTestSetup {
      * @throws IOException if a server socket couldn't be opened
      */
     private static void probeServerPort(final int port, final InetAddress addr)
-            throws IOException {
-        try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                public Void run() throws IOException {
-                    new ServerSocket(port, 0, addr).close();
-                    return null;
-                }
-            });
-        } catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getCause();
-        }
+        throws IOException {
+        new ServerSocket(port, 0, addr).close();
     }
 
     private void startWithAPI() throws Exception
     {
         BaseTestCase.println("Starting network server with NetworkServerControl api:");
             
-            serverOutput = AccessController.doPrivileged(
-                    new PrivilegedAction<FileOutputStream>() {
-                public FileOutputStream run() {
-                    File logs = new File("logs");
-                    logs.mkdir();
-                    File console = new File(logs, "serverConsoleOutput.log");
-                    FileOutputStream fos = null;
-                    try {
-                        fos = new FileOutputStream(console.getPath(), true);
-                    } catch (FileNotFoundException ex) {
-                        ex.printStackTrace();
-                    }
-                    return fos;
-                }
-            });
+        File logs = new File("logs");
+        logs.mkdir();
+        File console = new File(logs, "serverConsoleOutput.log");
+        FileOutputStream fos = null;
+        try {
+            serverOutput = new FileOutputStream(console.getPath(), true);
+        } catch (FileNotFoundException ex) {
+            ex.printStackTrace();
+        }
             
-            networkServerController.start(new PrintWriter(serverOutput));
+        networkServerController.start(new PrintWriter(serverOutput));
     }
     
     private void startWithCommand() throws Exception
@@ -412,46 +393,11 @@ final public class NetworkServerTestSetup extends BaseTestSetup {
         ArrayList<String> al = new ArrayList<String>();
         boolean         skipHostName = false;
 
-        // Loading from classes need to work-around the limitation of the
-        // default policy file doesn't work with classes.  Similarly, if we are
-        // running with Emma we don't run with the security manager, as the
-        // default server policy doesn't contain needed permissions and,
-        // additionally, Emma sources do not use doPrivileged blocks anyway.
-        if (!TestConfiguration.loadingFromJars() ||
-                BaseTestCase.runsWithEmma() || BaseTestCase.runsWithJaCoCo())
-        {
-            boolean setNoSecurityManager = true;
-            for (int i = 0; i < systemProperties.length; i++)
-            {
-                if (systemProperties[i].startsWith("java.security."))
-                {
-                    setNoSecurityManager = false;
-                    break;
-                }
-            }
-            for (int i = 0; i < startupArgs.length; i++)
-            {
-                if (startupArgs[i].equals("-noSecurityManager"))
-                {
-                    setNoSecurityManager = false;
-                    break;
-                }
-            }
-            if (setNoSecurityManager)
-            {
-                String[] newArgs = new String[startupArgs.length + 1];
-                System.arraycopy(startupArgs, 0, newArgs, 0, startupArgs.length);
-                newArgs[newArgs.length - 1] = "-noSecurityManager";
-                startupArgs = newArgs;
-            }
-        }
-
         int         count = systemProperties.length;
         for ( int i = 0; i < count; i++ )
         {
             al.add( "-D" + systemProperties[ i ] );
         }
-
         String serverName = NetworkServerControl.class.getName();
         if (useModules)
         {

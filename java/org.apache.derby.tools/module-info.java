@@ -21,6 +21,10 @@
 
 /**
  * <p>
+ * This module corresponds to <i>derbytools.jar</i>. Among other functionality, it contains the embedded and client JDBC drivers.
+ * </p>
+ * 
+ * <p>
  * A set of basic tools (including an interactive SQL monitor) can access
  * Derby databases via either the embedded or remote client
  * drivers. Optional functionality includes:

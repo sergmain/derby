@@ -31,7 +31,6 @@ import org.apache.derby.optional.api.LuceneIndexDescriptor;
 import org.apache.derby.optional.api.LuceneUtils;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.DatabasePropertyTestSetup;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 import org.apache.lucene.analysis.Analyzer;
 
@@ -104,7 +103,7 @@ public class LuceneCoarseAuthorizationTest extends GeneratedColumnsHelper
         BaseTestSuite suite = (BaseTestSuite)TestConfiguration.embeddedSuite(
             LuceneCoarseAuthorizationTest.class);
 
-        Test        unsecureTest = SecurityManagerSetup.noSecurityManager( suite );
+        Test        unsecureTest = suite;
         Test        authenticatedTest = DatabasePropertyTestSetup.builtinAuthentication
             ( unsecureTest, LEGAL_USERS, "LuceneCoarsePermissions" );
 

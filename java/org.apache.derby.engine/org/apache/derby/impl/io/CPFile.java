@@ -27,8 +27,6 @@ import java.io.InputStream;
 
 import java.io.FileNotFoundException;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * This class provides a class path based implementation of the StorageFile interface. It is used by the
@@ -139,57 +137,34 @@ class CPFile extends InputStreamFile<CPStorageFactory>
         }
     }
 
-    /** Privileged wrapper for {@code Thread.getContextClassLoader()}. */
     private static ClassLoader getContextClassLoader(final Thread thread) {
-        return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
-            public ClassLoader run() {
-                return thread.getContextClassLoader();
-            }
-        });
+        return thread.getContextClassLoader();
     }
 
-    /** Privileged wrapper for {@code ClassLoader.getResource(String)}. */
+    /** This used to be a Privileged wrapper for {@code ClassLoader.getResource(String)}. */
     private static URL getResource(
             final ClassLoader cl, final String name) {
-        return AccessController.doPrivileged(new PrivilegedAction<URL>() {
-            public URL run() {
-                return cl.getResource(name);
-            }
-        });
+        return cl.getResource(name);
     }
 
-    /** Privileged wrapper for {@code ClassLoader.getSystemResource(String)}. */
+    /** This used to be a Privileged wrapper for {@code ClassLoader.getSystemResource(String)}. */
     private static URL getSystemResource(final String name) {
-        return AccessController.doPrivileged(new PrivilegedAction<URL>() {
-            public URL run() {
-                return ClassLoader.getSystemResource(name);
-            }
-        });
+        return ClassLoader.getSystemResource(name);
     }
 
     /**
-     * Privileged wrapper for {@code ClassLoader.getResourceAsStream(String)}.
+     * This used to be a Privileged wrapper for {@code ClassLoader.getResourceAsStream(String)}.
      */
     private static InputStream getResourceAsStream(
             final ClassLoader cl, final String name) {
-        return AccessController.doPrivileged(
-                new PrivilegedAction<InputStream>() {
-            public InputStream run() {
-                return cl.getResourceAsStream(name);
-            }
-        });
+        return cl.getResourceAsStream(name);
     }
 
     /**
-     * Privileged wrapper for
+     * This used to be a Privileged wrapper for
      * {@code ClassLoader.getSystemResourceAsStream(String)}.
      */
     private static InputStream getSystemResourceAsStream(final String name) {
-        return AccessController.doPrivileged(
-                new PrivilegedAction<InputStream>() {
-            public InputStream run() {
-                return ClassLoader.getSystemResourceAsStream(name);
-            }
-        });
+        return ClassLoader.getSystemResourceAsStream(name);
     }
 }

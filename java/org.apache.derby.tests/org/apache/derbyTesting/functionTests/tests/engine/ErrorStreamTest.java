@@ -29,10 +29,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.sql.SQLException;
 import junit.framework.Test;
 import org.apache.derbyTesting.functionTests.util.PrivilegedFileOpsForTests;
@@ -637,19 +633,8 @@ public class ErrorStreamTest extends BaseJDBCTestCase {
     }
 
     private static void assertNotDirectory(final File f) throws IOException {
-        try {
-            AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<Void>() {
-                public Void run() throws IOException {
-                    assertFalse("assertNotDirectory failed: " +
-                          f.getCanonicalPath(), f.isDirectory());
-                    return null;
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            // e.getException() should be an instance of IOException.
-            throw (IOException) e.getException();
-        }
+        assertFalse("assertNotDirectory failed: " +
+                    f.getCanonicalPath(), f.isDirectory());
     }
 
     private static void assertIsEmpty(final File f) throws IOException {
@@ -662,39 +647,17 @@ public class ErrorStreamTest extends BaseJDBCTestCase {
 
 
     private static void assertNotEmpty(final File f) throws IOException {
-        try {
-            AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<Void>() {
-                public Void run() throws IOException {
-                    assertTrue("assertNotEmpty failed: " + f.getCanonicalPath()
-                          + " does not exist.", f.exists());
-                    FileInputStream fis = new FileInputStream(f);
-                    int result = fis.read();
-                    fis.close();
-                    assertTrue("assertNotEmpty failed: " + f.getCanonicalPath()
-                          + " is empty.", -1 != result);
-                    return null;
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            // e.getException() should be an instance of IOException.
-            throw (IOException) e.getException();
-        }
+        assertTrue("assertNotEmpty failed: " + f.getCanonicalPath()
+                   + " does not exist.", f.exists());
+        FileInputStream fis = new FileInputStream(f);
+        int result = fis.read();
+        fis.close();
+        assertTrue("assertNotEmpty failed: " + f.getCanonicalPath()
+                   + " is empty.", -1 != result);
     }
 
     private static void assertFileSize(final File f, final int size) throws IOException {
-        try {
-            AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<Void>() {
-                public Void run() throws IOException {
-                    assertEquals("assertFileEize failed for file " + f.getName() + ": ", size, f.length());
-                    return null;
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            // e.getException() should be an instance of IOException.
-            throw (IOException) e.getException();
-        }
+        assertEquals("assertFileEize failed for file " + f.getName() + ": ", size, f.length());
     }
 
     private static void assertIsExisting(final File f) throws IOException {
@@ -715,44 +678,19 @@ public class ErrorStreamTest extends BaseJDBCTestCase {
     }
 
     private static String getCanonicalPath(final File f) throws IOException {
-        try {
-            return AccessController.doPrivileged(
-                  new PrivilegedExceptionAction<String>() {
-                public String run() throws IOException {
-                    return f.getCanonicalPath();
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            // e.getException() should be an instance of IOException.
-            throw (IOException) e.getException();
-        }
+        return f.getCanonicalPath();
     }
 
     private static void makeDirIfNotExisting(final String filename) {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                File f = new File(filename);
-                if(!f.exists()) {
-                    f.mkdir();
-                }
-                return null;
-            }
-        });
+        File f = new File(filename);
+        if(!f.exists()) {
+            f.mkdir();
+        }
     }
 
     private static FileOutputStream newFileOutputStream(final File f)
     throws FileNotFoundException {
-        try {
-            return AccessController.doPrivileged(
-                  new PrivilegedExceptionAction<FileOutputStream>() {
-                public FileOutputStream run() throws FileNotFoundException {
-                    return new FileOutputStream(f);
-                }
-            });
-            } catch (PrivilegedActionException e) {
-                // e.getException() should be a FileNotFoundException.
-                throw (FileNotFoundException) e.getException();
-            }
+        return new FileOutputStream(f);
     }
 
 

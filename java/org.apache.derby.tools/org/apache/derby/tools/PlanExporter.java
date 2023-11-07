@@ -26,9 +26,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 import org.apache.derby.iapi.tools.i18n.LocalizedResource;
 import org.apache.derby.impl.tools.planexporter.AccessDatabase;
@@ -231,19 +228,8 @@ public class PlanExporter {
         final String fileName = arg.toUpperCase().endsWith(".XML")
                                 ? arg : (arg + ".xml");
 
-        Writer out;
-        try {
-            out = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<Writer>() {
-                @Override
-                public Writer run() throws IOException {
-                    return new OutputStreamWriter(
-                            new FileOutputStream(fileName), "UTF-8");
-                }
-            });
-        } catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getCause();
-        }
+        Writer out = new OutputStreamWriter(
+            new FileOutputStream(fileName), "UTF-8");
 
         try {
             xmlFile.writeTheXMLFile(stmt, time, out, xsl);
@@ -278,19 +264,10 @@ public class PlanExporter {
 
     private static void deleteFile(final String fileName)
     {
-        AccessController.doPrivileged
-        (new java.security.PrivilegedAction<Object>() {
-
-            public Object run() {
-                File delFile = new File(fileName);
-                if (!delFile.exists())
-                    return null;
-                delFile.delete();
-                return null;
-            }
-        }
-        );
-
+        File delFile = new File(fileName);
+        if (!delFile.exists())
+        { return; }
+        delFile.delete();
     }
 
 }

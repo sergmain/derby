@@ -24,9 +24,6 @@ package org.apache.derby.impl.sql.compile;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
 import java.sql.SQLException;
 import org.apache.derby.iapi.db.OptimizerTrace;
 import org.apache.derby.shared.common.error.PublicAPI;
@@ -157,29 +154,20 @@ public	class   OptimizerTracer  implements OptionalTool
                 (configurationParameters.length > 0)
                 )
             {
-                pw = AccessController.doPrivileged
-                    (
-                     new PrivilegedExceptionAction<PrintWriter>()
-                     {
-                         public PrintWriter run() throws SQLException
-                         {
-                             try {
-                                 String fileName = configurationParameters[ 0 ];
-                                 File   outputFile = new File( fileName );
+                try {
+                    String fileName = configurationParameters[ 0 ];
+                    File   outputFile = new File( fileName );
 
-                                 if ( outputFile.exists() )
-                                 {
-                                     throw PublicAPI.wrapStandardException
-                                         (
-                                          StandardException.newException( SQLState.DATA_FILE_EXISTS, fileName )
-                                          );
-                                 }
+                    if ( outputFile.exists() )
+                    {
+                        throw PublicAPI.wrapStandardException
+                            (
+                                StandardException.newException( SQLState.DATA_FILE_EXISTS, fileName )
+                                );
+                    }
                                  
-                                 return new PrintWriter( outputFile );
-                             } catch (IOException ioe) { throw new IllegalArgumentException( ioe.getMessage(), ioe ); }
-                         }  
-                     }
-                     );
+                    pw = new PrintWriter( outputFile );
+                } catch (IOException ioe) { throw wrap(new IllegalArgumentException( ioe.getMessage(), ioe )); }
                 needsClosing = true;
             }
             else { pw = new PrintWriter( System.out ); }
@@ -192,17 +180,6 @@ public	class   OptimizerTracer  implements OptionalTool
 
             if ( needsClosing ) { pw.close(); }
             
-        }
-        catch (Exception e)
-        {
-            if ( e.getMessage() == null )
-            {
-                Throwable   cause = e.getCause();
-                if ( (cause != null) && (cause instanceof SQLException) )
-                { throw (SQLException) cause; }
-            }
-            
-            throw wrap( e );
         }
         finally
         {
@@ -229,28 +206,12 @@ public	class   OptimizerTracer  implements OptionalTool
         return new SQLException( errorMessage, sqlState );
     }
     /**
-     * Privileged lookup of a Context. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Context    getContext( final String contextID )
     {
-        if ( System.getSecurityManager() == null )
-        {
-            return ContextService.getContext( contextID );
-        }
-        else
-        {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedAction<Context>()
-                 {
-                     public Context run()
-                     {
-                         return ContextService.getContext( contextID );
-                     }
-                 }
-                 );
-        }
+        return ContextService.getContext( contextID );
     }
 
 }

@@ -25,8 +25,6 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.InetAddress;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.StringTokenizer;
@@ -553,14 +551,7 @@ public class NetServlet extends HttpServlet {
         };
         Thread servThread = null;
         try {
-            servThread = AccessController.doPrivileged(
-                                new PrivilegedExceptionAction<Thread>() {
-                                    public Thread run() throws Exception
-                                    {
-                                        return new Thread(service);
-                                    }
-                                }
-                            );
+            servThread = new Thread(service);
         }
         catch (Exception e) {
             throw new RuntimeException(e.getMessage());

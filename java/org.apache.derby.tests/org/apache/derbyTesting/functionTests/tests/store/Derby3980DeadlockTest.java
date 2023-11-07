@@ -34,7 +34,6 @@ import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.BaseTestCase;
 import org.apache.derbyTesting.junit.CleanDatabaseTestSetup;
 import org.apache.derbyTesting.junit.DatabasePropertyTestSetup;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.SystemPropertyTestSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
@@ -51,8 +50,6 @@ public class Derby3980DeadlockTest extends BaseJDBCTestCase {
     private final Object syncObject = new Object();
     private int startedCount = 0;
     private static final String fprefix = "javacore";
-    private static final String POLICY_FILE_NAME =
-        "org/apache/derbyTesting/functionTests/tests/store/Derby3980DeadlockTest.policy";
     
     public Derby3980DeadlockTest(String name) {
         super(name);
@@ -84,7 +81,7 @@ public class Derby3980DeadlockTest extends BaseJDBCTestCase {
                 1,listExceptions.size());
     }
     /**
-     * Decorate a test with SecurityManagerSetup, clientServersuite, and
+     * Decorate a test with  clientServersuite and
      * SupportFilesSetup.
      * 
      * @return the decorated test
@@ -96,8 +93,8 @@ public class Derby3980DeadlockTest extends BaseJDBCTestCase {
         diagProperties.setProperty("derby.infolog.append", "true");
         test = new SystemPropertyTestSetup(test, diagProperties, true);
      
-        // Install a security manager using the initial policy file.
-        return new SecurityManagerSetup(test, POLICY_FILE_NAME);
+        return test;
+        
     }
     
     private void waitForThreads(Thread[] t) {

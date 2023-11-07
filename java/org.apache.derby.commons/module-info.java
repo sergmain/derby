@@ -21,6 +21,10 @@
 
 /**
  * <p>
+ * This module corresponds to <i>derbyshared.jar</i>.
+ * </p>
+ * 
+ * <p>
  * All configurations need this utility module.
  * </p>
  * 

@@ -23,9 +23,6 @@ package org.apache.derby.optional.lucene;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 
 import org.apache.lucene.store.AlreadyClosedException;
@@ -109,23 +106,8 @@ class DerbyIndexInput   extends IndexInput
     private void    setConstructorFields( final StorageFile file )
         throws IOException
     {
-        try {
-            AccessController.doPrivileged
-            (
-             new PrivilegedExceptionAction<Void>()
-             {
-                public Void run() throws IOException
-                {
-                    _file = file;
-                    _sraf = _file.getRandomAccessFile( "r" );
-
-                    return null;
-                }
-             }
-             );
-        } catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getCause();
-        }
+        _file = file;
+        _sraf = _file.getRandomAccessFile( "r" );
     }
 
     /////////////////////////////////////////////////////////////////////

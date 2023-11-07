@@ -20,10 +20,8 @@
 package org.apache.derbyTesting.junit;
 
 import java.io.PrintStream;
-import java.security.AccessController;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -63,18 +61,12 @@ public class EnvTest extends TestCase {
     }
     
     /**
-     * Get the system properties in a privileged block.
+     * Get the system properties. in a privileged block.
      *
      * @return the system properties.
      */
     public  static final Properties getSystemProperties() {
-        // Fetch system properties in a privileged block.
-        return AccessController.doPrivileged(
-                new PrivilegedAction<Properties>() {
-            public Properties run() {
-                return System.getProperties();
-            }
-        });
+        return System.getProperties();
     }
 	/*
 	** Tests of the JDBC.vmSupportsXXX to see which JDBC support is available.

@@ -1015,6 +1015,7 @@ public class AutoGenJDBC30Test extends BaseJDBCTestCase {
      * Expected result: no exceptions should occur.
      * @throws SQLException 
      */
+    @SuppressWarnings({"deprecation","removal"})
     public void testResultSetGarbageCollection() throws SQLException
     {
         Connection conn = getConnection();

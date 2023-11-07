@@ -29,36 +29,35 @@ import org.apache.derby.iapi.util.ByteArray;
 */
 
 public class ReflectClassesJava2 extends DatabaseClasses
-	implements java.security.PrivilegedAction<Object>
 {
 
-	private java.util.HashMap<String,ReflectGeneratedClass> preCompiled;
+    private java.util.HashMap<String,ReflectGeneratedClass> preCompiled;
 
-	private int action = -1;
+    private int action = -1;
 
-	synchronized LoadedGeneratedClass loadGeneratedClassFromData(String fullyQualifiedName, ByteArray classDump) {
+    synchronized LoadedGeneratedClass loadGeneratedClassFromData(String fullyQualifiedName, ByteArray classDump) {
 
-		if (classDump == null || classDump.getArray() == null) {
+        if (classDump == null || classDump.getArray() == null) {
 
-			if (preCompiled == null)
-				preCompiled = new java.util.HashMap<String,ReflectGeneratedClass>();
-			else
-			{
-				ReflectGeneratedClass gc = preCompiled.get(fullyQualifiedName);
-				if (gc != null)
-					return gc;
-			}
+            if (preCompiled == null)
+                preCompiled = new java.util.HashMap<String,ReflectGeneratedClass>();
+            else
+            {
+                ReflectGeneratedClass gc = preCompiled.get(fullyQualifiedName);
+                if (gc != null)
+                    return gc;
+            }
 
-			// not a generated class, just load the class directly.
-			try {
-				Class jvmClass = Class.forName(fullyQualifiedName);
-				ReflectGeneratedClass gc = new ReflectGeneratedClass(this, jvmClass);
-				preCompiled.put(fullyQualifiedName, gc);
-				return gc;
-			} catch (ClassNotFoundException cnfe) {
-				throw new NoClassDefFoundError(cnfe.toString());
-			}
-		}
+            // not a generated class, just load the class directly.
+            try {
+                Class jvmClass = Class.forName(fullyQualifiedName);
+                ReflectGeneratedClass gc = new ReflectGeneratedClass(this, jvmClass);
+                preCompiled.put(fullyQualifiedName, gc);
+                return gc;
+            } catch (ClassNotFoundException cnfe) {
+                throw new NoClassDefFoundError(cnfe.toString());
+            }
+        }
 
         // Generated class. Make sure that it lives in the org.apache.derby.exe package
         int     lastDot = fullyQualifiedName.lastIndexOf( "." );
@@ -74,55 +73,54 @@ public class ReflectClassesJava2 extends DatabaseClasses
             throw new IllegalArgumentException( fullyQualifiedName );
         }
         
-		action = 1;
-		return ((ReflectLoaderJava2) java.security.AccessController.doPrivileged(this)).loadGeneratedClass(fullyQualifiedName, classDump);
-	}
+        action = 1;
+        return ((ReflectLoaderJava2) run()).loadGeneratedClass(fullyQualifiedName, classDump);
+    }
 
-	public final Object run() {
+    public final Object run() {
 
-		try {
-			// SECURITY PERMISSION - MP2
-			switch (action) {
-			case 1:
-				return new ReflectLoaderJava2(getClass().getClassLoader(), this);
-			case 2:
-				return Thread.currentThread().getContextClassLoader();
-			default:
-				return null;
-			}
-		} finally {
-			action = -1;
-		}
-		
-	}
-
-	Class loadClassNotInDatabaseJar(String name) throws ClassNotFoundException {
-		
-		Class foundClass = null;
-		
-	    // We may have two problems with calling  getContextClassLoader()
-	    // when trying to find our own classes for aggregates.
-	    // 1) If using the URLClassLoader a ClassNotFoundException may be 
-	    //    thrown (Beetle 5002).
-	    // 2) If Derby is loaded with JNI, getContextClassLoader()
-	    //    may return null. (Beetle 5171)
-	    //
-	    // If this happens we need to user the class loader of this object
-	    // (the classLoader that loaded Derby). 
-	    // So we call Class.forName to ensure that we find the class.
         try {
-        	ClassLoader cl;
-        	synchronized(this) {
-        	  action = 2;
-              cl = ((ClassLoader)
-			      java.security.AccessController.doPrivileged(this));
-        	}
+            // SECURITY PERMISSION - MP2
+            switch (action) {
+            case 1:
+                return new ReflectLoaderJava2(getClass().getClassLoader(), this);
+            case 2:
+                return Thread.currentThread().getContextClassLoader();
+            default:
+                return null;
+            }
+        } finally {
+            action = -1;
+        }
+		
+    }
+
+    Class loadClassNotInDatabaseJar(String name) throws ClassNotFoundException {
+		
+        Class foundClass = null;
+		
+        // We may have two problems with calling  getContextClassLoader()
+        // when trying to find our own classes for aggregates.
+        // 1) If using the URLClassLoader a ClassNotFoundException may be 
+        //    thrown (Beetle 5002).
+        // 2) If Derby is loaded with JNI, getContextClassLoader()
+        //    may return null. (Beetle 5171)
+        //
+        // If this happens we need to user the class loader of this object
+        // (the classLoader that loaded Derby). 
+        // So we call Class.forName to ensure that we find the class.
+        try {
+            ClassLoader cl;
+            synchronized(this) {
+                action = 2;
+                cl = (ClassLoader) run();
+            }
 			
-			foundClass = (cl != null) ?  cl.loadClass(name) 
-				      :Class.forName(name);
+            foundClass = (cl != null) ?  cl.loadClass(name) 
+                :Class.forName(name);
         } catch (ClassNotFoundException cnfe) {
             foundClass = Class.forName(name);
         }
-		return foundClass;
-	}
+        return foundClass;
+    }
 }

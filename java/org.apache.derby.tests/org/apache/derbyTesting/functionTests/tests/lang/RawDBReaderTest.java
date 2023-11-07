@@ -30,7 +30,6 @@ import java.sql.SQLException;
 import junit.framework.Test;
 import org.apache.derbyTesting.junit.DatabasePropertyTestSetup;
 import org.apache.derbyTesting.junit.Decorator;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.SupportFilesSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
@@ -119,9 +118,7 @@ public class RawDBReaderTest extends GeneratedColumnsHelper
     {
         Test baseTest = TestConfiguration.embeddedSuite(RawDBReaderTest.class);
 
-        // We don't expect that users of this tool will run with a security
-        // manager. The tool is run standalone behind a firewall.
-        Test        wideOpenTest = SecurityManagerSetup.noSecurityManager( baseTest );
+        Test        wideOpenTest = baseTest;
 
         // don't teardown the corrupt database. instead, just delete it in our
         // own tearDown() method. this is to prevent the corrupt database from

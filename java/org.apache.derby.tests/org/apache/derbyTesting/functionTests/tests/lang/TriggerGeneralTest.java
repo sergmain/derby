@@ -39,7 +39,6 @@ import org.apache.derby.iapi.db.Factory;
 import org.apache.derby.iapi.db.TriggerExecutionContext;
 import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.JDBC;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.SupportFilesSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
@@ -87,7 +86,7 @@ public final class TriggerGeneralTest extends BaseJDBCTestCase {
                    new String[] {
                    "functionTests/tests/lang/dcl_emc1.jar",
                    });
-        return SecurityManagerSetup.noSecurityManager(t);
+        return t;
     }
 
     public void testTriggersInGeneral() throws Exception

@@ -21,10 +21,6 @@
 
 package org.apache.derbyTesting.unitTests.services;
 
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-
 import org.apache.derbyTesting.unitTests.harness.T_Generic;
 import org.apache.derbyTesting.unitTests.harness.T_Fail;
 
@@ -351,18 +347,8 @@ public class T_CacheService extends T_Generic implements CacheableFactory {
         throws StandardException
     {
         try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.startSystemModule( factoryInterface );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
+            return Monitor.startSystemModule( factoryInterface );
+        } catch (Exception pae)
         {
             throw StandardException.plainWrapException( pae );
         }

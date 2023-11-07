@@ -23,6 +23,7 @@ package org.apache.derbyTesting.functionTests.tests.lang;
 import java.io.IOException;
 import java.io.Reader;
 import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -33,13 +34,13 @@ import java.util.List;
 import java.util.Locale;
 import javax.xml.parsers.DocumentBuilderFactory;
 import junit.framework.Test;
+import org.apache.derby.iapi.sql.conn.ConnectionUtil;
 import org.apache.derby.optional.api.LuceneIndexDescriptor;
 import org.apache.derby.optional.api.LuceneUtils;
 import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.JDBC;
 import org.apache.derbyTesting.junit.LocaleTestSetup;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.Tokenizer;
@@ -69,15 +70,15 @@ public class LuceneSupportTest extends BaseJDBCTestCase {
 	}
 	
 	public static Test suite() {
-        BaseTestSuite suite = new BaseTestSuite("LuceneSupportTest");
+            BaseTestSuite suite = new BaseTestSuite("LuceneSupportTest");
 
-        Test    baseTest = TestConfiguration.embeddedSuite(LuceneSupportTest.class);
-        Test        singleUseTest = TestConfiguration.singleUseDatabaseDecorator( baseTest );
-        Test        localizedTest = new LocaleTestSetup( singleUseTest, new Locale( "en", "US" ) );
+            Test    baseTest = TestConfiguration.embeddedSuite(LuceneSupportTest.class);
+            Test        singleUseTest = TestConfiguration.singleUseDatabaseDecorator( baseTest );
+            Test        localizedTest = new LocaleTestSetup( singleUseTest, new Locale( "en", "US" ) );
 		
-		suite.addTest(SecurityManagerSetup.noSecurityManager(localizedTest));
+            suite.addTest(localizedTest);
  
-		return suite;
+            return suite;
 	}
 	
 	public void testCreateAndQueryIndex() throws Exception {
@@ -89,7 +90,7 @@ public class LuceneSupportTest extends BaseJDBCTestCase {
             (
              "create function getDatabaseLocale() returns varchar( 20 )\n" +
              "language java parameter style java reads sql data\n" +
-             "external name 'org.apache.derbyTesting.functionTests.tests.lang.LuceneSupportPermsTest.getDatabaseLocale()'\n"
+             "external name 'org.apache.derbyTesting.functionTests.tests.lang.LuceneSupportTest.getDatabaseLocale()'\n"
              ).executeUpdate();
 	    JDBC.assertFullResultSet
             (
@@ -527,4 +528,51 @@ public class LuceneSupportTest extends BaseJDBCTestCase {
 	    assertUpdateCount(cSt, 0);
 	    super.tearDown();
 	}
+
+    static  void    loadTestTable( Connection conn ) throws Exception
+    {
+        conn.prepareStatement
+            (
+             "create table textTable( keyCol int primary key, textCol clob )"
+             ).execute();
+        conn.prepareStatement
+            (
+             "insert into textTable values\n" +
+             "( 1, 'one' ),\n" +
+             "( 2, 'one two' ),\n" +
+             "( 3, 'one two three' ),\n" +
+             "( 4, 'one two three four' ),\n" +
+             "( 5, 'one two three four five' ),\n" +
+             "( 6, 'one two three four five six' ),\n" +
+             "( 7, 'one two three four five six seven' ),\n" +
+             "( 8, 'one two three four five six seven eight' ),\n" +
+             "( 9, 'one two three four five six seven eight nine' ),\n" +
+             "( 10, 'one two three four five six seven eight nine ten' ),\n" +
+             "( 101, 'bricks' ),\n" +
+             "( 102, 'bricks and mortar' ),\n" +
+             "( 103, 'bricks and mortar, tea' ),\n" +
+             "( 104, 'bricks and mortar, tea, tears' ),\n" +
+             "( 105, 'bricks and mortar, tea, tears, turtle' ),\n" +
+             "( 106, 'bricks and mortar, tea, tears, turtle, soup' ),\n" +
+             "( 107, 'bricks and mortar, tea, tears, turtle, soup, when in the course' ),\n" +
+             "( 108, 'bricks and mortar, tea, tears, turtle, soup, when in the course of human events' ),\n" +
+             "( 109, 'bricks and mortar, tea, tears, turtle, soup, when in the course of human events you want' ),\n" +
+             "( 110, 'bricks and mortar, tea, tears, turtle, soup, when in the course of human events you want better cell coverage' )\n"
+             ).execute();
+    }
+    static  void    unloadTestTable( Connection conn ) throws Exception
+    {
+        conn.prepareStatement
+            (
+             "drop table textTable"
+             ).execute();
+    }
+
+    /** Get the database locale */
+    public  static  String  getDatabaseLocale()
+        throws SQLException
+    {
+        return ConnectionUtil.getCurrentLCC().getDatabase().getLocale().toString();
+    }
+    
 }

@@ -30,7 +30,6 @@ import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.Derby;
 import org.apache.derbyTesting.junit.JDBCDataSource;
 import org.apache.derbyTesting.junit.NetworkServerTestSetup;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.SupportFilesSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
@@ -64,7 +63,14 @@ public class SSLTest extends BaseJDBCTestCase
         
         // Need derbynet.jar in the classpath!
         if (!Derby.hasServer())
+        {
             return suite;
+        }
+
+        // SSL as used by these tests was broken by JDK 10.
+        // See https://issues.apache.org/jira/browse/DERBY-6998
+        // and https://bugs.openjdk.java.net/browse/JDK-8211426.
+        if (vmAtLeast(1, 10)) { return suite; }
         
         suite.addTest(decorateTest("testSSLBasicDSConnect"));
         suite.addTest(decorateTest("testSSLBasicDSPlainConnect"));
@@ -95,8 +101,7 @@ public class SSLTest extends BaseJDBCTestCase
                                        startupArgs,
                                        true);
         
-        Test testSetup =
-            SecurityManagerSetup.noSecurityManager(networkServerTestSetup);
+        Test testSetup = networkServerTestSetup;
         
         testSetup = 
             new SupportFilesSetup(testSetup,

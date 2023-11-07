@@ -21,8 +21,6 @@
 
 package org.apache.derby.impl.services.cache;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
@@ -803,21 +801,12 @@ final class ConcurrentCache implements CacheManager {
     }
     
     /**
-     * Privileged module lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private static  Object getSystemModule( final String factoryInterface )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     return Monitor.getSystemModule( factoryInterface );
-                 }
-             }
-             );
+        return Monitor.getSystemModule( factoryInterface );
     }
 
 }

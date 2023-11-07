@@ -22,11 +22,6 @@
 package org.apache.derby.impl.services.jmx;
 
 import java.lang.management.ManagementFactory;
-import java.security.AccessControlException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -169,22 +164,7 @@ public final class JMXManagementService implements ManagementService, ModuleCont
      */
     private synchronized void findServer() {
         
-        try {
-            mbeanServer = AccessController
-                    .doPrivileged(new PrivilegedAction<MBeanServer>() {
-                        public MBeanServer run() {
-                            return ManagementFactory.getPlatformMBeanServer();
-                        }
-                    });
-            
-        } catch (SecurityException se) {
-            // Ignoring inability to create or
-            // find the mbean server. MBeans can continue
-            // to be registered with this service and
-            // startMangement() can be called to get
-            // them registered with JMX if someone else
-            // starts the MBean server.
-        }
+        mbeanServer = ManagementFactory.getPlatformMBeanServer();
     }
 
     /**
@@ -251,25 +231,7 @@ public final class JMXManagementService implements ManagementService, ModuleCont
         if (mbeanServer.isRegistered(beanName))
             return;
             
-        try {
-
-            AccessController
-               .doPrivileged(new PrivilegedExceptionAction<Object>() {
-
-                    public Object run() throws JMException {
-                        mbeanServer.registerMBean(standardMBean, beanName);
-                        return null;
-                    }
-
-                });
-
-        } catch (PrivilegedActionException pae) {
-            throw (JMException) pae.getException();
-        } catch (SecurityException se) {
-            // If we can't register the MBean then so be it.
-            // The application can later enabled the MBeans
-            // by using org.apache.derby.mbeans.Management
-        }
+        mbeanServer.registerMBean(standardMBean, beanName);
     }
     
     /**
@@ -314,28 +276,14 @@ public final class JMXManagementService implements ManagementService, ModuleCont
             return;
 
         try {
-
-            AccessController
-                    .doPrivileged(new PrivilegedExceptionAction<Object>() {
-
-                        public Object run() throws JMException {
-                            mbeanServer.unregisterMBean(mbeanName);
-                            return null;
-                        }
-
-                    });
-
-        } catch (PrivilegedActionException pae) {
-            // TODO - this is called on shutdown where
-            // we don't really care about errors.
-            // JMException jme = (JMException) pae.getException();
-            //if (!(jme instanceof InstanceNotFoundException))
-                // throw StandardException.plainWrapException(jme);
-        } catch (SecurityException se) {
-            // Can't unregister the MBean we registered due to permission
-            // problems, oh-well just leave it there. We are fail-safe
-            // if we attempt to re-register it.
+            mbeanServer.unregisterMBean(mbeanName);
         }
+        // TODO - this is called on shutdown where
+        // we don't really care about errors.
+        // JMException jme = (JMException) pae.getException();
+        //if (!(jme instanceof InstanceNotFoundException))
+        // throw StandardException.plainWrapException(jme);
+        catch (Exception infe) {}
     }
 
     public synchronized boolean isManagementActive() {
@@ -407,19 +355,10 @@ public final class JMXManagementService implements ManagementService, ModuleCont
                 SystemPermission.JMX, SystemPermission.CONTROL);
 
     /**
-     * Require SystemPermission("jmx", "control") to change
-     * the management state.
+     * This method used to require SystemPermission("jmx", "control") to change
+     * the management state. 
      */
     private void checkJMXControl() {
-        try {
-            if (System.getSecurityManager() != null)
-                AccessController.checkPermission(CONTROL);
-        } catch (AccessControlException e) {
-            // Need to throw a simplified version as AccessControlException
-            // will have a reference to Derby's SystemPermission which most likely
-            // will not be available on the client.
-            throw new SecurityException(e.getMessage());
-        }
     }
 
     public synchronized String getSystemIdentifier() {
@@ -432,21 +371,12 @@ public final class JMXManagementService implements ManagementService, ModuleCont
     }
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
 }

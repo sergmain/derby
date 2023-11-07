@@ -22,10 +22,8 @@
 package org.apache.derby.impl.jdbc.authentication;
 
 import java.util.Properties;
-import java.security.AccessController;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivilegedAction;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
@@ -570,40 +568,22 @@ public final class NativeAuthenticationServiceImpl
     }
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  String  getServiceName( final Object serviceModule )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<String>()
-             {
-                 public String run()
-                 {
-                     return Monitor.getServiceName( serviceModule );
-                 }
-             }
-             );
+        return Monitor.getServiceName( serviceModule );
     }
 
 }

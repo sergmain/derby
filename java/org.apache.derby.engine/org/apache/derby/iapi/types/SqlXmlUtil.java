@@ -198,12 +198,9 @@ public class SqlXmlUtil
             dBF.setValidating(false);
             dBF.setNamespaceAware(true);
 
-            if ( System.getSecurityManager() == null )
-            {
-                dBF.setFeature( XMLConstants.FEATURE_SECURE_PROCESSING, true );
-                dBF.setFeature(
-                 "http://xml.org/sax/features/external-general-entities", false );
-            }
+            dBF.setFeature( XMLConstants.FEATURE_SECURE_PROCESSING, true );
+            dBF.setFeature(
+                "http://xml.org/sax/features/external-general-entities", false );
 
             // Load document builder that can be used for parsing XML.
             dBuilder = dBF.newDocumentBuilder();
@@ -316,32 +313,8 @@ public class SqlXmlUtil
          * that the JAXP parser has the required permissions for
          * reading the DTD file.
          */
-        try {
-
-            final InputSource is = new InputSource(new StringReader(xmlAsText));
-            doc = java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedExceptionAction<Document>()
-                {
-                    public Document run() throws IOException, SAXException
-                    {
-                        return dBuilder.parse(is);
-                    }
-                });
-
-        } catch (java.security.PrivilegedActionException pae) {
-
-            /* Unwrap the privileged exception so that the user can
-             * see what the underlying error is. For example, it could
-             * be an i/o error from parsing the XML value, which can
-             * happen if the XML value references an external DTD file
-             * but the JAXP parser hits an i/o error when trying to read
-             * the DTD.  In that case we want to throw the i/o error
-             * itself so that it does not appear as a security exception
-             * to the user.
-             */
-            throw pae.getException();
-
-        }
+        final InputSource is = new InputSource(new StringReader(xmlAsText));
+        doc = dBuilder.parse(is);
 
         /* The second argument in the following call is for
          * catching cases where we have a top-level (parentless)

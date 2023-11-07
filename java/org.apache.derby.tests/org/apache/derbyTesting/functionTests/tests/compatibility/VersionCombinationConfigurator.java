@@ -23,9 +23,7 @@ package org.apache.derbyTesting.functionTests.tests.compatibility;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.AccessController;
 import java.security.CodeSource;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -364,20 +362,16 @@ public class VersionCombinationConfigurator {
      *      be obtained.
      */
     static URI getClassURI(final Class cl) {
-        return AccessController.doPrivileged(new PrivilegedAction<URI>() {
-            public URI run() {
-                CodeSource cs = cl.getProtectionDomain().getCodeSource();
-                if (cs != null) {
-                    try {
-                        return cs.getLocation().toURI();
-                    } catch (URISyntaxException use) {
-                        // Shouldn't happen, fall through and return null.
-                        BaseTestCase.alarm("bad URI: " + use.getMessage());
-                    }
-                }
-                return null;
+        CodeSource cs = cl.getProtectionDomain().getCodeSource();
+        if (cs != null) {
+            try {
+                return cs.getLocation().toURI();
+            } catch (URISyntaxException use) {
+                // Shouldn't happen, fall through and return null.
+                BaseTestCase.alarm("bad URI: " + use.getMessage());
             }
-        });
+        }
+        return null;
     }
 
     // Forwarding convenience methods

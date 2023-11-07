@@ -21,8 +21,6 @@
 
 package	org.apache.derby.impl.sql.compile;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Properties;
 import org.apache.derby.catalog.UUID;
 import org.apache.derby.shared.common.error.StandardException;
@@ -544,21 +542,12 @@ public class ConstraintDefinitionNode extends TableElementNode
     }
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
 }

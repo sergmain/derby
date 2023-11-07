@@ -31,10 +31,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.AccessControlException;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import org.apache.derby.shared.common.reference.SQLState;
 import org.apache.derby.shared.common.error.ExceptionSeverity;
 
@@ -143,7 +139,6 @@ public class ExceptionUtil
      *
      * @return stack traces for all live threads as a string or an error message.
      */
-    @SuppressWarnings({"BroadCatchBlock", "TooBroadCatch", "UseSpecificCatch"})
     public static String dumpThreads() {
 
         StringWriter out = new StringWriter();
@@ -161,16 +156,7 @@ public class ExceptionUtil
 
             String dump;
 
-            dump = (String) AccessController.doPrivileged
-            (new PrivilegedExceptionAction<Object>(){
-                public Object run() throws
-                IllegalArgumentException,
-                IllegalAccessException,
-                InvocationTargetException{
-                    return m.invoke(null, (Object[]) null);
-                }
-            }
-            );
+            dump = (String) m.invoke(null, (Object[]) null);
 
             //Print the dump to the message string. That went OK.
             p.print("---------------\nStack traces for all " +
@@ -182,18 +168,9 @@ public class ExceptionUtil
             "supported on JVM 1.4)");
 
         } catch (Exception e) {
-            if (e instanceof PrivilegedActionException &&
-                e.getCause() instanceof InvocationTargetException &&
-                e.getCause().getCause() instanceof AccessControlException){
-
-                p.println("(Skipping thread dump "
-                        + "because of insufficient permissions:\n"
-                        + e.getCause().getCause() + ")\n");
-            } else {
-                p.println("\nAssertFailure tried to do a thread dump, but "
+            p.println("\nAssertFailure tried to do a thread dump, but "
                         + "there was an error:");
-                e.getCause().printStackTrace(p);
-            }
+            e.printStackTrace(p);
         }
         return out.toString();
     }

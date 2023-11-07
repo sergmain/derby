@@ -26,9 +26,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -557,11 +554,10 @@ public final class SpawnedProcess {
      * It will only work if we are running with a full JDK, not a simple JRE.
      * It will not work on Windows, and just return an empty string.
      * @return jstack dump if possible
-     * @throws PrivilegedActionException
      * @throws InterruptedException
      */
     public String jstack()
-            throws PrivilegedActionException, InterruptedException{
+        throws InterruptedException, IllegalAccessException, NoSuchFieldException {
 
         String output = "";
 
@@ -599,23 +595,15 @@ public final class SpawnedProcess {
     /**
      * Return the pid if on Unixen, or -1 on Windows (can't be obtained).
      * @return pid
-     * @throws PrivilegedActionException
      */
-    public int getPid() throws PrivilegedActionException {
+    public int getPid() throws IllegalAccessException, NoSuchFieldException {
         if (!isWindowsPlatform() && !isIBMJVM()) {
-            return AccessController.doPrivileged(
-                new PrivilegedExceptionAction<Integer>() {
-                    @Override
-                    public Integer run() throws IllegalAccessException,
-                            NoSuchFieldException {
-                        final Field f = javaProcess.getClass().
-                                getDeclaredField("pid");
-                        f.setAccessible(true);
+            final Field f = javaProcess.getClass().getDeclaredField("pid");
+            f.setAccessible(true);
 
-                        return f.getInt(javaProcess);
-                    }
-                });
-        } else {
+            return f.getInt(javaProcess);
+        }
+        else {
             return -1;
         }
     }

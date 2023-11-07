@@ -21,8 +21,6 @@
 
 package org.apache.derby.iapi.sql.dictionary;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.sql.Timestamp;
 import org.apache.derby.catalog.ReferencedColumns;
 import org.apache.derby.catalog.UUID;
@@ -603,21 +601,12 @@ public class DataDescriptorGenerator
     }
     
     /**
-     * Privileged Monitor lookup. Must be package private so that user code
+     * Must be package private so that user code
      * can't call this entry point.
      */
     static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
 }

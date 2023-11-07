@@ -24,9 +24,6 @@ package org.apache.derby.impl.drda;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
 
 final class ClientThread extends Thread {
 
@@ -58,33 +55,26 @@ final class ClientThread extends Thread {
                 try { // Check for underlying InterruptedException,
                       // SSLException and IOException
 
-                    try { // Check for PrivilegedActionException
-                        clientSocket =
-                                    acceptClientWithRetry();
-                        // Server may have been shut down.  If so, close this
-                        // client socket and break out of the loop.
-                        // DERBY-3869
-                        if (parent.getShutdown()) {
-                            if (clientSocket != null)
-                                clientSocket.close();
-                            return;
-                        }
+                    clientSocket =
+                        acceptClientWithRetry();
+                    // Server may have been shut down.  If so, close this
+                    // client socket and break out of the loop.
+                    // DERBY-3869
+                    if (parent.getShutdown()) {
+                        if (clientSocket != null)
+                            clientSocket.close();
+                        return;
+                    }
                             
-                        clientSocket.setKeepAlive(parent.getKeepAlive());
+                    clientSocket.setKeepAlive(parent.getKeepAlive());
                         
-                        // Set time out: Stops DDMReader.fill() from
-                        // waiting indefinitely when timeSlice is set.
-                        if (timeSlice > 0)
-                            clientSocket.setSoTimeout(timeSlice);
+                    // Set time out: Stops DDMReader.fill() from
+                    // waiting indefinitely when timeSlice is set.
+                    if (timeSlice > 0)
+                        clientSocket.setSoTimeout(timeSlice);
                         
-                        //create a new Session for this socket
-                        parent.addSession(clientSocket);
-                        
-                    } catch (PrivilegedActionException e) {
-                        // Just throw the underlying exception
-                        throw e.getException();
-                    } // end inner try/catch block
-                    
+                    //create a new Session for this socket
+                    parent.addSession(clientSocket);
                 } catch (InterruptedException ie) {
                     if (parent.getShutdown()) {
                         // This is a shutdown and we'll just exit the
@@ -152,42 +142,35 @@ final class ClientThread extends Thread {
      * 
      */
     private Socket acceptClientWithRetry() {
-        return AccessController.doPrivileged(
-                new PrivilegedAction<Socket>() {
-                    public Socket run() {
-                        for (int trycount = 1; trycount <= 3; trycount++) {
-                            try {
-                                // DERBY-5347 Need to exit if
-                                // accept fails with IOException
-                                // Cannot just aimlessly loop
-                                // writing errors
-                                return serverSocket.accept();
-                            } catch (Exception acceptE) {
-                                // If not a normal shutdown,
-                                // log and shutdown the server
-                                if (!parent.getShutdown()) {
-                                    parent
-                                            .consoleExceptionPrintTrace(acceptE);
-                                    if (trycount == 3) {
-                                        // give up after three tries
-                                        parent.directShutdownInternal();
-                                    } else {
-                                        // otherwise wait 1 second and retry
-                                        try {
-                                            Thread.sleep(1000);
-                                        } catch (InterruptedException ie) {
-                                            parent
-                                            .consoleExceptionPrintTrace(ie);
-                                        }
-                                    }
-                                }
-                            }
+        for (int trycount = 1; trycount <= 3; trycount++) {
+            try {
+                // DERBY-5347 Need to exit if
+                // accept fails with IOException
+                // Cannot just aimlessly loop
+                // writing errors
+                return serverSocket.accept();
+            } catch (Exception acceptE) {
+                // If not a normal shutdown,
+                // log and shutdown the server
+                if (!parent.getShutdown()) {
+                    parent
+                        .consoleExceptionPrintTrace(acceptE);
+                    if (trycount == 3) {
+                        // give up after three tries
+                        parent.directShutdownInternal();
+                    } else {
+                        // otherwise wait 1 second and retry
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException ie) {
+                            parent
+                                .consoleExceptionPrintTrace(ie);
                         }
-                        return null; // no socket to return after three tries
                     }
                 }
-
-                );
+            }
+        }
+        return null; // no socket to return after three tries
     }
 }
 

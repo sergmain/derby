@@ -56,12 +56,7 @@ import org.apache.derby.iapi.store.replication.master.MasterFactory;
 import org.apache.derby.iapi.store.replication.slave.SlaveFactory;
 import java.io.IOException;
 
-import java.security.AccessControlException;
-import java.security.AccessController;
 import java.security.Permission;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 
 /* can't import due to name overlap:
 import java.sql.Connection;
@@ -2491,7 +2486,7 @@ public class EmbedConnection implements EngineConnection
     // This method in java.lang.Object was deprecated as of build 167
     // of JDK 9. See DERBY-6932.
     //
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation","removal"})
 	protected void finalize() throws Throwable 
 	{
 		try {
@@ -2696,6 +2691,8 @@ public class EmbedConnection implements EngineConnection
      * @param dbname the name of the database to create
      * @throws SQLException if the privileges check fails
      */
+    // AccessControlException deprecated for removal by JEP 411 https://openjdk.java.net/jeps/411
+    @SuppressWarnings("removal")
     private void checkDatabaseCreatePrivileges(String user,
                                                String dbname)
         throws SQLException {
@@ -2717,10 +2714,6 @@ public class EmbedConnection implements EngineConnection
                 = new DatabasePermission(url, DatabasePermission.CREATE);
             
             factory.checkSystemPrivileges(user, dp);
-        } catch (AccessControlException ace) {
-            throw newSQLException(
-                    SQLState.AUTH_DATABASE_CREATE_MISSING_PERMISSION,
-                    user, dbname, ace);
         } catch (IOException ioe) {
             throw newSQLException(
                     SQLState.AUTH_DATABASE_CREATE_EXCEPTION,
@@ -3935,21 +3928,6 @@ public class EmbedConnection implements EngineConnection
             throw newSQLException( SQLState.UU_INVALID_PARAMETER, "executor", "null" );
         }
 
-        //
-        // Must have privilege to invoke this method.
-        //
-        // The derby jars should be granted this permission. We deliberately
-        // do not wrap this check in an AccessController.doPrivileged() block.
-        // If we did so, that would absolve outer code blocks of the need to
-        // have this permission granted to them too. It is critical that the
-        // outer code blocks enjoy this privilege. That is what allows
-        // connection pools to prevent ordinary code from calling abort()
-        // and restrict its usage to privileged tools.
-        //
-        SecurityManager securityManager = System.getSecurityManager();
-        if ( securityManager != null )
-        { securityManager.checkPermission( new SQLPermission( "callAbort" ) ); }
-
         // Mark the Connection as closed. Set the "aborting" flag to allow internal
         // processing in close() to proceed.
         beginAborting();
@@ -3989,132 +3967,59 @@ public class EmbedConnection implements EngineConnection
     /////////////////////////////////////////////////////////////////////////
 
     /**
-     * Privileged Monitor lookup. Must be package private so that user code
+     * Must be package private so that user code
      * can't call this entry point.
      */
     static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
     /**
-     * Privileged service lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private static  Object findService( final String factoryInterface, final String serviceName )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     return Monitor.findService( factoryInterface, serviceName );
-                 }
-             }
-             );
+        return Monitor.findService( factoryInterface, serviceName );
     }
     
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  boolean startPersistentService( final String serviceName, final Properties properties ) 
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Boolean>()
-                 {
-                     public Boolean run()
-                         throws StandardException
-                     {
-                         return Monitor.startPersistentService( serviceName, properties );
-                     }
-                 }
-                 ).booleanValue();
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.startPersistentService( serviceName, properties );
     }
 
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object createPersistentService( final String factoryInterface, final String serviceName, final Properties properties ) 
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.createPersistentService( factoryInterface, serviceName, properties );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.createPersistentService( factoryInterface, serviceName, properties );
     }
 
     /**
-     * Privileged shutdown. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  void removePersistentService( final String name )
         throws StandardException
     {
-        try {
-            AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         Monitor.removePersistentService( name );
-                         return null;
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        Monitor.removePersistentService( name );
     }
 
     /**
-     * Private, privileged lookup of the lcc..
+     * Private lookup of the lcc..
      */
     private LanguageConnectionContext privilegedGetLCC()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<LanguageConnectionContext>()
-             {
-                 public LanguageConnectionContext run()
-                 {
-                     return getTR().getLcc();
-                 }
-             }
-             );
+        return getTR().getLcc();
     }
     
 }

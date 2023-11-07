@@ -21,8 +21,6 @@
 
 package org.apache.derby.impl.tools.sysinfo;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -46,11 +44,8 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
 import java.security.CodeSource;
-import java.security.AccessController;
 
 import org.apache.derby.shared.common.info.JVMInfo;
 import org.apache.derby.shared.common.info.PropertyNames;
@@ -237,22 +232,7 @@ public static void getMainInfo (java.io.PrintWriter aw, boolean pause) {
       }
       else
       {
-          try
-          {
-              classpath = AccessController.doPrivileged( new PrivilegedAction<String>()
-              {
-                  public String run()
-                  {
-                      return System.getProperty("java.class.path");
-                  }
-              }
-              );
-	      }
-	      catch (SecurityException se)
-          {
-              localAW.println(Main.getTextMessage ("SIF01.U", se.getMessage()));
-              classpath = null;
-          }
+          classpath = System.getProperty("java.class.path");
       }
 
       ZipInfoProperties zip[]= Main.getAllInfo (classpath);
@@ -341,8 +321,7 @@ public static void getMainInfo (java.io.PrintWriter aw, boolean pause) {
 }
   
   /**
-   * Return Java properties from java.lang.System. Will catch
-   * SecurityExceptions and note them for displaying information.
+   * Return Java properties from java.lang.System.
    * @param whichProperty This is the name of the property
    * 
    * @return getJavaProperty(whichProperty, false) 
@@ -352,8 +331,7 @@ public static void getMainInfo (java.io.PrintWriter aw, boolean pause) {
   }
  
   /**
-   * Return Java properties from java.lang.System. Will catch
-   * SecurityExceptions and note them for displaying information.
+   * Return Java properties from java.lang.System.
    * @param whichProperty This is the name of the property
    * @param nullUnavailable return nothing if no such java property and nullUnavailable is true
    * @return the Java property value or a string capturing a
@@ -364,28 +342,15 @@ public static void getMainInfo (java.io.PrintWriter aw, boolean pause) {
 
     final   String unavailable = nullUnavailable ? null : Main.getTextMessage ("SIF01.H");
 
-    try {
-        String  property = AccessController.doPrivileged( new PrivilegedAction<String>()
-            {
-                public  String  run()
-                {
-                    return System.getProperty (whichProperty, unavailable);
-                }
-            }
-            );
-        return property;
-    }
-    catch (SecurityException se) {
-
-      return Main.getTextMessage ("SIF01.I", se);
-    }
-
+    String  property = System.getProperty (whichProperty, unavailable);
+    return property;
   } // end of getJavaProperty (String whichProperty)
 
 
     /**
-     * wrapper for getCanonicalPath for sysinfo. For sysinfo we just want to print
-     * the security exceptions, not throw them if we don't have permmission
+     * wrapper for getCanonicalPath for sysinfo. When we installed a SecurityManager
+     * (see DERBY-7138), we wanted to print
+     * the security exceptions for sysinfo, not throw them if we didn't have permmission
      * 
      * @param f file on which to call getCanonicalPath
      * @return f.getCanonicalPath
@@ -393,18 +358,7 @@ public static void getMainInfo (java.io.PrintWriter aw, boolean pause) {
      */
     private static String getCanonicalPath(final File f) throws IOException {
 
-        try {
-            return AccessController
-                    .doPrivileged(new PrivilegedExceptionAction<String>() {
-                        public String run() throws IOException {
-                            return f.getCanonicalPath();
-                        }
-                    });
-        } catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getCause();
-        } catch (SecurityException se) {
-            return Main.getTextMessage("SIF01.I", se);
-        }
+        return f.getCanonicalPath();
     }
 
   /**
@@ -461,84 +415,78 @@ public static void getMainInfo (java.io.PrintWriter aw, boolean pause) {
       final Properties finalp = p;
      
       try {     
-          InputStream is = AccessController.doPrivileged
-            (new PrivilegedExceptionAction<InputStream>() {
-                  public InputStream run() throws IOException {
-                    Class loadingClass = Main.class;
-                    InputStream locis = null;
+          Class loadingClass = Main.class;
+          InputStream locis = null;
 
-                    if (JVMInfo.isModuleAware())
-                    {
-                        String moduleName = ModuleUtil.localizationModuleName(locale.toString());
-                        Module localizationModule = ModuleUtil.derbyModule(moduleName);
+          if (JVMInfo.isModuleAware())
+          {
+              String moduleName = ModuleUtil.localizationModuleName(locale.toString());
+              Module localizationModule = ModuleUtil.derbyModule(moduleName);
 
-                        if (localizationModule != null)
-                        {
-                            locis = localizationModule.getResourceAsStream(finalLocaleResource);
-                        }
-                    }
-                    else
-                    {
-                        locis = loadingClass.getResourceAsStream (finalLocaleResource);
-                    }
-  					return locis;
-                  }
+              if (localizationModule != null)
+              {
+                  locis = localizationModule.getResourceAsStream(finalLocaleResource);
               }
-           );      
+          }
+          else
+          {
+              locis = loadingClass.getResourceAsStream (finalLocaleResource);
+          }
+          InputStream is = locis;
       	
-        if (is == null) {
-          //localAW.println("resource is null: " + localeResource);
-        }
-        else {
+          if (is == null) {
+              //localAW.println("resource is null: " + localeResource);
+          }
+          else {
 
-          try {
-			  p.clear();
-            p.load (is);
-        //Displaying Current Locale
-	    if (cur_loc)
-		{
-	Locale loc = null;
-	loc = Locale.getDefault();
-        localAW.println(Main.getTextMessage ("SIF01.T") + "  [" + loc.getDisplayLanguage() + "/" +  loc.getDisplayCountry() + " [" + loc + "]]");
-		cur_loc = false;
-		}
+              try {
+                  p.clear();
+                  p.load (is);
+                  //Displaying Current Locale
+                  if (cur_loc)
+                  {
+                      Locale loc = null;
+                      loc = Locale.getDefault();
+                      localAW.println(Main.getTextMessage ("SIF01.T") + "  [" + loc.getDisplayLanguage() + "/" +  loc.getDisplayCountry() + " [" + loc + "]]");
+                      cur_loc = false;
+                  }
 
-	//Beetle 5079: do not print unlocalized locale names to console, only print locale code.
-	String localeName = p.getProperty("derby.locale.external.name");
-	localeName = localeName.substring(localeName.indexOf("[")+1);
-	localeName = localeName.substring(0,localeName.indexOf("]"));
+                  //Beetle 5079: do not print unlocalized locale names to console, only print locale code.
+                  String localeName = p.getProperty("derby.locale.external.name");
+                  localeName = localeName.substring(localeName.indexOf("[")+1);
+                  localeName = localeName.substring(0,localeName.indexOf("]"));
 	
-            localAW.println (Main.getTextMessage ("SIF01.R",
-                                                                   localeName));
+                  localAW.println (Main.getTextMessage ("SIF01.R",
+                                                        localeName));
 
 
-			int major = Integer.parseInt(p.getProperty ("derby.locale.version.major"));
-			int minor = Integer.parseInt(p.getProperty ("derby.locale.version.minor"));
-			int maint = Integer.parseInt(p.getProperty ("derby.locale.version.maint"));
-			String build = p.getProperty ("derby.locale.build.number");
+                  int major = Integer.parseInt(p.getProperty ("derby.locale.version.major"));
+                  int minor = Integer.parseInt(p.getProperty ("derby.locale.version.minor"));
+                  int maint = Integer.parseInt(p.getProperty ("derby.locale.version.maint"));
+                  String build = p.getProperty ("derby.locale.build.number");
 
-			String lv = ProductVersionHolder.fullVersionString(major, minor, maint, false, build);
-
-
-            localAW.println (Main.getTextMessage ("SIF01.S", lv));
+                  String lv = ProductVersionHolder.fullVersionString(major, minor, maint, false, build);
 
 
+                  localAW.println (Main.getTextMessage ("SIF01.S", lv));
+
+
+              }
+              catch (IOException ioe) {
+
+                  //This case is a bit ugly. If we get an IOException, we return
+                  //null. Though this correctly reflects that the product is not
+                  //available for use, it may be confusing to users that we swallow
+                  //the IO error here.
+
+                  localAW.println("Could not get locale properties from : " + is);
+              }
           }
-          catch (IOException ioe) {
-
-            //This case is a bit ugly. If we get an IOException, we return
-            //null. Though this correctly reflects that the product is not
-            //available for use, it may be confusing to users that we swallow
-            //the IO error here.
-
-            localAW.println("Could not get locale properties from : " + is);
-          }
-        }
 
       }
       catch (Throwable t) {
-        localAW.println ("Could not load resource: " + finalLocaleResource);
-        localAW.println ("Exception: " + t);
+          localAW.println ("Could not load resource: " + finalLocaleResource);
+          localAW.println ("Exception: " + t);
       }
 
     }
@@ -564,30 +512,23 @@ public static void getMainInfo (java.io.PrintWriter aw, boolean pause) {
       final Properties finalp = p;
       final String finalTstingResource = tstingResource;
       try {
-          InputStream is = AccessController.doPrivileged
-                  (new PrivilegedExceptionAction<InputStream>() {
-                      public InputStream run() throws IOException {
-                          Class loadingClass = Main.class;
-                          InputStream is = null;
+          Class loadingClass = Main.class;
+          InputStream is = null;
 
-                          if (JVMInfo.isModuleAware())
-                          {
-                              String moduleName = ModuleUtil.TESTING_MODULE_NAME;
-                              Module testingModule = ModuleUtil.derbyModule(moduleName);
+          if (JVMInfo.isModuleAware())
+          {
+              String moduleName = ModuleUtil.TESTING_MODULE_NAME;
+              Module testingModule = ModuleUtil.derbyModule(moduleName);
 
-                              if (testingModule != null)
-                              {
-                                  is = testingModule.getResourceAsStream(finalTstingResource);
-                              }
-                          }
-                          else
-                          {
-                              is = loadingClass.getResourceAsStream (finalTstingResource);
-                          }
-                          
-                          return is;
-                      }
-                  });
+              if (testingModule != null)
+              {
+                  is = testingModule.getResourceAsStream(finalTstingResource);
+              }
+          }
+          else
+          {
+              is = loadingClass.getResourceAsStream (finalTstingResource);
+          }
 
           if (is == null) {
               //localAW.println("resource is null: " + tstingResource);
@@ -983,60 +924,39 @@ public static void getMainInfo (java.io.PrintWriter aw, boolean pause) {
             zips[0] = zip;
         }
 
-        try
-        {
-			if (classpath != null) {
-				String cp [] = parseClasspath(classpath);
-				List<String> jarNamesList = Arrays.asList(jarNames);
-				Vector<ZipInfoProperties> v = new Vector<ZipInfoProperties>();
-				for (int i = 0; i < cp.length; i++)
-				{
-                    boolean matches = false;
-                    String candidate = cp[i];
-                    for (String jarName : jarNames)
+        if (classpath != null) {
+            String cp [] = parseClasspath(classpath);
+            List<String> jarNamesList = Arrays.asList(jarNames);
+            Vector<ZipInfoProperties> v = new Vector<ZipInfoProperties>();
+            for (int i = 0; i < cp.length; i++)
+            {
+                boolean matches = false;
+                String candidate = cp[i];
+                for (String jarName : jarNames)
+                {
+                    if (candidate.endsWith(jarName))
                     {
-                        if (candidate.endsWith(jarName))
-                        {
-                            matches = true;
-                            break;
-                        }
+                        matches = true;
+                        break;
                     }
-                    if (!matches)
-                        continue;
+                }
+                if (!matches)
+                { continue; }
 
-					ZipInfoProperties zip = null;
-					try {
-						zip = checkForInfo(cp[i]);
-					}
-					catch (SecurityException se)
-					{
-						zip = new ZipInfoProperties(null);
-						zip.setLocation(
-							Main.getTextMessage ("SIF03.C", se.getMessage()));
-					}
-					if (zip != null)
-					{
-						v.addElement(zip);
-					}
-				}
-				if (v.size() > 0)
-				{
-					ZipInfoProperties cpzips[] = new ZipInfoProperties[v.size()];
-					v.copyInto(cpzips);
-					return mergeZips(zips, cpzips);
-				}
-			}
-            return mergeZips(zips, null);
-
+                ZipInfoProperties zip =  checkForInfo(cp[i]);
+                if (zip != null)
+                {
+                    v.addElement(zip);
+                }
+            }
+            if (v.size() > 0)
+            {
+                ZipInfoProperties cpzips[] = new ZipInfoProperties[v.size()];
+                v.copyInto(cpzips);
+                return mergeZips(zips, cpzips);
+            }
         }
-        catch (SecurityException se)
-        {
-            ZipInfoProperties zip[] = new ZipInfoProperties[1];
-            zip[0] = new ZipInfoProperties(null);
-            zip[0].setLocation(
-					Main.getTextMessage ("SIF03.C", se.getMessage()));
-            return zip;
-        }
+        return mergeZips(zips, null);
     }
 
     /**
@@ -1056,33 +976,19 @@ public static void getMainInfo (java.io.PrintWriter aw, boolean pause) {
         {
             final String resource = "/".concat(infoNames[i]);
 
-            InputStream is = AccessController.doPrivileged
-            (new PrivilegedAction<InputStream>() {
-                public InputStream run() {
-			        InputStream locis =
-                        new Main().getClass().getResourceAsStream(resource);
-                            return locis;
-                    }
-                }
-            );         
+            InputStream is =  new Main().getClass().getResourceAsStream(resource);
 
-			if (is == null)
-				continue;
+            if (is == null)
+                continue;
 
-			ZipInfoProperties ze = new ZipInfoProperties(ProductVersionHolder.getProductVersionHolderFromMyEnv(is));
+            ZipInfoProperties ze = new ZipInfoProperties(ProductVersionHolder.getProductVersionHolderFromMyEnv(is));
  
-                        // get the real location of the info file
-                        URL locUrl = AccessController.doPrivileged
-                        (new PrivilegedAction<URL>() {
-                            public URL run() {
-                                URL realUrl = new Main().getClass().getResource(resource);
-                                return realUrl;
-                            }
-                        });
+            // get the real location of the info file
+            URL locUrl = new Main().getClass().getResource(resource);
 
-			ze.setLocation(formatURL(locUrl));
+            ze.setLocation(formatURL(locUrl));
 
-			al.add(ze);
+            al.add(ze);
         }
 
         if (al.size() == 0)
@@ -1130,32 +1036,24 @@ public static void getMainInfo (java.io.PrintWriter aw, boolean pause) {
      */
     private static ZipInfoProperties checkForInfo(final String cpEntry)
     {
-        return AccessController.doPrivileged( new PrivilegedAction<ZipInfoProperties>()
-            {
-                public ZipInfoProperties run()
-                {
-                    File f = new File(cpEntry);
-                    if ( ! f.exists())
-                    {
-                        return null;
-                    }
+        File f = new File(cpEntry);
+        if ( ! f.exists())
+        {
+            return null;
+        }
 
-                    if (f.isDirectory())
-                    {
-                        ZipInfoProperties zip = checkDirectory(cpEntry);
-                        return zip;
-                    }
+        if (f.isDirectory())
+        {
+            ZipInfoProperties zip = checkDirectory(cpEntry);
+            return zip;
+        }
 
-                    if (f.isFile())
-                    {
-                        ZipInfoProperties zip = checkFile(cpEntry);
-                        return zip;
-                    }
-                    return null;
-                }
-            }
-            );
-        
+        if (f.isFile())
+        {
+            ZipInfoProperties zip = checkFile(cpEntry);
+            return zip;
+        }
+        return null;
     }
 
     /**
@@ -1268,35 +1166,23 @@ public static void getMainInfo (java.io.PrintWriter aw, boolean pause) {
      */
     private static String getFileWhichLoadedClass(final Class cls)
     {
-         return AccessController.doPrivileged( new PrivilegedAction<String>()
-        {
-            public String run()
-            {
-                CodeSource cs = null;
-                try {
-                    cs = cls.getProtectionDomain().getCodeSource ();
-                }
-                catch (SecurityException se) {
-                    return Main.getTextMessage(
-                        "SIF01.V", cls.getName(), se.getMessage());
-                }
+        CodeSource cs = null;
+        cs = cls.getProtectionDomain().getCodeSource ();
  
-                if ( cs == null )
-                    return null;        
+        if ( cs == null )
+            return null;        
      
-                URL result = cs.getLocation ();
+        URL result = cs.getLocation ();
 
-                try {
-                    // DERBY-4806 Should use UTF-8 according to
-                    // http://www.w3.org/TR/html40/appendix/notes.html#non-ascii-chars
-                    // to get the string of the file name
-                    return URLDecoder.decode(result.toString(), "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    // All JVMs are required to support UTF-8.
-                    return e.getMessage();
-                }
-            }
-        });
+        try {
+            // DERBY-4806 Should use UTF-8 according to
+            // http://www.w3.org/TR/html40/appendix/notes.html#non-ascii-chars
+            // to get the string of the file name
+            return URLDecoder.decode(result.toString(), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            // All JVMs are required to support UTF-8.
+            return e.getMessage();
+        }
     }
 
     /**

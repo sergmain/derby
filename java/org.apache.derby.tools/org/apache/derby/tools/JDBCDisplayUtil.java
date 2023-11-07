@@ -27,7 +27,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import java.security.AccessController;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
@@ -1269,16 +1268,7 @@ public class JDBCDisplayUtil {
      */
     private static boolean getSystemBoolean(final String name) {
 
-        return (AccessController
-                .doPrivileged(new java.security.PrivilegedAction<Boolean>() {
-
-                    public Boolean run() {
-                        return Boolean.getBoolean(name) ?
-                            Boolean.TRUE : Boolean.FALSE;
-
-                    }
-
-                })).booleanValue();
+        return Boolean.getBoolean(name);
     }
 }
 

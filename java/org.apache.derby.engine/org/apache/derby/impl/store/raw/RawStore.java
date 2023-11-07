@@ -67,11 +67,6 @@ import org.apache.derby.shared.common.reference.SQLState;
 import org.apache.derby.shared.common.reference.MessageId;
 import org.apache.derby.shared.common.reference.Property;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.SecureRandom;
-
 import java.util.Date;
 import java.util.Properties;
 import java.io.Serializable;
@@ -81,7 +76,7 @@ import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import java.security.PrivilegedExceptionAction;
+import java.security.SecureRandom;
 import org.apache.derby.iapi.sql.conn.LanguageConnectionContext;
 import org.apache.derby.iapi.sql.dictionary.DataDictionary;
 
@@ -96,11 +91,11 @@ import org.apache.derby.iapi.store.replication.slave.SlaveFactory;
 	</PRE>
 	
 	<P>
-	Class is final as it has methods with privilege blocks
-	and implements PrivilegedExceptionAction.
+	Class is final because it used to have methods with privilege blocks.
+	See DERBY-7138.
 */
 
-public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSupportable, PrivilegedExceptionAction<Object>
+public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSupportable
 {
 	private static final String BACKUP_HISTORY = "BACKUP.HISTORY";
 	protected TransactionFactory	xactFactory;
@@ -2347,51 +2342,56 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
         These methods require Priv Blocks when run under a security manager.
     */
 
-	private synchronized OutputStreamWriter privFileWriter( StorageFile fileName, boolean append) throws IOException
-	{
+    private synchronized OutputStreamWriter privFileWriter( StorageFile fileName, boolean append) throws IOException
+    {
         actionCode = FILE_WRITER_ACTION;
         actionStorageFile = fileName;
         actionAppend = append;
-		try{
-			return (OutputStreamWriter) java.security.AccessController.doPrivileged( this);
-		}catch (java.security.PrivilegedActionException pae)
-        {
-            throw (IOException) pae.getException();
+        try{
+            return (OutputStreamWriter) run();
         }
+        catch (StandardException pae) { throw wrapSE(pae); }
         finally
         {
             actionStorageFile = null;
         }
-	}
+    }
 
-	private synchronized boolean privExists( File file)
+    /** Wrap a StandardException in an IOException to handle the signature of run() */
+    private IOException wrapSE(Exception se)
+    {
+        // should never be called
+        return new IOException(se.getMessage(), se);
+    }
+
+    private synchronized boolean privExists( File file)
     {
         actionCode = REGULAR_FILE_EXISTS_ACTION;
         actionRegularFile = file;
 
         try
         {
-            Object ret = AccessController.doPrivileged( this);
+            Object ret = run();
             return ((Boolean) ret).booleanValue();
         }
-        catch( PrivilegedActionException pae) { return false;} // does not throw an exception
+        catch( Exception pae) { return false;} // does not throw an exception
         finally
         {
             actionRegularFile = null;
         }
     }
 
-	private synchronized boolean privExists(final StorageFile file)
+    private synchronized boolean privExists(final StorageFile file)
     {
         actionCode = STORAGE_FILE_EXISTS_ACTION;
         actionStorageFile = file;
 
         try
         {
-            Object ret = AccessController.doPrivileged( this);
+            Object ret = run();
             return ((Boolean) ret).booleanValue();
         }
-        catch( PrivilegedActionException pae) { return false;} // does not throw an exception
+        catch( Exception pae) { return false;} // does not throw an exception
         finally
         {
             actionStorageFile = null;
@@ -2405,12 +2405,9 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
         actionStorageFile = file;
         try
         {
-            return (OutputStreamWriter) java.security.AccessController.doPrivileged(this);
+            return (OutputStreamWriter) run();
         }
-        catch (java.security.PrivilegedActionException pae)
-        {
-            throw (IOException) pae.getException();
-        }
+        catch (StandardException pae) { throw wrapSE(pae); }
     }
 
     private synchronized boolean privDelete( File file)
@@ -2420,10 +2417,10 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
 
         try
         {
-            Object ret = AccessController.doPrivileged( this);
+            Object ret = run();
             return ((Boolean) ret).booleanValue();
         }
-        catch( PrivilegedActionException pae) { return false;} // does not throw an exception
+        catch( Exception pae) { return false;} // does not throw an exception
         finally
         {
             actionRegularFile = null;
@@ -2437,17 +2434,15 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
 
         try
         {
-            Object ret = AccessController.doPrivileged( this);
+            Object ret = run();
             return ((Boolean) ret).booleanValue();
         }
-        catch( PrivilegedActionException pae) { return false;} // does not throw an exception
+        catch( Exception pae) { return false;} // does not throw an exception
         finally
         {
             actionStorageFile = null;
         }
     }
-
-
 
     private synchronized boolean privMkdirs(File file) throws IOException
     {
@@ -2456,18 +2451,15 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
 
         try
         {
-            Object ret = AccessController.doPrivileged( this);
+            Object ret = run();
             return ((Boolean) ret).booleanValue();
         }
-        catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getCause();
-        }
+        catch (StandardException pae) { throw wrapSE(pae); }
         finally
         {
             actionRegularFile = null;
         }
     }
-
 
     private synchronized boolean privIsDirectory( File file)
     {
@@ -2476,10 +2468,10 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
 
         try
         {
-            Object ret = AccessController.doPrivileged( this);
+            Object ret = run();
             return ((Boolean) ret).booleanValue();
         }
-        catch( PrivilegedActionException pae) { return false;} // does not throw an exception
+        catch( Exception pae) { return false;} // does not throw an exception
         finally
         {
             actionRegularFile = null;
@@ -2493,10 +2485,10 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
 
         try
         {
-            Object ret = AccessController.doPrivileged( this);
+            Object ret = run();
             return ((Boolean) ret).booleanValue();
         }
-        catch( PrivilegedActionException pae) { return false;} // does not throw an exception
+        catch( Exception pae) { return false;} // does not throw an exception
         finally
         {
             actionRegularFile = null;
@@ -2511,10 +2503,10 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
 
         try
         {
-            Object ret = AccessController.doPrivileged( this);
+            Object ret = run();
             return ((Boolean) ret).booleanValue();
         }
-        catch( PrivilegedActionException pae) { return false;} // does not throw an exception
+        catch( Exception pae) { return false;} // does not throw an exception
         finally
         {
             actionRegularFile = null;
@@ -2538,11 +2530,12 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
 
         try
         {
-            Object ret = AccessController.doPrivileged( this);
+            Object ret = run();
             return ((Boolean) ret).booleanValue();
         }
-        catch( PrivilegedActionException pae) {
-            throw (StandardException)pae.getCause();
+        catch( IOException pae) {
+            // should never happen
+            throw StandardException.plainWrapException(pae);
         }
         finally
         {
@@ -2564,10 +2557,10 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
 
         try
         {
-            Object ret = AccessController.doPrivileged( this);
+            Object ret = run();
             return ((Boolean) ret).booleanValue();
         }
-        catch( PrivilegedActionException pae) { return false;} // does not throw an exception
+        catch( Exception pae) { return false;} // does not throw an exception
         finally
         {
             actionStorageFile = null;
@@ -2586,10 +2579,10 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
 
         try
         {
-            Object ret = AccessController.doPrivileged( this);
+            Object ret = run();
             return ((Boolean) ret).booleanValue();
         }
-        catch( PrivilegedActionException pae) { return false;} // does not throw an exception
+        catch( Exception pae) { return false;} // does not throw an exception
         finally
         {
             actionStorageFile = null;
@@ -2606,11 +2599,12 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
 
         try
         {
-            Object ret = AccessController.doPrivileged( this);
+            Object ret = run();
             return ((Boolean) ret).booleanValue();
         }
-        catch( PrivilegedActionException pae) {
-            throw (StandardException)pae.getCause();
+        catch( IOException pae) {
+            // should never happen
+            throw StandardException.plainWrapException(pae);
         }
         finally
         {
@@ -2619,8 +2613,6 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
         }
     }
 
-
-    
     private synchronized boolean privCopyFile( StorageFile from, StorageFile to)
     {
         actionCode = COPY_STORAGE_FILE_TO_STORAGE_ACTION;
@@ -2629,17 +2621,16 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
 
         try
         {
-            Object ret = AccessController.doPrivileged( this);
+            Object ret = run();
             return ((Boolean) ret).booleanValue();
         }
-        catch( PrivilegedActionException pae) { return false;} // does not throw an exception
+        catch( Exception pae) { return false;} // does not throw an exception
         finally
         {
             actionStorageFile = null;
             actionToStorageFile = null;
         }
     }
-
 
     private synchronized String[] privList(final StorageFile file)
     {
@@ -2648,15 +2639,14 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
 
         try
         {
-            return (String[]) AccessController.doPrivileged( this);
+            return (String[]) run();
         }
-        catch( PrivilegedActionException pae) { return null;} // does not throw an exception
+        catch( Exception pae) { return null;} // does not throw an exception
         finally
         {
             actionStorageFile = null;
         }
     }
-
 
     private synchronized String privGetCanonicalPath(final StorageFile file)
     {
@@ -2665,22 +2655,16 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
 
         try
         {
-            return (String) AccessController.doPrivileged( this);
+            return (String) run();
         }
-        catch( PrivilegedActionException pae) {
+        catch( Exception pae) {
             return null;
         } // does not throw an exception
-        catch(SecurityException se) {
-            // there are no permission to get canonical path 
-            // just return null.
-            return null;
-        }
         finally
         {
             actionStorageFile = null;
         }
     }
-
 
     private synchronized String privGetCanonicalPath(final File file)
     {
@@ -2689,16 +2673,11 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
 
         try
         {
-            return (String) AccessController.doPrivileged( this);
+            return (String) run();
         }
-        catch( PrivilegedActionException pae) {
+        catch( Exception pae) {
             return null;
         } // does not throw an exception
-        catch(SecurityException se) { 
-            // there are no permission to get canonical path 
-            // just return null.
-            return null;
-        }
         finally
         {
             actionRegularFile = null;
@@ -2706,7 +2685,6 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
     }
 
 
-    // PrivilegedExceptionAction method
     public final Object run() throws IOException, StandardException
     {
         switch(actionCode)
@@ -2840,114 +2818,56 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
     }
     
     /**
-     * Privileged lookup of the ContextService. Private so that user code
+     * Private so that user code
      * can't call this entry point.
      */
     private static  ContextService    getContextService()
     {
-        if ( System.getSecurityManager() == null )
-        {
-            return ContextService.getFactory();
-        }
-        else
-        {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedAction<ContextService>()
-                 {
-                     public ContextService run()
-                     {
-                         return ContextService.getFactory();
-                     }
-                 }
-                 );
-        }
+        return ContextService.getFactory();
     }
 
     
     /**
-     * Privileged lookup of a Context. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Context    getContextOrNull( final String contextID )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Context>()
-             {
-                 public Context run()
-                 {
-                     return ContextService.getContextOrNull( contextID );
-                 }
-             }
-             );
+        return ContextService.getContextOrNull( contextID );
     }
 
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
 
     /**
-     * Privileged service name lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  String getServiceName( final Object serviceModule )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<String>()
-             {
-                 public String run()
-                 {
-                     return Monitor.getServiceName( serviceModule );
-                 }
-             }
-             );
+        return Monitor.getServiceName( serviceModule );
     }
     
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object  startSystemModule( final String factoryInterface )
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.startSystemModule( factoryInterface );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.startSystemModule( factoryInterface );
     }
 
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object bootServiceModule
@@ -2957,47 +2877,17 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
          )
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.bootServiceModule( create, serviceModule, factoryInterface, properties );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.bootServiceModule( create, serviceModule, factoryInterface, properties );
     }
 
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object findServiceModule( final Object serviceModule, final String factoryInterface)
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.findServiceModule( serviceModule, factoryInterface );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.findServiceModule( serviceModule, factoryInterface );
     }
 
 }

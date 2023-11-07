@@ -27,8 +27,6 @@ import junit.framework.Test;
 import org.apache.derby.client.ClientDataSourceInterface;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.JDBC;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
-
 
 /**
  * Run a replication test on localhost
@@ -56,7 +54,7 @@ public class ReplicationRun_Local_1Indexing extends ReplicationRun
         
         suite.addTestSuite( ReplicationRun_Local_1Indexing.class    );
         
-        return SecurityManagerSetup.noSecurityManager(suite);
+        return suite;
 
     }
     

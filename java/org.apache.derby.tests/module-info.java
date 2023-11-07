@@ -21,6 +21,10 @@
 
 /**
  * <p>
+ * This module corresponds to <i>derbyTesting.jar</i>.
+ * </p>
+ * 
+ * <p>
  * The Derby tests exercise all of the modules.
  * </p>
  * 

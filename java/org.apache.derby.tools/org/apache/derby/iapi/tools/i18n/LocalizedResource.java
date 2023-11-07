@@ -41,7 +41,8 @@ import java.util.StringTokenizer;
 
 import org.apache.derby.shared.common.i18n.MessageService;
 
-public final class LocalizedResource  implements java.security.PrivilegedAction<String> {
+public final class LocalizedResource
+{
 
 	private ResourceBundle res;
 	private Locale locale;
@@ -420,17 +421,11 @@ public final class LocalizedResource  implements java.security.PrivilegedAction<
 	}
 
 	private final synchronized String getEnvProperty(String key) {
-		String s;
-		 try
-		  {
-				resourceKey =  key;
-				s = java.security.AccessController.doPrivileged(this);
-		}
-		catch (SecurityException se) {
-			s = null;
-		}
-		//System.out.println("{"+resourceKey+"="+s+"}");
-		return s;
+            String s;
+            resourceKey =  key;
+            s = run();
+            //System.out.println("{"+resourceKey+"="+s+"}");
+            return s;
 	}
 	public final String run() {
 		String s = System.getProperty(resourceKey);

@@ -25,8 +25,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -307,23 +305,17 @@ public class OSReadOnlyTest extends BaseJDBCTestCase{
      */
     private void createDummyLockFile(String dbDir) {
         final File f = new File(constructDbPath(dbDir), "db.lck");
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-
-            public Void run() {
-                if (!f.exists()) {
-                    try {
-                        FileOutputStream fos = new FileOutputStream(f);
-                        // Just write a dummy byte.
-                        fos.write(12);
-                        fos.close();
-                    } catch (IOException fnfe) {
-                        // Ignore
-                    }
-                }
-                f.setReadOnly();
-                return null;
+        if (!f.exists()) {
+            try {
+                FileOutputStream fos = new FileOutputStream(f);
+                // Just write a dummy byte.
+                fos.write(12);
+                fos.close();
+            } catch (IOException fnfe) {
+                // Ignore
             }
-        });
+        }
+        f.setReadOnly();
     }
 
     public void changeFilePermissions(String dir) {
@@ -357,38 +349,33 @@ public class OSReadOnlyTest extends BaseJDBCTestCase{
             return false;
         final File sdirectory = directory;
 
-        return AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Boolean>() {
-                public Boolean run() {
-                    // set fail to true to start with; unless it works, we
-                    // want to specifically set the value.
-                    boolean success = true;
-                    if( !sdirectory.isDirectory() )
+        // set fail to true to start with; unless it works, we
+        // want to specifically set the value.
+        boolean success = true;
+        if( !sdirectory.isDirectory() )
+            success = false;
+        String[] list = sdirectory.list();
+        // Some JVMs return null for File.list() when the directory is empty
+        if( list != null )
+        {
+            for( int i = 0; i < list.length; i++ )
+            {
+                File entry = new File( sdirectory, list[i] );
+                if( entry.isDirectory() )
+                {
+                    if( !changeDirectoryToReadOnly(entry) )
                         success = false;
-                    String[] list = sdirectory.list();
-                    // Some JVMs return null for File.list() when the directory is empty
-                    if( list != null )
-                    {
-                        for( int i = 0; i < list.length; i++ )
-                        {
-                            File entry = new File( sdirectory, list[i] );
-                            if( entry.isDirectory() )
-                            {
-                                if( !changeDirectoryToReadOnly(entry) )
-                                    success = false;
-                            }
-                            else {
-                                if( !entry.setReadOnly() )
-                                    success = false;
-                            }
-                        }
-                    }
-                    // Before Java 6 we cannot make the directory writable
-                    // again, which means we cannot delete the directory and
-                    // its content...
-                    //success &= sdirectory.setReadOnly();
-                    return success;
                 }
-            });        
+                else {
+                    if( !entry.setReadOnly() )
+                        success = false;
+                }
+            }
+        }
+        // Before Java 6 we cannot make the directory writable
+        // again, which means we cannot delete the directory and
+        // its content...
+        //success &= sdirectory.setReadOnly();
+        return success;
     }
 }

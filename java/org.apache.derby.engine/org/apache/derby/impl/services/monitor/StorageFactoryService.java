@@ -60,10 +60,6 @@ import java.util.Enumeration;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 import org.apache.derby.iapi.services.io.FileUtil;
 
 /**
@@ -95,29 +91,20 @@ final class StorageFactoryService implements PersistentService
             final File relativeRoot = (File) monitorEnv;
             try
             {
-                AccessController.doPrivileged(
-                    new java.security.PrivilegedExceptionAction<Object>()
-                    {
-                        public Object run() throws IOException, StandardException
-                        {
-                            home = relativeRoot.getPath();
-                            canonicalHome = relativeRoot.getCanonicalPath();
-                            rootStorageFactory = getStorageFactoryInstance( true, null, null, null);
+                home = relativeRoot.getPath();
+                canonicalHome = relativeRoot.getCanonicalPath();
+                rootStorageFactory = getStorageFactoryInstance( true, null, null, null);
 
-                            if( home != null)
-                            {
-                                StorageFile rootDir = rootStorageFactory.newStorageFile( null);
-                                boolean created = rootDir.mkdirs();
-                                if (created) {
-                                    rootDir.limitAccessToOwner();
-                                }
-                            }
-                            return null;
-                        }
+                if( home != null)
+                {
+                    StorageFile rootDir = rootStorageFactory.newStorageFile( null);
+                    boolean created = rootDir.mkdirs();
+                    if (created) {
+                        rootDir.limitAccessToOwner();
                     }
-                    );
+                }
             }
-            catch( PrivilegedActionException pae)
+            catch(IOException pae)
             {
                 home = null;
                 canonicalHome = null;
@@ -131,16 +118,7 @@ final class StorageFactoryService implements PersistentService
             }
             catch( IOException ioe){ throw Monitor.exceptionStartingModule(/*serviceName, */ ioe); }
         }
-        AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Object>()
-            {
-                public Object run()
-                {
-                    separatorChar = rootStorageFactory.getSeparator();
-                    return null;
-                }
-            }
-            );
+        separatorChar = rootStorageFactory.getSeparator();
     } // end of constructor
 
     
@@ -183,23 +161,20 @@ final class StorageFactoryService implements PersistentService
     {
         try
         {
-            return AccessController.doPrivileged(
-                new PrivilegedExceptionAction<StorageFactory>()
-                {
-                  public StorageFactory run() throws InstantiationException,
-                      IllegalAccessException, IOException, NoSuchMethodException, InvocationTargetException
-                    {
-                        return privGetStorageFactoryInstance( useHome, databaseName, tempDirName, uniqueName);
-                    }
-                });
+            return privGetStorageFactoryInstance( useHome, databaseName, tempDirName, uniqueName);
         }
-        catch (PrivilegedActionException pae)
-        {
-            Exception e = pae.getException();
-            throw StandardException.newException( SQLState.REGISTERED_CLASS_INSTANCE_ERROR,
-                                                  e, subSubProtocol, storageFactoryClass);
-        }
+        catch (IOException ioe) { throw registeredClassInstanceError(ioe); }
+        catch (InstantiationException ie) { throw registeredClassInstanceError(ie); }
+        catch (IllegalAccessException ia) { throw registeredClassInstanceError(ia); }
+        catch (NoSuchMethodException nsme) { throw registeredClassInstanceError(nsme); }
+        catch (InvocationTargetException ite) { throw registeredClassInstanceError(ite); }
     } // end of getStorageFactoryInstance
+
+    private StandardException registeredClassInstanceError(Exception e)
+    {
+        return StandardException.newException( SQLState.REGISTERED_CLASS_INSTANCE_ERROR,
+                                               e, subSubProtocol, storageFactoryClass);
+    }
 
     private StorageFactory privGetStorageFactoryInstance( boolean useHome,
                                                           String databaseName,
@@ -247,191 +222,164 @@ final class StorageFactoryService implements PersistentService
     }
 
     /**
-		Open the service properties in the directory identified by the service name.
+       Open the service properties in the directory identified by the service name.
 
-		@return A Properties object or null if serviceName does not represent a valid service.
+       @return A Properties object or null if serviceName does not represent a valid service.
 
-		@exception StandardException Service appears valid but the properties cannot be created.
-	*/
-	public Properties getServiceProperties( final String serviceName, Properties defaultProperties)
-		throws StandardException
+       @exception StandardException Service appears valid but the properties cannot be created.
+    */
+    public Properties getServiceProperties( final String serviceName, Properties defaultProperties)
+        throws StandardException
     {
-		if (SanityManager.DEBUG) {
-			if (! serviceName.equals(getCanonicalServiceName(serviceName)))
-			{
-				SanityManager.THROWASSERT("serviceName (" + serviceName + 
-										  ") expected to equal getCanonicalServiceName(serviceName) (" +
-										  getCanonicalServiceName(serviceName) + ")");
-			}
-		}
+        if (SanityManager.DEBUG) {
+            if (! serviceName.equals(getCanonicalServiceName(serviceName)))
+            {
+                SanityManager.THROWASSERT("serviceName (" + serviceName + 
+                                          ") expected to equal getCanonicalServiceName(serviceName) (" +
+                                          getCanonicalServiceName(serviceName) + ")");
+            }
+        }
 
-		//recreate the service root  if requested by the user.
-		final String recreateFrom = recreateServiceRoot(serviceName, defaultProperties);
+        //recreate the service root  if requested by the user.
+        final String recreateFrom = recreateServiceRoot(serviceName, defaultProperties);
 
         final Properties serviceProperties = new Properties(defaultProperties);
-		try
+        try
         {
-            AccessController.doPrivileged(
-                new PrivilegedExceptionAction<Object>()
-                {
-                    public Object run()
-                        throws IOException, StandardException,
-                        InstantiationException, IllegalAccessException,
-                        NoSuchMethodException, InvocationTargetException
-                    {
-                        if( recreateFrom != null) // restore from a file
-                        {
-                            File propFile = new File(recreateFrom, PersistentService.PROPERTIES_NAME);
-                            InputStream is = new FileInputStream(propFile);
-                            try {
-                                serviceProperties.load(new BufferedInputStream(is));
-                            } finally {
-                                is.close();
-                            }
-                        }
-                        else
-                        {
-                            StorageFactory storageFactory = privGetStorageFactoryInstance( true, serviceName, null, null);
-                            StorageFile file = storageFactory.newStorageFile( PersistentService.PROPERTIES_NAME);
-                            resolveServicePropertiesFiles(storageFactory, file);
-                            try {
-                                InputStream is = file.getInputStream();
-                                try {
-                                    // Need to load the properties before closing the
-                                    // StorageFactory.
-                                    serviceProperties.load(new BufferedInputStream(is));
-                                } finally {
-                                    is.close();
-                                }
-                            } finally {
-                               storageFactory.shutdown();
-                            }
-                        }
-                        return null;
-                    }
+            if( recreateFrom != null) // restore from a file
+            {
+                File propFile = new File(recreateFrom, PersistentService.PROPERTIES_NAME);
+                InputStream is = new FileInputStream(propFile);
+                try {
+                    serviceProperties.load(new BufferedInputStream(is));
+                } finally {
+                    is.close();
                 }
-                );
+            }
+            else
+            {
+                StorageFactory storageFactory = privGetStorageFactoryInstance( true, serviceName, null, null);
+                StorageFile file = storageFactory.newStorageFile( PersistentService.PROPERTIES_NAME);
+                resolveServicePropertiesFiles(storageFactory, file);
+                try {
+                    InputStream is = file.getInputStream();
+                    try {
+                        // Need to load the properties before closing the
+                        // StorageFactory.
+                        serviceProperties.load(new BufferedInputStream(is));
+                    } finally {
+                        is.close();
+                    }
+                } finally {
+                    storageFactory.shutdown();
+                }
+            }
 
-			return serviceProperties;
-		}
-        catch (PrivilegedActionException pae)
-        {
-            if( pae.getException() instanceof FileNotFoundException)
-                return null;
-            throw Monitor.exceptionStartingModule( pae.getException());
+            return serviceProperties;
         }
-		catch (SecurityException se) { throw Monitor.exceptionStartingModule(/*serviceName, */ se);	}
-	} // end of getServiceProperties
+        catch (FileNotFoundException fnfe) { return null; }
+        catch (IOException ioe) { throw Monitor.exceptionStartingModule(ioe); }
+        catch (InstantiationException ie) { throw Monitor.exceptionStartingModule(ie); }
+        catch (IllegalAccessException ia) { throw Monitor.exceptionStartingModule(ia); }
+        catch (NoSuchMethodException nsme) { throw Monitor.exceptionStartingModule(nsme); }
+        catch (InvocationTargetException ite) { throw Monitor.exceptionStartingModule(ite); }
+    } // end of getServiceProperties
 
 
-	/**
-		@exception StandardException Properties cannot be saved.
-	*/
-
-	public void saveServiceProperties( final String serviceName,
+    /**
+       @exception StandardException Properties cannot be saved.
+    */
+    public void saveServiceProperties( final String serviceName,
                                        StorageFactory sf,
                                        final Properties properties,
                                        final boolean replace)
-		throws StandardException
+        throws StandardException
     {
-		if (SanityManager.DEBUG)
+        if (SanityManager.DEBUG)
         {
-			SanityManager.ASSERT(serviceName.equals(getCanonicalServiceName(serviceName)), serviceName);
+            SanityManager.ASSERT(serviceName.equals(getCanonicalServiceName(serviceName)), serviceName);
         }
         if( ! (sf instanceof WritableStorageFactory))
             throw StandardException.newException(SQLState.READ_ONLY_SERVICE);
         final WritableStorageFactory storageFactory = (WritableStorageFactory) sf;
         // Write the service properties to file.
+        StorageFile backupFile = replace
+            ? storageFactory.newStorageFile(
+                PersistentService.PROPERTIES_NAME.concat("old"))
+            : null;
+        StorageFile servicePropertiesFile = storageFactory.newStorageFile( PersistentService.PROPERTIES_NAME);
+        FileOperationHelper foh = new FileOperationHelper();
+
+        if (replace)
+        {
+            foh.renameTo(
+                servicePropertiesFile, backupFile, true);
+        }
+
+        OutputStream os = null;
         try
         {
-            AccessController.doPrivileged(
-                new PrivilegedExceptionAction<Object>()
-                {
-                    public Object run() throws StandardException
-                    {
-                        StorageFile backupFile = replace
-                            ? storageFactory.newStorageFile(
-                                PersistentService.PROPERTIES_NAME.concat("old"))
-                            : null;
-                        StorageFile servicePropertiesFile = storageFactory.newStorageFile( PersistentService.PROPERTIES_NAME);
-                        FileOperationHelper foh = new FileOperationHelper();
-
-                        if (replace)
-                        {
-                            foh.renameTo(
-                                    servicePropertiesFile, backupFile, true);
-                        }
-
-                        OutputStream os = null;
-                        try
-                        {
-                            os = servicePropertiesFile.getOutputStream();
-                            properties.store(os, serviceName +
-                                MessageService.getTextMessage(
-                                    MessageId.SERVICE_PROPERTIES_DONT_EDIT));
-                            // The eof token should match the ISO-8859-1 encoding 
-                            // of the rest of the properties file written with store.
-                            BufferedWriter bOut = new BufferedWriter(
-                                    new OutputStreamWriter(os,"ISO-8859-1"));
-                            bOut.write(SERVICE_PROPERTIES_EOF_TOKEN);
-                            bOut.newLine();
-                            storageFactory.sync( os, false);
-                            bOut.close();
-                            os.close();
-                            os = null; 
-                        }
-                        catch (IOException ioe)
-                        {
-                            if (backupFile != null)
-                            {
-                                // Rename the old properties file back again.
-                                foh.renameTo(backupFile, servicePropertiesFile,
-                                        false);
-                            }
-                            if (replace)
-                            {
-                                throw StandardException.newException(
-                                        SQLState.SERVICE_PROPERTIES_EDIT_FAILED,
-                                        ioe);
-                            }
-                            else
-                            {
-                                throw Monitor.exceptionStartingModule(ioe);
-                            }
-                        }
-                        finally
-                        {
-                            if (os != null)
-                            {
-                                try
-                                {
-                                    os.close();
-                                }
-                                catch (IOException ioe)
-                                {
-                                    // Ignore exception on close
-                                }
-                            }
-                        }
-		
-                        if (backupFile != null)
-                        {
-                            if (!foh.delete(backupFile, false))
-                            {
-                                Monitor.getStream().printlnWithHeader(
-                                    MessageService.getTextMessage(
-                                        MessageId.SERVICE_PROPERTIES_BACKUP_DEL_FAILED,
-                                        getMostAccuratePath(backupFile)));
-                                
-                            }
-                        }
-                        return null;
-                    }
-                }
-                );
+            os = servicePropertiesFile.getOutputStream();
+            properties.store(os, serviceName +
+                             MessageService.getTextMessage(
+                                 MessageId.SERVICE_PROPERTIES_DONT_EDIT));
+            // The eof token should match the ISO-8859-1 encoding 
+            // of the rest of the properties file written with store.
+            BufferedWriter bOut = new BufferedWriter(
+                new OutputStreamWriter(os,"ISO-8859-1"));
+            bOut.write(SERVICE_PROPERTIES_EOF_TOKEN);
+            bOut.newLine();
+            storageFactory.sync( os, false);
+            bOut.close();
+            os.close();
+            os = null; 
         }
-        catch( PrivilegedActionException pae) { throw (StandardException) pae.getException();}
-	} // end of saveServiceProperties
+        catch (IOException ioe)
+        {
+            if (backupFile != null)
+            {
+                // Rename the old properties file back again.
+                foh.renameTo(backupFile, servicePropertiesFile,
+                             false);
+            }
+            if (replace)
+            {
+                throw StandardException.newException(
+                    SQLState.SERVICE_PROPERTIES_EDIT_FAILED,
+                    ioe);
+            }
+            else
+            {
+                throw Monitor.exceptionStartingModule(ioe);
+            }
+        }
+        finally
+        {
+            if (os != null)
+            {
+                try
+                {
+                    os.close();
+                }
+                catch (IOException ioe)
+                {
+                    // Ignore exception on close
+                }
+            }
+        }
+		
+        if (backupFile != null)
+        {
+            if (!foh.delete(backupFile, false))
+            {
+                Monitor.getStream().printlnWithHeader(
+                    MessageService.getTextMessage(
+                        MessageId.SERVICE_PROPERTIES_BACKUP_DEL_FAILED,
+                        getMostAccuratePath(backupFile)));
+                                
+            }
+        }
+    } // end of saveServiceProperties
 
 	
     /** @see PersistentService#createDataWarningFile */
@@ -439,45 +387,32 @@ final class StorageFactoryService implements PersistentService
         if( ! (sf instanceof WritableStorageFactory))
             throw StandardException.newException(SQLState.READ_ONLY_SERVICE);
         final WritableStorageFactory storageFactory = (WritableStorageFactory) sf;
-        try
+        OutputStreamWriter osw=null; 
+        try 
         {
-            AccessController.doPrivileged(
-            	    new PrivilegedExceptionAction<Object>()
-                    {
-                        public Object run() throws StandardException
-                        {
-                            OutputStreamWriter osw=null; 
-                            try 
-                            {
-                                StorageFile fileReadMe = storageFactory.newStorageFile(
-                                    PersistentService.DB_README_FILE_NAME);
-                                osw = new OutputStreamWriter(fileReadMe.getOutputStream(),"UTF8");
-                                osw.write(MessageService.getTextMessage(
-                                        MessageId.README_AT_DB_LEVEL));
-                            }
-                            catch (IOException ioe)
-                            {
-                            }
-                            finally
-                            {
-                                if (osw != null)
-                                {
-                                    try
-                                    {
-                                        osw.close();
-                                    }
-                                    catch (IOException ioe)
-                                    {
-                                        // Ignore exception on close
-                                    }
-                                }
-                            }
-                            return null;
-                        }
-                    }
-                );
+            StorageFile fileReadMe = storageFactory.newStorageFile(
+                PersistentService.DB_README_FILE_NAME);
+            osw = new OutputStreamWriter(fileReadMe.getOutputStream(),"UTF8");
+            osw.write(MessageService.getTextMessage(
+                          MessageId.README_AT_DB_LEVEL));
         }
-        catch( PrivilegedActionException pae) { throw (StandardException) pae.getException();}
+        catch (IOException ioe)
+        {
+        }
+        finally
+        {
+            if (osw != null)
+            {
+                try
+                {
+                    osw.close();
+                }
+                catch (IOException ioe)
+                {
+                    // Ignore exception on close
+                }
+            }
+        }
     } // end of createDataWarningFile
 
     /**
@@ -488,54 +423,40 @@ final class StorageFactoryService implements PersistentService
      *
      * @exception StandardException Properties cannot be saved.
      */
-
-	public void saveServiceProperties(final String serviceName, 
+    public void saveServiceProperties(final String serviceName, 
                                       final Properties properties)
-		throws StandardException {
+        throws StandardException {
 
-        try
-        {
-            AccessController.doPrivileged(
-                new PrivilegedExceptionAction<Object>()
-                {
-                    public Object run() throws StandardException
-                    {
-                        // Since this is the backup location, we cannot use
-                        // storageFactory.newStorageFile as in the other
-                        // variant of this method:
-                        File servicePropertiesFile = 
-                            new File(serviceName, PersistentService.PROPERTIES_NAME);
+        // Since this is the backup location, we cannot use
+        // storageFactory.newStorageFile as in the other
+        // variant of this method:
+        File servicePropertiesFile = 
+            new File(serviceName, PersistentService.PROPERTIES_NAME);
 
-                        FileOutputStream fos = null;
-                        try {
+        FileOutputStream fos = null;
+        try {
 
-                            fos = new FileOutputStream(servicePropertiesFile);
-                            FileUtil.limitAccessToOwner(servicePropertiesFile);
+            fos = new FileOutputStream(servicePropertiesFile);
+            FileUtil.limitAccessToOwner(servicePropertiesFile);
 
-                            properties.store(fos, 
-                                             serviceName + 
-                                             MessageService.getTextMessage(
-                                                  MessageId.SERVICE_PROPERTIES_DONT_EDIT));
-                            fos.getFD().sync();
-                            fos.close();
-                            fos = null;
-                        } catch (IOException ioe) {
-                            if (fos != null) {
-                                try {
-                                    fos.close();
-                                } catch (IOException ioe2) {
-                                }
-                                fos = null;
-                            }
-
-                            throw Monitor.exceptionStartingModule(ioe);
-                        }
-		
-                        return null;
-                    }
+            properties.store(fos, 
+                             serviceName + 
+                             MessageService.getTextMessage(
+                                 MessageId.SERVICE_PROPERTIES_DONT_EDIT));
+            fos.getFD().sync();
+            fos.close();
+            fos = null;
+        } catch (IOException ioe) {
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException ioe2) {
                 }
-                );
-        }catch( PrivilegedActionException pae) { throw (StandardException) pae.getException();}
+                fos = null;
+            }
+
+            throw Monitor.exceptionStartingModule(ioe);
+        }
     }
     
     /**
@@ -645,220 +566,196 @@ final class StorageFactoryService implements PersistentService
 	** from the service dir and  recreated with the properties from backup.
 	*/
 
-	protected String recreateServiceRoot( final String serviceName,
-										  Properties properties) throws StandardException
-	{
-		//if there are no propertues then nothing to do in this routine
-		if(properties == null) {
-			return null;
-		}
+    protected String recreateServiceRoot( final String serviceName,
+                                          Properties properties) throws StandardException
+    {
+        //if there are no propertues then nothing to do in this routine
+        if(properties == null) {
+            return null;
+        }
 
-		String restoreFrom; //location where backup copy of service properties available
-		boolean createRoot = false;
-		boolean deleteExistingRoot = false;
+        String restoreFrom; //location where backup copy of service properties available
+        boolean createRoot = false;
+        boolean deleteExistingRoot = false;
         
-		//check if user wants to create a database from a backup copy
-		restoreFrom = properties.getProperty(Attribute.CREATE_FROM);
-		if(restoreFrom !=null)
-		{
-			//create root dicretory if it  does not exist.
-			createRoot =true;
-			deleteExistingRoot = false;
-		}
+        //check if user wants to create a database from a backup copy
+        restoreFrom = properties.getProperty(Attribute.CREATE_FROM);
+        if(restoreFrom !=null)
+        {
+            //create root dicretory if it  does not exist.
+            createRoot =true;
+            deleteExistingRoot = false;
+        }
         else
-		{	//check if user requested a complete restore(version recovery) from backup
-			restoreFrom = properties.getProperty(Attribute.RESTORE_FROM);
-			//create root dir if it does not exists and  if there exists one already delete and recreate
-			if(restoreFrom !=null)
+        {	//check if user requested a complete restore(version recovery) from backup
+            restoreFrom = properties.getProperty(Attribute.RESTORE_FROM);
+            //create root dir if it does not exists and  if there exists one already delete and recreate
+            if(restoreFrom !=null)
             {
-				createRoot =true;
-				deleteExistingRoot = true;
-			}
+                createRoot =true;
+                deleteExistingRoot = true;
+            }
             else
-			{
-				//check if user has requested roll forward recovery using a backup
-				restoreFrom = properties.getProperty(Attribute.ROLL_FORWARD_RECOVERY_FROM);
-				if(restoreFrom !=null)
-				{
-					//if service root does not exist then only create one
-					//This is useful when logDevice was on some other device
-					//and the device on which data directorties existied has
-					//failed and user is trying to restore it some other device.
+            {
+                //check if user has requested roll forward recovery using a backup
+                restoreFrom = properties.getProperty(Attribute.ROLL_FORWARD_RECOVERY_FROM);
+                if(restoreFrom !=null)
+                {
+                    //if service root does not exist then only create one
+                    //This is useful when logDevice was on some other device
+                    //and the device on which data directorties existied has
+                    //failed and user is trying to restore it some other device.
                     try
                     {
-                        if( AccessController.doPrivileged(
-                                new PrivilegedExceptionAction<Object>()
-                                {
-                                    public Object run()
-                                        throws IOException, StandardException,
-                                      InstantiationException, IllegalAccessException,
-                                      NoSuchMethodException, InvocationTargetException
-                                      
-                                    {
-                                        StorageFactory storageFactory
-                                          = privGetStorageFactoryInstance( true, serviceName, null, null);
-                                        try
-                                        {
-                                            StorageFile serviceDirectory = storageFactory.newStorageFile( null);
-                                            return serviceDirectory.exists() ? this : null;
-                                        }
-                                        finally {storageFactory.shutdown();}
-                                    }
-                                }
-                                ) == null)
+                        Object sfs = null;
+                        StorageFactory storageFactory
+                            = privGetStorageFactoryInstance( true, serviceName, null, null);
+                        try
+                        {
+                            StorageFile serviceDirectory = storageFactory.newStorageFile( null);
+                            sfs = serviceDirectory.exists() ? this : null;
+                        }
+                        finally {storageFactory.shutdown();}
+
+                        if (sfs == null)
                         {
                             createRoot =true;
                             deleteExistingRoot = false;
                         }
                         
                     }
-                    catch( PrivilegedActionException pae)
-                    {
-                        throw Monitor.exceptionStartingModule( (IOException) pae.getException());
-                    }
-				}
-			}
-		}
-
-		//restore the service properties from backup
-		if(restoreFrom != null)
-		{
-			//First make sure backup service directory exists in the specified path
-			File backupRoot = new File(restoreFrom);
-			if (fileExists(backupRoot))
-			{
-				//First make sure backup have service.properties
-				File bserviceProp = new File(restoreFrom, PersistentService.PROPERTIES_NAME);
-				if(fileExists(bserviceProp))
-				{
-					//create service root if required
-					if(createRoot)
-						createServiceRoot(serviceName, deleteExistingRoot);
-                    try
-                    {
-                        AccessController.doPrivileged(
-                            new PrivilegedExceptionAction<Object>()
-                            {
-                                public Object run()
-                                    throws IOException, StandardException,
-                                    InstantiationException, IllegalAccessException,
-                                    NoSuchMethodException, InvocationTargetException
-                                {
-                                    WritableStorageFactory storageFactory =
-                                      (WritableStorageFactory) privGetStorageFactoryInstance( true,
-                                                                                              serviceName,
-                                                                                              null,
-                                                                                              null);
-                                    try
-                                    {
-                                        StorageFile cserviceProp = storageFactory.newStorageFile( PersistentService.PROPERTIES_NAME);
-
-                                        if(cserviceProp.exists())
-                                            if(!cserviceProp.delete())
-                                                throw StandardException.newException(SQLState.UNABLE_TO_DELETE_FILE,
-                                                                                     cserviceProp);
-                                        return null;
-                                    }
-                                    finally { storageFactory.shutdown();}
-                                }
-                            }
-                            );
-                    }
-                    catch( PrivilegedActionException pae)
-                    { throw Monitor.exceptionStartingModule( (IOException)pae.getException());}
-				}
-                else
-					throw StandardException.newException(SQLState.PROPERTY_FILE_NOT_FOUND_IN_BACKUP, bserviceProp);
-			}
-            else
-				throw StandardException.newException(SQLState.SERVICE_DIRECTORY_NOT_IN_BACKUP, backupRoot);
-
-			properties.put(Property.IN_RESTORE_FROM_BACKUP,"True");
-			if(createRoot)
-				properties.put(Property.DELETE_ROOT_ON_ERROR, "True");
-		}
-		return restoreFrom;
-	} // end of recreateServiceRoot
-
-	/**
-		Properties cannot be saved
-	*/
-	public String createServiceRoot(final String name, final boolean deleteExisting)
-		throws StandardException
-    {
-        if( !( rootStorageFactory instanceof WritableStorageFactory))
-            throw StandardException.newException(SQLState.READ_ONLY_SERVICE);
-		// we need to create the directory before we can call
-		// getCanonicalPath() on it, because if intermediate directories
-		// need to be created the getCanonicalPath() will fail.
-
-		Throwable t = null;
-        try
-        {
-            return getProtocolLeadIn() + (String) AccessController.doPrivileged(
-                new PrivilegedExceptionAction<Object>()
-                {
-                    public Object run()
-                        throws StandardException, IOException,
-                        InstantiationException, IllegalAccessException,
-                        NoSuchMethodException, InvocationTargetException
-                    {
-                        StorageFactory storageFactory = privGetStorageFactoryInstance( true, name, null, null);
-                        try
-                        {
-                            StorageFile serviceDirectory = storageFactory.newStorageFile( null);
-
-                            if (serviceDirectory.exists())
-                            {
-                                if (deleteExisting)
-                                {
-                                    if (!serviceDirectory.deleteAll())
-                                        throw StandardException.newException(SQLState.SERVICE_DIRECTORY_REMOVE_ERROR,
-                                                                             getDirectoryPath( name));
-                                }
-                                else
-                                {
-                                    vetService( storageFactory, name );
-                                    throw StandardException.newException(SQLState.SERVICE_DIRECTORY_EXISTS_ERROR,
-                                                                         getDirectoryPath( name));
-                                }
-                            }
-
-                            if (serviceDirectory.mkdirs())
-                            {
-                                serviceDirectory.limitAccessToOwner();
-                                // DERBY-5096. The storageFactory canonicalName may need to be adjusted
-                                // for casing after the directory is created. Just reset it after making the 
-                                // the directory to make sure.
-                                String serviceDirCanonicalPath = serviceDirectory.getCanonicalPath();
-                                storageFactory.setCanonicalName(serviceDirCanonicalPath);
-                                try
-                                {
-                                    return storageFactory.getCanonicalName();
-                                }
-                                catch (IOException ioe)
-                                {
-                                    serviceDirectory.deleteAll();
-                                    throw ioe;
-                                }
-                            }
-                            throw StandardException.newException(SQLState.SERVICE_DIRECTORY_CREATE_ERROR, serviceDirectory);
-                        }
-                        finally { storageFactory.shutdown(); }
-                    }
+                    catch (IOException ioe) { throw Monitor.exceptionStartingModule(ioe); }
+                    catch (InstantiationException ie) { throw Monitor.exceptionStartingModule(ie); }
+                    catch (IllegalAccessException ia) { throw Monitor.exceptionStartingModule(ia); }
+                    catch (NoSuchMethodException nsme) { throw Monitor.exceptionStartingModule(nsme); }
+                    catch (InvocationTargetException ite) { throw Monitor.exceptionStartingModule(ite); }
                 }
-                );
-		}
-        catch (SecurityException se) { t = se; }
-        catch (PrivilegedActionException pae)
-        {
-            t = pae.getException();
-            if( t instanceof StandardException)
-                throw (StandardException) t;
+            }
         }
 
-        throw StandardException.newException(SQLState.SERVICE_DIRECTORY_CREATE_ERROR, t, name);
+        //restore the service properties from backup
+        if(restoreFrom != null)
+        {
+            //First make sure backup service directory exists in the specified path
+            File backupRoot = new File(restoreFrom);
+            if (fileExists(backupRoot))
+            {
+                //First make sure backup have service.properties
+                File bserviceProp = new File(restoreFrom, PersistentService.PROPERTIES_NAME);
+                if(fileExists(bserviceProp))
+                {
+                    //create service root if required
+                    if(createRoot)
+                    { createServiceRoot(serviceName, deleteExistingRoot); }
+                    try
+                    {
+                        WritableStorageFactory storageFactory =
+                            (WritableStorageFactory) privGetStorageFactoryInstance( true,
+                                                                                    serviceName,
+                                                                                    null,
+                                                                                    null);
+                        try
+                        {
+                            StorageFile cserviceProp = storageFactory.newStorageFile( PersistentService.PROPERTIES_NAME);
+
+                            if(cserviceProp.exists())
+                            {
+                                if(!cserviceProp.delete())
+                                { throw StandardException.newException(SQLState.UNABLE_TO_DELETE_FILE, cserviceProp); }
+                            }
+                        }
+                        finally { storageFactory.shutdown();}
+                    }
+                    catch (IOException ioe) { throw Monitor.exceptionStartingModule(ioe); }
+                    catch (InstantiationException ie) { throw Monitor.exceptionStartingModule(ie); }
+                    catch (IllegalAccessException ia) { throw Monitor.exceptionStartingModule(ia); }
+                    catch (NoSuchMethodException nsme) { throw Monitor.exceptionStartingModule(nsme); }
+                    catch (InvocationTargetException ite) { throw Monitor.exceptionStartingModule(ite); }
+                }
+                else
+                { throw StandardException.newException(SQLState.PROPERTY_FILE_NOT_FOUND_IN_BACKUP, bserviceProp); }
+            }
+            else
+            { throw StandardException.newException(SQLState.SERVICE_DIRECTORY_NOT_IN_BACKUP, backupRoot); }
+
+            properties.put(Property.IN_RESTORE_FROM_BACKUP,"True");
+            if(createRoot)
+            { properties.put(Property.DELETE_ROOT_ON_ERROR, "True"); }
+        }
+        return restoreFrom;
+    } // end of recreateServiceRoot
+
+    /**
+       Properties cannot be saved
+    */
+    public String createServiceRoot(final String name, final boolean deleteExisting)
+        throws StandardException
+    {
+        if( !( rootStorageFactory instanceof WritableStorageFactory))
+        { throw StandardException.newException(SQLState.READ_ONLY_SERVICE); }
+        // we need to create the directory before we can call
+        // getCanonicalPath() on it, because if intermediate directories
+        // need to be created the getCanonicalPath() will fail.
+
+        String instantiationString = null;
+        try
+        {
+            StorageFactory storageFactory = privGetStorageFactoryInstance( true, name, null, null);
+            try
+            {
+                StorageFile serviceDirectory = storageFactory.newStorageFile( null);
+
+                if (serviceDirectory.exists())
+                {
+                    if (deleteExisting)
+                    {
+                        if (!serviceDirectory.deleteAll())
+                            throw StandardException.newException(SQLState.SERVICE_DIRECTORY_REMOVE_ERROR,
+                                                                 getDirectoryPath( name));
+                    }
+                    else
+                    {
+                        vetService( storageFactory, name );
+                        throw StandardException.newException(SQLState.SERVICE_DIRECTORY_EXISTS_ERROR,
+                                                             getDirectoryPath( name));
+                    }
+                }
+
+                if (serviceDirectory.mkdirs())
+                {
+                    serviceDirectory.limitAccessToOwner();
+                    // DERBY-5096. The storageFactory canonicalName may need to be adjusted
+                    // for casing after the directory is created. Just reset it after making the 
+                    // the directory to make sure.
+                    String serviceDirCanonicalPath = serviceDirectory.getCanonicalPath();
+                    storageFactory.setCanonicalName(serviceDirCanonicalPath);
+                    try
+                    {
+                        instantiationString = storageFactory.getCanonicalName();
+                    }
+                    catch (IOException ioe)
+                    {
+                        serviceDirectory.deleteAll();
+                        throw ioe;
+                    }
+                }
+            }
+            finally { storageFactory.shutdown(); }
+        }
+        catch (IOException ioe) { throw serviceDirectoryCreateError(ioe, name); }
+        catch (InstantiationException ie) { throw serviceDirectoryCreateError(ie, name); }
+        catch (IllegalAccessException ia) { throw serviceDirectoryCreateError(ia, name); }
+        catch (NoSuchMethodException nsme) { throw serviceDirectoryCreateError(nsme, name); }
+        catch (InvocationTargetException ite) { throw serviceDirectoryCreateError(ite, name); }
+
+        return getProtocolLeadIn() + instantiationString;
+
     } // end of createServiceRoot
+
+    private StandardException serviceDirectoryCreateError(Exception t, String name)
+    {
+        return StandardException.newException(SQLState.SERVICE_DIRECTORY_CREATE_ERROR, t, name);
+    }
 
     /**
        Verify that the service directory looks ok before objecting that the database
@@ -896,56 +793,48 @@ final class StorageFactoryService implements PersistentService
         return sb.toString();
     } // end of getDirectoryPath
 
-	public boolean removeServiceRoot(final String serviceName)
+    public boolean removeServiceRoot(final String serviceName)
     {
         if( !( rootStorageFactory instanceof WritableStorageFactory))
-            return false;
+        { return false; }
         try
         {
-            return AccessController.doPrivileged(
-                new PrivilegedExceptionAction<Object>()
+            StorageFactoryService sfs = null;
+            StorageFactory storageFactory = privGetStorageFactoryInstance( true, serviceName, null, null);
+            try
+            {
+                if (SanityManager.DEBUG)
                 {
-                    public Object run()
-                        throws StandardException, IOException,
-                        InstantiationException, IllegalAccessException,
-                        NoSuchMethodException, InvocationTargetException
-                    {
-                        StorageFactory storageFactory = privGetStorageFactoryInstance( true, serviceName, null, null);
-                        try
-                        {
-                            if (SanityManager.DEBUG)
-                            {
-                                // Run this through getCanonicalServiceName as
-                                // an extra sanity check. Prepending the
-                                // protocol lead in to the canonical name from
-                                // the storage factory should be enough.
-                                String tmpCanonical = getCanonicalServiceName(
-                                        getProtocolLeadIn() +
-                                        storageFactory.getCanonicalName());
-                                // These should give the same result.
-                                SanityManager.ASSERT(
-                                        tmpCanonical.equals(getProtocolLeadIn()
-                                        + storageFactory.getCanonicalName()));
-                                SanityManager.ASSERT(
-                                    serviceName.equals(tmpCanonical),
-                                    "serviceName = " + serviceName +
-                                    " ; protocolLeadIn + " +
-                                    "storageFactory.getCanoicalName = " +
-                                    tmpCanonical);
-                            }
-                            StorageFile serviceDirectory = storageFactory.newStorageFile( null);
-                            return serviceDirectory.deleteAll() ? this : null;
-                        }
-                        finally { storageFactory.shutdown(); }
-                    }
+                    // Run this through getCanonicalServiceName as
+                    // an extra sanity check. Prepending the
+                    // protocol lead in to the canonical name from
+                    // the storage factory should be enough.
+                    String tmpCanonical = getCanonicalServiceName(
+                        getProtocolLeadIn() +
+                        storageFactory.getCanonicalName());
+                    // These should give the same result.
+                    SanityManager.ASSERT(
+                        tmpCanonical.equals(getProtocolLeadIn()
+                                            + storageFactory.getCanonicalName()));
+                    SanityManager.ASSERT(
+                        serviceName.equals(tmpCanonical),
+                        "serviceName = " + serviceName +
+                        " ; protocolLeadIn + " +
+                        "storageFactory.getCanoicalName = " +
+                        tmpCanonical);
                 }
-                ) != null;
-        }
-        catch( PrivilegedActionException pae){ return false;}
-	} // end of removeServiceRoot
+                StorageFile serviceDirectory = storageFactory.newStorageFile( null);
+                sfs = serviceDirectory.deleteAll() ? this : null;
+            }
+            finally { storageFactory.shutdown(); }
 
-	public String getCanonicalServiceName(String name)
-		throws StandardException
+            return (sfs != null);
+        }
+        catch(Exception pae){ return false;}
+    } // end of removeServiceRoot
+
+    public String getCanonicalServiceName(String name)
+        throws StandardException
     {
         int colon = name.indexOf( ':');
         // If no subsubprotocol is specified and the storage factory type isn't
@@ -966,31 +855,24 @@ final class StorageFactoryService implements PersistentService
 
         try
         {
-            return getProtocolLeadIn() + AccessController.doPrivileged(
-                new PrivilegedExceptionAction<String>()
-                {
-                    public String run()
-                        throws StandardException, IOException,
-                        InstantiationException, IllegalAccessException,
-                        NoSuchMethodException, InvocationTargetException
-                    {
-                        StorageFactory storageFactory = privGetStorageFactoryInstance( true, nm, null, null);
-                        try
-                        {
-                            return storageFactory.getCanonicalName();
-                        }
-                        finally { storageFactory.shutdown();}
-                    }
-                }
-                );
-        }
-		catch (PrivilegedActionException pae)
-        {
-			throw Monitor.exceptionStartingModule(pae.getException());
-		}
-	} // end of getCanonicalServiceName
+            String rawName = null;
+            StorageFactory storageFactory = privGetStorageFactoryInstance( true, nm, null, null);
+            try
+            {
+                rawName = storageFactory.getCanonicalName();
+            }
+            finally { storageFactory.shutdown();}
+            
+            return getProtocolLeadIn() + rawName;
 
-	public String getUserServiceName(String serviceName)
+        }
+        catch (Exception pae)
+        {
+            throw Monitor.exceptionStartingModule(pae);
+        }
+    } // end of getCanonicalServiceName
+
+    public String getUserServiceName(String serviceName)
     {
 		if (home != null)
         {
@@ -1026,15 +908,9 @@ final class StorageFactoryService implements PersistentService
      *
      * @param file the file to check
      * @return {@code true} if the file exists, {@code false} if not.
-     * @throws SecurityException if the required privileges are missing
      */
     private final boolean fileExists(final File file) {
-        return (AccessController.doPrivileged(
-                new PrivilegedAction<Boolean>() {
-                    public Boolean run() {
-                        return file.exists();
-                    }
-            })).booleanValue();
+        return file.exists();
     }
 
     /**
@@ -1066,24 +942,15 @@ final class StorageFactoryService implements PersistentService
     }
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
-    final class DirectoryList implements Enumeration, PrivilegedAction<DirectoryList>
+    final class DirectoryList implements Enumeration
     {
         private String[] contents;
         private StorageFile systemDirectory;	 
@@ -1098,7 +965,7 @@ final class StorageFactoryService implements PersistentService
         DirectoryList()
         {
             actionCode = INIT_ACTION;
-            AccessController.doPrivileged( this);
+            run();
         }
 
         public boolean hasMoreElements()
@@ -1110,11 +977,11 @@ final class StorageFactoryService implements PersistentService
                 return true;
 
             actionCode = HAS_MORE_ELEMENTS_ACTION;
-            return AccessController.doPrivileged( this) != null;
+            return run() != null;
         } // end of hasMoreElements
 
         public Object nextElement() throws NoSuchElementException
-        {
+            {
             if (!hasMoreElements())
                 throw new NoSuchElementException();
 
@@ -1122,7 +989,6 @@ final class StorageFactoryService implements PersistentService
             return contents[index++];
         } // end of nextElement
 
-        // PrivilegedAction method
         public final DirectoryList run()
         {
             switch( actionCode)
@@ -1197,11 +1063,7 @@ final class StorageFactoryService implements PersistentService
                 throws StandardException {
             operation = "exists";
             boolean ret = false;
-            try {
-                ret = file.exists();
-            } catch (SecurityException se) {
-                handleSecPrivException(file, mustSucceed, se);
-            }
+            ret = file.exists();
             return ret;
         }
 
@@ -1209,11 +1071,7 @@ final class StorageFactoryService implements PersistentService
                 throws StandardException {
             operation = "delete";
             boolean deleted = false;
-            try {
-                deleted = file.delete();
-            } catch (SecurityException se) {
-                handleSecPrivException(file, mustSucceed, se);
-            }
+            deleted = file.delete();
             if (mustSucceed && !deleted) {
                 throw StandardException.newException(
                         SQLState.UNABLE_TO_DELETE_FILE, file.getPath());   
@@ -1227,18 +1085,7 @@ final class StorageFactoryService implements PersistentService
             // Even if the explicit delete fails, the rename may succeed.
             delete(to, false);
             boolean renamed = false;
-            try {
-                renamed = from.renameTo(to);
-            } catch (SecurityException se) {
-                StorageFile file = to;
-                try {
-                    // We got a security exception, assume a secman is present.
-                    System.getSecurityManager().checkWrite(from.getPath());
-                } catch (SecurityException se1) {
-                    file = from;
-                }
-                handleSecPrivException(file, mustSucceed, se);
-            }
+            renamed = from.renameTo(to);
             if (mustSucceed && !renamed) {
                 throw StandardException.newException(
                         SQLState.UNABLE_TO_RENAME_FILE,
@@ -1247,31 +1094,5 @@ final class StorageFactoryService implements PersistentService
             return renamed;
         }
         
-        /**
-         * Handles security exceptions caused by missing privileges on the
-         * files being accessed.
-         *
-         * @param file the file that was accessed
-         * @param mustSucceed if {@code true} a {@code StandardException} will
-         *      be thrown, if {@code false} a warning is written to the log
-         * @param se the security exception raised
-         * @throws StandardException if {@code mustSucceed} is {@code true}
-         * @throws NullPointerException if {@code file} or {@code se} is null
-         */
-        private void handleSecPrivException(StorageFile file,
-                                            boolean mustSucceed,
-                                            SecurityException se)
-                throws StandardException {
-            if (mustSucceed) {
-                throw StandardException.newException(
-                        SQLState.MISSING_FILE_PRIVILEGE, se, operation,
-                        file.getName(), se.getMessage());
-            } else {
-                Monitor.getStream().printlnWithHeader(
-                        MessageService.getTextMessage(
-                        SQLState.MISSING_FILE_PRIVILEGE, operation,
-                        getMostAccuratePath(file), se.getMessage())); 
-            }
-        }
     } // End of static class FileOperationHelper
 }

@@ -21,11 +21,6 @@
 
 package org.apache.derby.impl.store.raw.data;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-
 import org.apache.derby.iapi.services.context.ContextService;
 import org.apache.derby.iapi.services.diag.Diagnosticable;
 import org.apache.derby.iapi.services.diag.DiagnosticUtil;
@@ -441,64 +436,31 @@ public class D_DiagnosticUtil
     }
 
     /**
-     * Privileged startup. Must be private so that user code
+     *  Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object findServiceModule( final Object serviceModule, final String factoryInterface)
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.findServiceModule( serviceModule, factoryInterface );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.findServiceModule( serviceModule, factoryInterface );
     }
 
     /**
-     * Privileged module lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private static  Object getServiceModule( final Object serviceModule, final String factoryInterface )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     return Monitor.getServiceModule( serviceModule, factoryInterface );
-                 }
-             }
-             );
+        return Monitor.getServiceModule( serviceModule, factoryInterface );
     }
 
     /**
-     * Privileged service lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private static  Object findService( final String factoryInterface, final String serviceName )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     return Monitor.findService( factoryInterface, serviceName );
-                 }
-             }
-             );
+        return Monitor.findService( factoryInterface, serviceName );
     }
     
 }

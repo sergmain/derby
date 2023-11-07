@@ -23,10 +23,6 @@ package org.apache.derbyTesting.functionTests.util;
 
 import java.io.FileWriter;
 import java.io.File;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 /**
   Convience functions for performing file manipulations
@@ -67,25 +63,15 @@ public class FTFileUtil
 	public static void renameFile(String location, String name , 
                                   String newName) throws Exception
 	{
-		final File src = new File(location, name);
-		final File dst = new File(location, newName);
+            final File src = new File(location, name);
+            final File dst = new File(location, newName);
         
-        // needs to run in a privileged block as it will be
-		// called through a SQL statement and thus a generated
-		// class. The generated class on the stack has no permissions
-		// granted to it.
-        AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                public Void run() throws Exception {
-                    if(!src.renameTo(dst))
-                    {
-                        throw new Exception("unable to rename File: " +
-                                            src.getAbsolutePath() +
-                                            " To: " + dst.getAbsolutePath());
-                    }
-                    
-                    return null; // nothing to return
-                }
-            });
+            if(!src.renameTo(dst))
+            {
+                throw new Exception("unable to rename File: " +
+                                    src.getAbsolutePath() +
+                                    " To: " + dst.getAbsolutePath());
+            }
     }
 
 
@@ -164,20 +150,9 @@ public class FTFileUtil
      */
 
 	public static String removeDirectory(final String directory)
-        throws PrivilegedActionException
 	{
-        // needs to run in a privileged block as it will be
-		// called through a SQL statement and thus a generated
-		// class. The generated class on the stack has no permissions
-		// granted to it.
-
-        return AccessController.doPrivileged(new PrivilegedAction<String>() {
-                    public String run()
-                    {
-                        return (removeDirectory(
-                               new File(directory)) ? "true" : "false");
-                    }
-                });
+            return (removeDirectory(
+                        new File(directory)) ? "true" : "false");
 	}
     
 }

@@ -30,10 +30,8 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.IOException;
 
-import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.GeneralSecurityException;
-import java.security.PrivilegedActionException;
 import java.security.SecureClassLoader;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -88,59 +86,46 @@ final class JarLoader extends SecureClassLoader {
 		this.vs = vs;
 	}
 
-	/**
-	 *  Initialize the class loader so it knows if it
-	 *  is loading from a ZipFile or an InputStream
-	 */
-	void initialize() {
+    /**
+     *  Initialize the class loader so it knows if it
+     *  is loading from a ZipFile or an InputStream
+     */
+    void initialize() {
 
-		String schemaName = name[IdUtil.DBCP_SCHEMA_NAME];
-		String sqlName = name[IdUtil.DBCP_SQL_JAR_NAME];
+        String schemaName = name[IdUtil.DBCP_SCHEMA_NAME];
+        String sqlName = name[IdUtil.DBCP_SQL_JAR_NAME];
 
-		Exception e;
-		try {
-			installedJar =
-				updateLoader.getJarReader().getJarFile(
-					schemaName, sqlName);
+        Exception e;
+        try {
+            installedJar =
+                updateLoader.getJarReader().getJarFile(
+                    schemaName, sqlName);
 
-			if (installedJar instanceof File) {
-                try {
-                    jar = AccessController.doPrivileged
-                    (new java.security.PrivilegedExceptionAction<JarFile>(){
+            if (installedJar instanceof File) {
+                jar = new JarFile((File) installedJar);
+                return;
+            }
 
-                        public JarFile run() throws IOException {
-                        return new JarFile((File) installedJar);
+            // Jar is only accessible as an InputStream,
+            // which means we need to re-open the stream for
+            // each access.
 
-                        }
+            isStream = true;
+            return;
 
-                    }
-                     );
-                } catch (PrivilegedActionException pae) {
-                    throw (IOException) pae.getException();
-                }
-				return;
-			}
+        } catch (IOException ioe) {
+            e = ioe;
+        } catch (StandardException se) {
+            e = se;
+        }
 
-			// Jar is only accessible as an InputStream,
-			// which means we need to re-open the stream for
-			// each access.
+        if (vs != null)
+            vs.println(MessageService.getTextMessage(
+                           MessageId.CM_LOAD_JAR_EXCEPTION, getJarName(), e));
 
-			isStream = true;
-			return;
-
-		} catch (IOException ioe) {
-			e = ioe;
-		} catch (StandardException se) {
-			e = se;
-		}
-
-		if (vs != null)
-			vs.println(MessageService.getTextMessage(
-					MessageId.CM_LOAD_JAR_EXCEPTION, getJarName(), e));
-
-		// No such zip.
-		setInvalid();
-	}
+        // No such zip.
+        setInvalid();
+    }
 
 	/**
 	 * Handle all requests to the top-level loader.
@@ -470,7 +455,7 @@ final class JarLoader extends SecureClassLoader {
      * Read the raw data for the class file format
      * into a byte array that can be used for loading the class.
      * If this is a signed class and it has been compromised then
-     * a SecurityException will be thrown.
+     * an IOException will be thrown.
      */
     byte[] readData(JarEntry ze, InputStream in, String className)
             throws IOException {
@@ -539,7 +524,7 @@ final class JarLoader extends SecureClassLoader {
     }
 
     /**
-     * Provide a SecurityManager with information about the class name
+     * Provide a SecurityException with information about the class name
      * and the jar file.
      */
     private SecurityException handleException(Exception e, String className) {

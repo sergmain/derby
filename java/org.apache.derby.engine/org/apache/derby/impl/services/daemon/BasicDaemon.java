@@ -31,8 +31,6 @@ import org.apache.derby.shared.common.sanity.SanityManager;
 
 import org.apache.derby.shared.common.error.StandardException;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Vector;
 import java.util.List;
 import org.apache.derby.iapi.util.InterruptStatus;
@@ -703,7 +701,7 @@ public class BasicDaemon implements DaemonService, Runnable
 
 			if ((serviceCount % yieldCount) == 0) {
 
-				yield();
+				yieldNow();
 			}
 
 			if (SanityManager.DEBUG)
@@ -717,7 +715,7 @@ public class BasicDaemon implements DaemonService, Runnable
 
 
 	/* let everybody else run first */
-	private void yield()
+	private void yieldNow()
 	{
 		Thread currentThread = Thread.currentThread();
 		int oldPriority = currentThread.getPriority();
@@ -743,32 +741,17 @@ public class BasicDaemon implements DaemonService, Runnable
             ModuleFactory mf, final int priority) {
         final Thread t = Thread.currentThread();
         if (mf != null && mf.isDaemonThread(t)) {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                @Override
-                public Void run() {
-                    t.setPriority(priority);
-                    return null;
-                }
-            });
+            t.setPriority(priority);
         }
     }
     
     /**
-     * Privileged Monitor lookup. Must be package private so that user code
+     * Must be package private so that user code
      * can't call this entry point.
      */
     static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
 }

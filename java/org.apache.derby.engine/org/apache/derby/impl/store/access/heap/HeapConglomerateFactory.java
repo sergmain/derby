@@ -55,8 +55,6 @@ import org.apache.derby.iapi.services.uuid.UUIDFactory;
 
 import org.apache.derby.catalog.UUID;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Properties;
 
 // For JavaDoc references (i.e. @see)
@@ -372,21 +370,12 @@ public class HeapConglomerateFactory implements ConglomerateFactory, ModuleContr
 	}
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
 }

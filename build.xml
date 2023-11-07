@@ -52,38 +52,34 @@
     </not>
   </condition>
 
+<!-- Testing properties -->
+
+  <!-- Must set java.security.manager=allow for JDK 18 onward -->
+  <condition property="mustAllowSecurityManager">
+    <available classname="java.lang.runtime.ObjectMethods"/>
+  </condition>
+
+  <condition property="java.security.manager" value="allow">
+    <and>
+      <isset property="mustAllowSecurityManager"/>
+    </and>
+  </condition>
+
+  <target name="z"><echo message="java.security.manager = ${java.security.manager}"/></target>
+
 <!-- <echoproperties/> -->
 
 <!-- Targets -->
   <target
       name="buildsource"
-      depends="checkCompilerLevel,storeless,optional,runner,versioninfo,localeinfo,binscripts,generateSecurityPolicies"
+      depends="checkCompilerLevel,storeless,optional,runner,versioninfo,localeinfo,binscripts"
       description="Compile the product source (does not build the tests)."
   />
   <target
       name="all"
-      depends="buildsource,demo,testing,runmessagecheck"
+      depends="demo,testing,runmessagecheck"
       description="Compile all of the source, including tests as well as production code."
   />
-
-  <!-- Generate security policies and corresponding documentation -->
-  <!-- <target name="buildPolicyFiles" unless="messagesUpToDate" -->
-  <target
-      name="generateSecurityPolicies"
-      description="Build security policies."
-  >
-
-    <taskdef
-      name="generatePolicies"
-      classname="org.apache.derbyBuild.SecurityPolicyGenerator"
-      classpath="${out.build.dir}"
-    />
-
-    <generatePolicies
-      baseDirectory="${basedir}"
-    />
-
-  </target>
 
 <!-- ==================================================================== -->
 <!--                       Initialize targets                             -->
@@ -100,10 +96,8 @@
     </fail>
    </target>
 
-   <target name="init" unless="init.done" depends="version_check,install_junit,setCompilerProperties">
+   <target name="init" unless="init.done" depends="version_check,install_junit,setCompilerProperties,make-generated-dirs,make-release-dirs">
     <tstamp/>
-    <antcall target="make-generated-dirs"/>
-    <antcall target="make-release-dirs"/>
 
     <!-- Create the emtpy dir that we put in the boot classpath to
          prevent the default Java runtime libraries from being loaded.
@@ -218,7 +212,7 @@
 
 
    <!-- You can override this property in local.properties to fetch from an alternative location -->
-   <property name="junit.url" value="http://repo1.maven.org/maven2/junit/junit/3.8.2/junit-3.8.2.jar"/> 
+   <property name="junit.url" value="https://repo1.maven.org/maven2/junit/junit/3.8.2/junit-3.8.2.jar"/> 
    <target name="junit_check">
        <!-- check if junit is set, if set, if junit.jar is really there, if not, error out  -->
        <fail message="junit property is set to ${junit}, but there is no junit.jar there.">
@@ -267,7 +261,7 @@
     </condition>
   </target>
 
-  <target name="writeversioninfo" unless="versioninfo.available">
+  <target name="writeversioninfo" depends="setCompilerProperties" unless="versioninfo.available">
     <mkdir dir="${out.engine.dir}/org/apache/derby/info/"/>
     <mkdir dir="${out.engine.dir}/org/apache/derby/info/engine"/>
 
@@ -286,41 +280,40 @@
     <mkdir dir="${out.testing.dir}/org/apache/derby/info"/>
     <mkdir dir="${out.testing.dir}/org/apache/derby/info/tsting"/>
 
-    <antcall target="infowriter">
-      <param name="info.buildnumber" value="1"/>
-      <param name="info.iname" value="Apache Derby Embedded Engine"/>
-      <param name="info.ename" value="Apache Derby"/>
-      <param name="info.productfile" value="codeline"/>
-      <param name="info.file" value="${out.engine.dir}/org/apache/derby/info/engine/info.properties"/>
-    </antcall>
-    <antcall target="infowriter">
-      <param name="info.buildnumber" value="1"/>
-      <param name="info.iname" value="Apache Derby Tools"/>
-      <param name="info.ename" value="Apache Derby"/>
-      <param name="info.productfile" value="codeline"/>
-      <param name="info.file" value="${out.tools.dir}/org/apache/derby/info/tools/info.properties"/>
-    </antcall>
-    <antcall target="infowriter">
-      <param name="info.buildnumber" value="1"/>
-      <param name="info.iname" value="Apache Derby Network Server"/>
-      <param name="info.ename" value="Apache Derby"/>
-      <param name="info.productfile" value="codeline"/>
-      <param name="info.file" value="${out.drda.dir}/org/apache/derby/info/net/info.properties"/>
-    </antcall>
-    <antcall target="infowriter">
-      <param name="info.buildnumber" value="1"/>
-      <param name="info.iname" value="Apache Derby Network Client"/>
-      <param name="info.ename" value="Apache Derby"/>
-      <param name="info.productfile" value="codeline"/>
-      <param name="info.file" value="${out.client.dir}/org/apache/derby/info/client/info.properties"/>
-    </antcall>
-    <antcall target="infowriter">
-      <param name="info.buildnumber" value="1"/>
-      <param name="info.iname" value="Apache Derby Shared Utilities"/>
-      <param name="info.ename" value="Apache Derby"/>
-      <param name="info.productfile" value="codeline"/>
-      <param name="info.file" value="${out.shared.dir}/org/apache/derby/info/shared/info.properties"/>
-    </antcall>
+    <infowriter
+      info.buildnumber="1"
+      info.iname="Apache Derby Embedded Engine"
+      info.ename="Apache Derby"
+      info.productfile="codeline"
+      info.file="${out.engine.dir}/org/apache/derby/info/engine/info.properties"/>
+
+    <infowriter
+      info.buildnumber="1"
+      info.iname="Apache Derby Tools"
+      info.ename="Apache Derby"
+      info.productfile="codeline"
+      info.file="${out.tools.dir}/org/apache/derby/info/tools/info.properties"/>
+
+    <infowriter
+      info.buildnumber="1"
+      info.iname="Apache Derby Network Server"
+      info.ename="Apache Derby"
+      info.productfile="codeline"
+      info.file="${out.drda.dir}/org/apache/derby/info/net/info.properties"/>
+
+    <infowriter 
+      info.buildnumber="1"
+      info.iname="Apache Derby Network Client"
+      info.ename="Apache Derby"
+      info.productfile="codeline"
+      info.file="${out.client.dir}/org/apache/derby/info/client/info.properties"/>
+
+    <infowriter
+      info.buildnumber="1"
+      info.iname="Apache Derby Shared Utilities"
+      info.ename="Apache Derby"
+      info.productfile="codeline"
+      info.file="${out.shared.dir}/org/apache/derby/info/shared/info.properties"/>
   </target>
 
   <target name="cleanversion">
@@ -367,6 +360,29 @@
       <entry key="derby.product.file" value="${info.productfile}"/>
     </propertyfile>
   </target>  
+
+  <macrodef name="infowriter">
+    <attribute name="info.buildnumber"/>
+    <attribute name="info.iname"/>
+    <attribute name="info.ename"/>
+    <attribute name="info.productfile"/>
+    <attribute name="info.file"/>
+    <sequential>
+      <propertyfile file="@{info.file}" comment="${copyright.comment}">
+        <entry key="derby.version.major"            value="${major}"/>
+        <entry key="derby.version.minor"            value="${minor}"/>
+        <entry key="derby.version.maint"            value="${maint}"/>
+        <entry key="derby.version.drdamaint"        value="${drdamaint}"/>
+        <entry key="derby.build.number"             value="@{info.buildnumber}"/>
+        <entry key="derby.product.technology.name"  value="$@{info.iname}"/>
+        <entry key="derby.product.external.name"    value="@{info.ename}"/>
+        <entry key="derby.product.external.version" value="${eversion}"/>
+        <entry key="derby.version.beta"             value="${beta}"/>
+        <entry key="derby.product.vendor"           value="${vendor}"/>
+        <entry key="derby.product.file"             value="@{info.productfile}"/>
+      </propertyfile>
+    </sequential>
+  </macrodef>  
 
     <!--
         Create the release properties file and check it in
@@ -421,31 +437,46 @@
 <!--                   Locale info writer build target                    -->
 <!-- ==================================================================== -->
 
-  <target name="buildlocaleinfo">
-    <property name="locale.output.dir" value="${out.dir}/${locale.stub}${locale.iname}/org/apache/derby/info/${locale.stub}${locale.iname}"/>
-    <mkdir dir="${locale.output.dir}"/>
+  <macrodef name="buildlocaleinfo">
+    <attribute name="locale.iname"/>
+    <attribute name="locale.ename"/>
+    <attribute name="info.buildnumber"/>
+    <attribute name="info.productfile"/>
+    <attribute name="locale.output.dir"
+               default="${out.dir}/${locale.stub}@{locale.iname}/org/apache/derby/info/${locale.stub}@{locale.iname}"/>
+    <sequential>
+      <mkdir dir="@{locale.output.dir}"/>
 
-    <antcall target="localeinfowriter">
-      <param name="info.buildnumber" value="1"/>
-      <param name="info.iname" value="_${locale.iname}"/>
-      <param name="info.ename" value="${locale.ename}"/>
-      <param name="info.file" value="${locale.output.dir}/info.properties"/>
-    </antcall>
-  </target>
+      <localeinfowriter
+        info.buildnumber="1"
+        info.iname="_@{locale.iname}"
+        info.ename="@{locale.ename}"
+        info.file="@{locale.output.dir}/info.properties"
+        info.productfile="@{info.productfile}"
+      />
+    </sequential>
+  </macrodef>
 
-  <target name="localeinfowriter">
-    <propertyfile file="${info.file}" comment="${copyright.comment}">
-      <entry key="derby.locale.version.major" value="${major}"/>
-      <entry key="derby.locale.version.minor" value="${minor}"/>
-      <entry key="derby.locale.version.maint" value="${maint}"/>
-      <entry key="derby.locale.build.number" value="${info.buildnumber}"/>
-      <entry key="derby.locale.technology.name" value="${info.iname}"/>
-      <entry key="derby.locale.external.name" value="${info.ename}"/>
-      <entry key="derby.version.beta" value="${beta}"/>
-      <entry key="derby.locale.vendor" value="${vendor}"/>
-      <entry key="derby.product.file" value="${info.productfile}"/>
-    </propertyfile>
-  </target>
+  <macrodef name="localeinfowriter">
+    <attribute name="info.buildnumber"/>
+    <attribute name="info.iname"/>
+    <attribute name="info.ename"/>
+    <attribute name="info.productfile"/>
+    <attribute name="info.file"/>
+    <sequential>
+      <propertyfile file="@{info.file}" comment="${copyright.comment}">
+        <entry key="derby.locale.version.major" value="${major}"/>
+        <entry key="derby.locale.version.minor" value="${minor}"/>
+        <entry key="derby.locale.version.maint" value="${maint}"/>
+        <entry key="derby.locale.build.number" value="@{info.buildnumber}"/>
+        <entry key="derby.locale.technology.name" value="@{info.iname}"/>
+        <entry key="derby.locale.external.name" value="@{info.ename}"/>
+        <entry key="derby.version.beta" value="${beta}"/>
+        <entry key="derby.locale.vendor" value="${vendor}"/>
+        <entry key="derby.product.file" value="@{info.productfile}"/>
+      </propertyfile>
+    </sequential>
+  </macrodef>
 
  
 <!-- ==================================================================== -->
@@ -456,108 +487,96 @@
           depends="checklocaleinfo,checkmessages"
           unless="localeinfo.available">
 
-    <antcall target="buildlocaleinfo">
-      <param name="locale.iname" value="cs"/>
-      <param name="locale.ename" value="Czech/International [cs]"/>
-      <param name="info.buildnumber" value="1"/>
-      <param name="info.productfile" value="codeline"/>
-    </antcall>
-    <antcall target="buildlocaleinfo">
-      <param name="locale.iname" value="de_DE"/>
-      <param name="locale.ename" value="German/Germany [de_DE]"/>
-      <param name="info.buildnumber" value="1"/>
-      <param name="info.productfile" value="codeline"/>
-    </antcall>
-    <antcall target="buildlocaleinfo">
-      <param name="locale.iname" value="es"/>
-      <param name="locale.ename" value="Spanish/International [es]"/>
-      <param name="info.buildnumber" value="1"/>
-      <param name="info.productfile" value="codeline"/>
-    </antcall>
-    <antcall target="buildlocaleinfo">
-      <param name="locale.iname" value="fr"/>
-      <param name="locale.ename" value="French/International [fr]"/>
-      <param name="info.buildnumber" value="1"/>
-      <param name="info.productfile" value="codeline"/>
-    </antcall>
-    <antcall target="buildlocaleinfo">
-      <param name="locale.iname" value="hu"/>
-      <param name="locale.ename" value="Hungarian/International [hu]"/>
-      <param name="info.buildnumber" value="1"/>
-      <param name="info.productfile" value="codeline"/>
-    </antcall>
-    <antcall target="buildlocaleinfo">
-      <param name="locale.iname" value="it"/>
-      <param name="locale.ename" value="Italian/International [it]"/>
-      <param name="info.buildnumber" value="1"/>
-      <param name="info.productfile" value="codeline"/>
-    </antcall>
-    <antcall target="buildlocaleinfo">
-      <param name="locale.iname" value="ja_JP"/>
-      <param name="locale.ename" value="Japanese/Japan [ja_JP]"/>
-      <param name="info.buildnumber" value="1"/>
-      <param name="info.productfile" value="codeline"/>
-    </antcall>
-    <antcall target="buildlocaleinfo">
-      <param name="locale.iname" value="ko_KR"/>
-      <param name="locale.ename" value="Korean/Korea [ko_KR]"/>
-      <param name="info.buildnumber" value="1"/>
-      <param name="info.productfile" value="codeline"/>
-    </antcall>
-    <antcall target="buildlocaleinfo">
-      <param name="locale.iname" value="pl"/>
-      <param name="locale.ename" value="Polish/International [pl]"/>
-      <param name="info.buildnumber" value="1"/>
-      <param name="info.productfile" value="codeline"/>
-    </antcall>
-    <antcall target="buildlocaleinfo">
-      <param name="locale.iname" value="pt_BR"/>
-      <param name="locale.ename" value="Portuguese/Brazil [pt_BR]"/>
-      <param name="info.buildnumber" value="1"/>
-      <param name="info.productfile" value="codeline"/>
-    </antcall>
-    <antcall target="buildlocaleinfo">
-      <param name="locale.iname" value="ru"/>
-      <param name="locale.ename" value="Russian/International [ru]"/>
-      <param name="info.buildnumber" value="1"/>
-      <param name="info.productfile" value="codeline"/>
-    </antcall>
-    <antcall target="buildlocaleinfo">
-      <param name="locale.iname" value="zh_CN"/>
-      <param name="locale.ename" value="Simplified_Chinese/PR_China [zh_CN]"/>
-      <param name="info.buildnumber" value="1"/>
-      <param name="info.productfile" value="codeline"/>
-    </antcall>
-    <antcall target="buildlocaleinfo">
-      <param name="locale.iname" value="zh_TW"/>
-      <param name="locale.ename" value="Chinese/Taiwan_Traditional [zh_TW]"/>
-      <param name="info.buildnumber" value="1"/>
-      <param name="info.productfile" value="codeline"/>
-    </antcall>
+    <buildlocaleinfo
+      locale.iname="cs"
+      locale.ename="Czech/International [cs]"
+      info.buildnumber="1"
+      info.productfile="codeline"/>
+    <buildlocaleinfo
+      locale.iname="de_DE"
+      locale.ename="German/Germany [de_DE]"
+      info.buildnumber="1"
+      info.productfile="codeline"/>
+    <buildlocaleinfo
+      locale.iname="es"
+      locale.ename="Spanish/International [es]"
+      info.buildnumber="1"
+      info.productfile="codeline"/>
+    <buildlocaleinfo
+      locale.iname="fr"
+      locale.ename="French/International [fr]"
+      info.buildnumber="1"
+      info.productfile="codeline"/>
+    <buildlocaleinfo
+      locale.iname="hu"
+      locale.ename="Hungarian/International [hu]"
+      info.buildnumber="1"
+      info.productfile="codeline"/>
+    <buildlocaleinfo
+      locale.iname="it"
+      locale.ename="Italian/International [it]"
+      info.buildnumber="1"
+      info.productfile="codeline"/>
+    <buildlocaleinfo
+      locale.iname="ja_JP"
+      locale.ename="Japanese/Japan [ja_JP]"
+      info.buildnumber="1"
+      info.productfile="codeline"/>
+    <buildlocaleinfo
+      locale.iname="ko_KR"
+      locale.ename="Korean/Korea [ko_KR]"
+      info.buildnumber="1"
+      info.productfile="codeline"/>
+    <buildlocaleinfo
+      locale.iname="pl"
+      locale.ename="Polish/International [pl]"
+      info.buildnumber="1"
+      info.productfile="codeline"/>
+    <buildlocaleinfo
+      locale.iname="pt_BR"
+      locale.ename="Portuguese/Brazil [pt_BR]"
+      info.buildnumber="1"
+      info.productfile="codeline"/>
+    <buildlocaleinfo
+      locale.iname="ru"
+      locale.ename="Russian/International [ru]"
+      info.buildnumber="1"
+      info.productfile="codeline"/>
+    <buildlocaleinfo
+      locale.iname="zh_CN"
+      locale.ename="Simplified_Chinese/PR_China [zh_CN]"
+      info.buildnumber="1"
+      info.productfile="codeline"/>
+    <buildlocaleinfo
+      locale.iname="zh_TW"
+      locale.ename="Chinese/Taiwan_Traditional [zh_TW]"
+      info.buildnumber="1"
+      info.productfile="codeline"/>
   </target>
 
   <target name="checklocaleinfo">
     <condition property="localeinfo.available">
       <and>
-        <available file="${${out.dir}/${locale.stub}cs/org/apache/derby/info/${locale.stub}cs/info.properties"/>
-        <available file="${${out.dir}/${locale.stub}de_DE/org/apache/derby/info/${locale.stub}de_DE/info.properties"/>
-        <available file="${${out.dir}/${locale.stub}es/org/apache/derby/info/${locale.stub}es/info.properties"/>
-        <available file="${${out.dir}/${locale.stub}fr/org/apache/derby/info/${locale.stub}fr/info.properties"/>
-        <available file="${${out.dir}/${locale.stub}hu/org/apache/derby/info/${locale.stub}hu/info.properties"/>
-        <available file="${${out.dir}/${locale.stub}it/org/apache/derby/info/${locale.stub}it/info.properties"/>
-        <available file="${${out.dir}/${locale.stub}ja_JP/org/apache/derby/info/${locale.stub}ja_JP/info.properties"/>
-        <available file="${${out.dir}/${locale.stub}ko_KR/org/apache/derby/info/${locale.stub}ko_KR/info.properties"/>
-        <available file="${${out.dir}/${locale.stub}pl/org/apache/derby/info/${locale.stub}pl/info.properties"/>
-        <available file="${${out.dir}/${locale.stub}pt_BR/org/apache/derby/info/${locale.stub}pt_BR/info.properties"/>
-        <available file="${${out.dir}/${locale.stub}ru/org/apache/derby/info/${locale.stub}ru/info.properties"/>
-        <available file="${${out.dir}/${locale.stub}zh_CN/org/apache/derby/info/${locale.stub}zh_CN/info.properties"/>
-        <available file="${${out.dir}/${locale.stub}zh_TW/org/apache/derby/info/${locale.stub}zh_TW/info.properties"/>
+        <available file="${out.dir}/${locale.stub}cs/org/apache/derby/info/${locale.stub}cs/info.properties"/>
+        <available file="${out.dir}/${locale.stub}de_DE/org/apache/derby/info/${locale.stub}de_DE/info.properties"/>
+        <available file="${out.dir}/${locale.stub}es/org/apache/derby/info/${locale.stub}es/info.properties"/>
+        <available file="${out.dir}/${locale.stub}fr/org/apache/derby/info/${locale.stub}fr/info.properties"/>
+        <available file="${out.dir}/${locale.stub}hu/org/apache/derby/info/${locale.stub}hu/info.properties"/>
+        <available file="${out.dir}/${locale.stub}it/org/apache/derby/info/${locale.stub}it/info.properties"/>
+        <available file="${out.dir}/${locale.stub}ja_JP/org/apache/derby/info/${locale.stub}ja_JP/info.properties"/>
+        <available file="${out.dir}/${locale.stub}ko_KR/org/apache/derby/info/${locale.stub}ko_KR/info.properties"/>
+        <available file="${out.dir}/${locale.stub}pl/org/apache/derby/info/${locale.stub}pl/info.properties"/>
+        <available file="${out.dir}/${locale.stub}pt_BR/org/apache/derby/info/${locale.stub}pt_BR/info.properties"/>
+        <available file="${out.dir}/${locale.stub}ru/org/apache/derby/info/${locale.stub}ru/info.properties"/>
+        <available file="${out.dir}/${locale.stub}zh_CN/org/apache/derby/info/${locale.stub}zh_CN/info.properties"/>
+        <available file="${out.dir}/${locale.stub}zh_TW/org/apache/derby/info/${locale.stub}zh_TW/info.properties"/>
       </and>
     </condition>
   </target>
 
   <target name="cleanlocale">
-    <delete file="${out.dir}/${locale.stub}cs/org/apache/derby/info/${locale.stub}cs/info.properties"/>           <delete file="${out.dir}/${locale.stub}de_DE/org/apache/derby/info/${locale.stub}de_DE/info.properties"/>
+    <delete file="${out.dir}/${locale.stub}cs/org/apache/derby/info/${locale.stub}cs/info.properties"/>
+    <delete file="${out.dir}/${locale.stub}de_DE/org/apache/derby/info/${locale.stub}de_DE/info.properties"/>
     <delete file="${out.dir}/${locale.stub}es/org/apache/derby/info/${locale.stub}es/info.properties"/>
     <delete file="${out.dir}/${locale.stub}fr/org/apache/derby/info/${locale.stub}fr/info.properties"/>
     <delete file="${out.dir}/${locale.stub}hu/org/apache/derby/info/${locale.stub}hu/info.properties"/>
@@ -575,6 +594,7 @@
           unless="checkmessages.done">
     <java classname="org.apache.derbyBuild.MessageVetter"
           classpath="${out.build.dir}"
+          fork="yes"
           failonerror="true">
       <arg file="${out.engine.dir}/org/apache/derby/loc"/>
       <arg file="${out.drda.dir}/org/apache/derby/loc/drda"/>
@@ -598,51 +618,717 @@
 <!--                   Derby Engine build target                     -->
 <!-- ==================================================================== -->
 
-  <target name="engine" depends="shared,felixStubs">
-    <ant dir="${derby.engine.src.dir}"/>
-    <antcall target="build"/>
-    <ant dir="${derby.engine.dir}/loc"/>
-    <antcall target="class_size_catalog"/>
+  <target name="engine" depends="engine_properties_copy,class_size_catalog">
   </target>
 
-  <target name="tools" depends="engine,client">
-    <ant dir="${derby.tools.src.dir}"/>
+  <target name="engine_properties_copy"
+          depends="locales"
+          description="Build Derby engine">
+
+    <copy todir="${out.engine.dir}/${derby.dir}">
+       <fileset dir="${derby.engine.dir}">
+         <include name="modules.properties"/>
+       </fileset>
+    </copy>
+
+    <copy
+      file="${derby.engine.src.dir}/org/apache/derby/impl/jdbc/metadata.properties"
+      tofile="${out.engine.dir}/org/apache/derby/impl/jdbc/metadata.properties"/>
+
+    <copy
+      file="${derby.engine.src.dir}/org/apache/derby/impl/sql/catalog/metadata_net.properties"
+      tofile="${out.engine.dir}/org/apache/derby/impl/sql/catalog/metadata_net.properties"/>
+
   </target>
-	
-  <target name="optional" depends="tools">
-    <ant dir="${derby.optional.src.dir}"/>
+
+  <target name="compiles_engine_and_derbyBuild" depends="felixStubs,shared,engine_parser">
+    <!-- compiles engine module java files (fixed and generated by parser) -->
+    <!-- ${derby.engine.src.dir}     : java/org.apache.derby.engine -->
+    <!-- ${generated.src.engine.dir} : generated/java/org.apache.derby.engine -->
+    <!-- and -->
+    <!-- ${derby.build.src.dir}      : java/build -->
+    <!--                               org/apache/derbyBuild/** -->
+    <javac
+      source="${min.version}"
+      target="${min.version}"
+      nowarn="on"
+      debug="${debug}" debuglevel="${debuglevel}"
+      depend="${depend}"
+      deprecation="${deprecation}"
+      optimize="${optimize}"
+      proceed="${proceed}"
+      verbose="${verbose}"
+      srcdir="${derby.engine.src.dir}:${generated.src.engine.dir}"
+      destdir="${out.engine.dir}">
+      <compilerarg value="-Xlint:unchecked"/>
+      <modulepath>
+        <pathelement location="${out.shared.dir}"/>
+        <pathelement location="${osgi}"/>
+      </modulepath>
+    </javac>
+
+    <copy file="${derby.build.src.dir}/org/apache/derbyBuild/odbcgen_fragments.properties"
+          tofile="${out.build.dir}/org/apache/derbyBuild/odbcgen_fragments.properties"/>
+
+    <javac
+      source="${min.version}"
+      target="${min.version}"
+      nowarn="on"
+      debug="${debug}" debuglevel="${debuglevel}"
+      depend="${depend}"
+      deprecation="${deprecation}"
+      optimize="${optimize}"
+      proceed="${proceed}"
+      verbose="${verbose}"
+      srcdir="${derby.build.src.dir}"
+      destdir="${out.build.dir}">
+      <classpath>
+        <pathelement path="${java.home}/../lib/tools.jar"/>
+        <pathelement path="${ant.core.lib}"/>
+        <pathelement path="${out.shared.dir}"/>
+        <pathelement path="${out.engine.dir}"/>
+      </classpath>
+      <include name="org/apache/derbyBuild/**"/>
+      <compilerarg value="-Xlint:unchecked"/>
+      <compilerarg value="-Xlint:deprecation"/>
+    </javac>
   </target>
-	
-  <target name="runner" depends="drda">
-    <ant dir="${derby.run.src.dir}"/>
+
+  <target name="locales" depends="split"/>
+
+  <!-- Initialization-->
+  <target name="locales_init" depends="compiles_engine_and_derbyBuild">
+    <property name="msgStub" value="messages_"/>
+
+    <!-- Define the task which creates the engine's messages_en.properties -->
+    <taskdef
+      name="buildMessages"
+      classname="org.apache.derbyBuild.MessageBuilder"
+      classpath="${out.build.dir}"
+    />
+
+    <property name="messageDescriptors" value="${derby.locales.dir}/messages.xml"/>
+    <property name="englishMessages" value="${generated.engine.locale.dir}/${msgStub}en.properties"/>
+
+    <uptodate
+      property="messagesUpToDate"
+      targetfile="${englishMessages}"
+    >
+      <srcfiles file="${messageDescriptors}"/>
+      <srcfiles dir="${derby.build.dir}" includes="*.java"/>
+    </uptodate>
   </target>
-	
-  <target name="storeless" depends="engine">
-  	<ant dir="${derby.storeless.src.dir}"/>
+
+  <!-- Generate english messages from xml descriptors-->
+  <target name="buildMessages" depends="locales_init" unless="messagesUpToDate">
+
+    <mkdir dir="${gen.doc.dir}" />
+
+    <buildMessages
+      xmlSourceFile="${messageDescriptors}"
+      propertiesTargetFile="${englishMessages}"
+      ditaTargetFile="${sqlstateTables}"
+    />
+
   </target>
-	
+
+  <target name="split" depends="buildMessages,verifysplit">
+
+    <antcall target="doSplit">
+      <param name="msgdir" value="${generated.engine.locale.dir}"/>
+      <param name="localeSuffix" value="en"/>
+    </antcall>
+    <antcall target="doSplit">
+      <param name="msgdir" value="${derby.locales.dir}"/>
+      <param name="localeSuffix" value="cs"/>
+    </antcall>
+    <antcall target="doSplit">
+      <param name="msgdir" value="${derby.locales.dir}"/>
+      <param name="localeSuffix" value="de_DE"/>
+    </antcall>
+    <antcall target="doSplit">
+      <param name="msgdir" value="${derby.locales.dir}"/>
+      <param name="localeSuffix" value="es"/>
+    </antcall>
+    <antcall target="doSplit">
+      <param name="msgdir" value="${derby.locales.dir}"/>
+      <param name="localeSuffix" value="hu"/>
+    </antcall>
+    <antcall target="doSplit">
+      <param name="msgdir" value="${derby.locales.dir}"/>
+      <param name="localeSuffix" value="ja_JP"/>
+    </antcall>
+    <antcall target="doSplit">
+      <param name="msgdir" value="${derby.locales.dir}"/>
+      <param name="localeSuffix" value="ko_KR"/>
+    </antcall>
+    <antcall target="doSplit">
+      <param name="msgdir" value="${derby.locales.dir}"/>
+      <param name="localeSuffix" value="qq_PP_testOnly"/>
+    </antcall>
+    <antcall target="doSplit">
+      <param name="msgdir" value="${derby.locales.dir}"/>
+      <param name="localeSuffix" value="pl"/>
+    </antcall>
+    <antcall target="doSplit">
+      <param name="msgdir" value="${derby.locales.dir}"/>
+      <param name="localeSuffix" value="pt_BR"/>
+    </antcall>
+    <antcall target="doSplit">
+      <param name="msgdir" value="${derby.locales.dir}"/>
+      <param name="localeSuffix" value="ru"/>
+    </antcall>
+    <antcall target="doSplit">
+      <param name="msgdir" value="${derby.locales.dir}"/>
+      <param name="localeSuffix" value="zh_CN"/>
+    </antcall>
+    <antcall target="doSplit">
+      <param name="msgdir" value="${derby.locales.dir}"/>
+      <param name="localeSuffix" value="zh_TW"/>
+    </antcall>
+    <antcall target="doSplit">
+      <param name="msgdir" value="${derby.locales.dir}"/>
+      <param name="localeSuffix" value="it"/>
+    </antcall>
+    <antcall target="doSplit">
+      <param name="msgdir" value="${derby.locales.dir}"/>
+      <param name="localeSuffix" value="fr"/>
+    </antcall>
+  </target>
+
+  <target name="doSplit" depends="splitprops,noSplit,chksplit" unless="split.done">
+    <mkdir dir="${loc.engine.dir}"/>
+    <mkdir dir="${loc.client.dir}"/>
+
+    <mkdir dir="${generated.src.dir}/${locale.stub}${localeSuffix}"/>
+    <mkdir dir="${generated.src.dir}/${locale.stub}${localeSuffix}/org/apache/derby/info/${locale.stub}${localeSuffix}"/>
+    <mkdir dir="${locale.output.dir}"/>
+    <mkdir dir="${locale.output.dir}/org/apache/derby/loc/${locale.stub}${localeSuffix}"/>
+
+    <copy overwrite="true"
+          file="${derby.locales.src.dir}/module-info.template"
+          tofile="${generated.src.dir}/${locale.stub}${localeSuffix}/module-info.java">
+      <filterset>
+        <filter token="LOCALE" value="${localeSuffix}"/>
+      </filterset>
+    </copy>
+
+    <copy overwrite="true"
+          file="${derby.locales.src.dir}/DerbyModule.template"
+          tofile="${generated.src.dir}/${locale.stub}${localeSuffix}/org/apache/derby/info/${locale.stub}${localeSuffix}/DerbyModule.java">
+      <filterset>
+        <filter token="LOCALE" value="${localeSuffix}"/>
+      </filterset>
+    </copy>
+
+    <javac
+      source="${min.version}"
+      target="${min.version}"
+      nowarn="on"
+      debug="${debug}" debuglevel="${debuglevel}"
+      depend="${depend}"
+      deprecation="${deprecation}"
+      optimize="${optimize}"
+      proceed="${proceed}"
+      verbose="${verbose}"
+      srcdir="${generated.src.dir}/${locale.stub}${localeSuffix}"
+      destdir="${locale.output.dir}">
+      <compilerarg value="-Xlint:unchecked"/>
+      <modulepath>
+        <pathelement location="${out.shared.dir}"/>
+      </modulepath>
+    </javac>
+
+    <java classname="org.apache.derbyBuild.splitmessages"
+          classpath="${out.build.dir}:${out.shared.dir}"
+          fork="yes"
+          failonerror="true">
+      <arg value="${loc.engine.dir}"/> 
+      <arg value="${loc.client.dir}"/> 
+      <arg value="${locale.output.dir}/org/apache/derby/loc"/> 
+      <arg value="${split.properties}"/>
+    </java>
+    <touch file="${split.donefile}"/>
+  </target>
+
+  <target name="splitprops">
+    <property name="split.properties" value="${msgdir}/${msgStub}${localeSuffix}.properties"/>
+    <property name="locale.output.dir" value="${out.dir}/${locale.stub}${localeSuffix}"/>
+    <property name="split.donefile" value="${loc.engine.dir}/${msgStub}${localeSuffix}.done"/>
+  </target>
+
+  <target name="chksplit">
+    <uptodate property="split.done"
+              targetfile="${split.donefile}" >
+      <srcfiles dir="${derby.locales.dir}" includes="${msgStub}${localeSuffix}.properties" />
+    </uptodate>
+  </target>
+
+  <target name="verifysplit">
+    <available classname="org.apache.derbyBuild.splitmessages"
+               property="splitmsgs.available">
+      <classpath>
+        <pathelement path="${out.build.dir}"/>
+        <pathelement path="${out.shared.dir}"/>
+      </classpath>
+    </available>
+  </target>
+
+  <target name="noSplit" unless="splitmsgs.available">
+    <echo level="error" message=""/>
+    <echo level="error" message="***** SplitMessages not available *****"/>
+    <echo level="error" message=" ***** Run &quot;all&quot; target first *****"/>
+    <echo level="error" message=""/>
+    <fail message="  Exiting ant build..."/>
+  </target>
+
+  <target name="engine_parser" depends="make-generated-dirs,setCompilerProperties">
+
+    <genParser
+                msg="Generating SQL parser..."
+            outroot="${generated.src.engine.dir}"
+            srcroot="org.apache.derby.engine"
+          directory="${derby.dir}/impl/sql/compile"
+            rmfiles="implparser_rm.files"
+             jjfile="sqlgrammar.jj"
+            chkfile="SQLParser.java"
+      constantsfile="SQLParserConstants"
+    />
+
+    <!--
+      The following files were generated:
+
+      CharStream.java
+      ParseException.java
+      SQLParser.java
+      SQLParserConstants.java
+      SQLParserTokenManager.java
+      Token.java
+      TokenMgrError.java
+
+      3 of those files are checked into the codeline:
+
+      CharStream.java
+      ParseException.java
+      Token.java
+
+      We don't want generated code to clash with the checked-in versions. So
+      we delete the conflicting classes here.
+    -->
+    <delete>
+      <fileset dir="${generated.src.engine.dir}/${derby.dir}/impl/sql/compile">
+        <include name="CharStream.java"/>
+        <include name="ParseException.java"/>
+        <include name="Token.java"/>
+      </fileset>
+    </delete>
+
+    <!-- Reduce the visibility of these files from public to package. -->
+    <replaceregexp match="^public (class|interface)" replace="\1" flags="m">
+      <fileset dir="${generated.src.engine.dir}/${derby.dir}/impl/sql/compile">
+        <include name="SQLParser.java"/>
+        <include name="SQLParserConstants.java"/>
+        <include name="SQLParserTokenManager.java"/>
+        <include name="TokenMgrError.java"/>
+      </fileset>
+    </replaceregexp>
+
+  </target>
+
+  <!-- end of expanding 'engine' target of java\org.apache.derby.engine\build.xml -->
+
+  <target name="tools" depends="engine,client,parser">
+
+    <javac
+      source="${min.version}"
+      target="${min.version}"
+      nowarn="on"
+      debug="${debug}" debuglevel="${debuglevel}"
+      depend="${depend}"
+      deprecation="${deprecation}"
+      optimize="${optimize}"
+      proceed="${proceed}"
+      verbose="${verbose}"
+      srcdir="${derby.tools.src.dir}:${generated.src.tools.dir}"
+      destdir="${out.tools.dir}">
+      <compilerarg value="-Xlint"/>
+      <modulepath>
+        <pathelement location="${out.shared.dir}"/>
+        <pathelement location="${out.engine.dir}"/>
+        <pathelement location="${out.client.dir}"/>
+      </modulepath>
+    </javac>
+
+    <copy todir="${loc.tools.dir}" flatten="true">
+      <fileset dir="${derby.tools.locales.dir}">
+        <include name="sysinfoMessages.properties"/>
+        <include name="toolsmessages.properties"/>
+      </fileset>
+    </copy>
+
+    <copyLocalization localization="en"/>
+    <copyLocalization localization="cs"/>
+    <copyLocalization localization="de_DE"/>
+    <copyLocalization localization="es"/>
+    <copyLocalization localization="hu"/>
+    <copyLocalization localization="ja_JP"/>
+    <copyLocalization localization="ko_KR"/>
+    <copyLocalization localization="qq_PP_testOnly"/>
+    <copyLocalization localization="pl"/>
+    <copyLocalization localization="pt_BR"/>
+    <copyLocalization localization="ru"/>
+    <copyLocalization localization="zh_CN"/>
+    <copyLocalization localization="zh_TW"/>
+    <copyLocalization localization="it"/>
+    <copyLocalization localization="fr"/>
+  </target>
+
+  <macrodef name="copyLocalization">
+    <attribute name="localization"/>
+    <attribute name="locale.output.dir"
+               default="${out.dir}/${locale.stub}@{localization}/org/apache/derby/loc/tools/${locale.stub}@{localization}"
+               description="e.g. : classes\locale_en\org\apache\derby\loc\tools\locale_en"/>
+    <sequential>
+      <mkdir dir="@{locale.output.dir}"/>
+      <copy todir="@{locale.output.dir}">
+        <fileset dir="${derby.tools.locales.dir}">
+          <include name="sysinfoMessages_@{localization}.properties"/>
+          <include name="toolsmessages_@{localization}.properties"/>
+        </fileset>
+      </copy>
+    </sequential>
+  </macrodef>
+
+  <target name="parser" depends="make-generated-dirs,setCompilerProperties">
+
+    <genParser
+                msg="Generating ij parser..."
+            outroot="${generated.src.tools.dir}"
+            srcroot="org.apache.derby.tools"
+          directory="${derby.dir}/impl/tools/ij"
+            rmfiles="ijimplparser_rm.files"
+             jjfile="ij.jj"
+            chkfile="ij.java"
+      constantsfile="ijConstants"
+    />
+
+    <genParser
+                msg="Generating mtGrammar parser..."
+            outroot="${generated.src.tools.dir}"
+            srcroot="org.apache.derby.tools"
+          directory="${derby.dir}/impl/tools/ij"
+            rmfiles="mtparser_rm.files"
+             jjfile="mtGrammar.jj"
+            chkfile="mtGrammar.java"
+      constantsfile="mtGrammarConstants"
+    />
+
+    <!--
+      The following files were just generated:
+
+      CharStream.java
+      ij.java
+      ijConstants.java
+      ijTokenManager.java
+      mtGrammar.java
+      mtGrammarConstants.java
+      mtGrammarTokenManager.java
+      ParseException.java
+      SimpleCharStream.java
+      Token.java
+      TokenMgrError.java
+
+      1 of those files is checked into the codeline:
+
+      ParseException.java
+
+      We don't want generated code to clash with the checked-in versions. So
+      we delete the conflicting class here.
+    -->
+    <delete>
+      <fileset dir="${generated.src.tools.dir}/${derby.dir}/impl/tools/ij">
+        <include name="ParseException.java"/>
+      </fileset>
+    </delete>
+
+    <!-- reduce the visibility of these files from public to package protection -->
+    <property name="ijConstants.src" value="${generated.src.tools.dir}/${derby.dir}/impl/tools/ij/ijConstants.java"/>
+    <property name="ijTokenManager.src" value="${generated.src.tools.dir}/${derby.dir}/impl/tools/ij/ijTokenManager.java"/>
+
+    <replaceregexp file="${ijConstants.src}" match="public interface" replace="interface"/>
+    <replaceregexp file="${ijTokenManager.src}" match="public class" replace="class"/>
+
+  </target>
+
+  <target name="optional" depends="tools"
+          description="Build Derby optional tools">
+
+    <property name="cur.dir.optional" value="optional"/>
+
+    <javac
+      source="${min.version}"
+      target="${min.version}"
+      nowarn="on"
+      debug="${debug}" debuglevel="${debuglevel}"
+      depend="${depend}"
+      deprecation="${deprecation}"
+      optimize="${optimize}"
+      proceed="${proceed}"
+      verbose="${verbose}"
+      srcdir="${derby.optional.src.dir}:${generated.src.dir}"
+      destdir="${out.optional.dir}">
+      <modulepath>
+        <pathelement path="${out.shared.dir}"/>
+        <pathelement path="${out.engine.dir}"/>
+        <pathelement path="${out.tools.dir}"/>
+        <pathelement path="${lucene_core}"/>
+        <pathelement path="${lucene_a_co}"/>
+        <pathelement path="${lucene_qp}"/>
+        <pathelement path="${json_simple}"/>
+      </modulepath>
+      <include name="${derby.dir}/${cur.dir.optional}/**"/>
+      <compilerarg value="-Xlint:unchecked"/>
+      <compilerarg value="-Xlint:deprecation"/>
+    </javac>
+  </target>
+
+  <target name="runner" depends="drda"
+          description="Build Derby command runner">
+
+    <property name="cur.dir.run" value="run"/>
+
+    <javac
+      source="${min.version}"
+      target="${min.version}"
+      nowarn="on"
+      debug="${debug}" debuglevel="${debuglevel}"
+      depend="${depend}"
+      deprecation="${deprecation}"
+      optimize="${optimize}"
+      proceed="${proceed}"
+      verbose="${verbose}"
+      srcdir="${derby.run.src.dir}:${generated.src.dir}"
+      destdir="${out.run.dir}">
+      <include name="${derby.dir}/${cur.dir.run}/**"/>
+      <compilerarg value="-Xlint:unchecked"/>
+      <compilerarg value="-Xlint:deprecation"/>
+      <modulepath>
+        <pathelement location="${out.shared.dir}"/>
+        <pathelement location="${out.drda.dir}"/>
+        <pathelement location="${out.tools.dir}"/>
+      </modulepath>
+    </javac>
+  </target>
+
+  <target name="storeless" depends="engine"
+    description="Build storeless engine support code">
+
+    <mkdir dir="${out.storeless.dir}"/>
+    <copy todir="${out.storeless.dir}/${derby.dir}">
+      <fileset dir="${derby.storeless.src.dir}/${derby.dir}">
+        <include name="modules.properties"/>
+      </fileset>
+    </copy>
+    <javac
+      source="${min.version}"
+      target="${min.version}"
+      nowarn="on"
+      debug="${debug}" debuglevel="${debuglevel}"
+      depend="${depend}"
+      deprecation="${deprecation}"
+      optimize="${optimize}"
+      proceed="${proceed}"
+      verbose="${verbose}"
+      srcdir="${derby.storeless.src.dir}"
+      destdir="${out.storeless.dir}">
+      <classpath>
+        <pathelement path="${out.engine.dir}"/>
+        <pathelement path="${out.shared.dir}"/>
+      </classpath>
+      <compilerarg value="-Xlint:unchecked"/>
+    </javac>
+  </target>
+
   <target name="shared" depends="state">
-    <ant dir="${derby.shared.src.dir}"/>
+
+    <echo level="info" message="building generated sanity info"/>
+    <javac
+      source="${min.version}"
+      target="${min.version}"
+      nowarn="on"
+      debug="${debug}" debuglevel="${debuglevel}"
+      depend="${depend}"
+      deprecation="${deprecation}"
+      optimize="${optimize}"
+      proceed="${proceed}"
+      verbose="${verbose}"
+      srcdir="${generated.src.shared.dir}:${derby.shared.src.dir}"
+      destdir="${out.shared.dir}">
+      <compilerarg value="-Xlint:unchecked"/>
+    </javac>
   </target>
   
-  <target name="drda" depends="tools">
-    <ant dir="${derby.drda.src.dir}"/>
+  <target name="drda" depends="drda.compile,odbcMeta"/>
+
+  <target name="drda.compile" depends="tools"> 
+
+    <javac
+      source="${min.version}"
+      target="${min.version}"
+      nowarn="on"
+      debug="${debug}" debuglevel="${debuglevel}"
+      depend="${depend}"
+      deprecation="${deprecation}"
+      optimize="${optimize}"
+      proceed="${proceed}"
+      verbose="${verbose}"
+      srcdir="${derby.drda.src.dir}"
+      destdir="${out.drda.dir}">
+      <compilerarg value="-Xlint:unchecked"/>
+      <modulepath>
+        <pathelement location="${servlet24}"/>
+        <pathelement location="${out.engine.dir}"/>
+        <pathelement location="${out.shared.dir}"/>
+        <pathelement location="${out.tools.dir}"/>
+      </modulepath>
+    </javac>
+
+    <copy todir="${drdaloc.dir}" flatten="true">
+      <fileset dir="${derby.drda.locales.dir}">
+        <include name="messages*.properties"/>
+        <include name="servlet*.properties"/>
+      </fileset>
+    </copy>
+  </target>
+
+<!-- Generate ODBC-compliant metadata statements from JDBC metadata       -->
+<!-- Doing so involves three steps:                                       -->
+<!-- 1. Get a fresh copy of the metadata.properties file (from the source -->
+<!--    dir, since that one hasn't been modified by the ODBC generation   -->
+<!--    code), to be safe.                                                -->
+<!-- 2. Run the ODBC metadata generator program, which reads the metadata -->
+<!--    file from step 1 and creates an output file that has all of the   -->
+<!--    queries from metadata.properties PLUS any ODBC versions of those  -->
+<!--    queries that are required for ODBC compliance.  The name of this  -->
+<!--    output file is "odbc_metadata.properties".                        -->
+<!-- 3. Move odbc_metadata.properties to clobber the metadata.properties  -->
+<!--    file that is in the BUILD directory (not the one in the source    -->
+<!--    dir).                                                             -->
+
+  <target name="odbcMeta" depends="odbcprops,verifyodbcgen,noODBC,chkodbcgen" unless="odbcgen.done">
+    <delete file="${metadata.out.dir}/metadata.properties"/>
+    <copy file="${derby.metadata.src.dir}/metadata.properties" tofile="${metadata.out.dir}/metadata.properties"/>
+    <java classname="org.apache.derbyBuild.ODBCMetadataGenerator"
+          classpath="${out.build.dir}:${out.engine.dir}"
+          dir="${metadata.out.dir}"
+          fork="yes"
+          failonerror="true">
+    </java>
+    <move file="${metadata.out.dir}/odbc_metadata.properties" tofile="${metadata.out.dir}/metadata.properties"/>
+    <touch file="${odbc.donefile}"/>
+  </target>
+
+  <target name="odbcprops">
+    <property name="odbc.donefile" value="${metadata.out.dir}/odbcmeta.done"/>
+  </target>
+
+  <target name="chkodbcgen">
+    <uptodate property="odbcgen.done"
+              targetfile="${odbc.donefile}" >
+      <srcfiles dir="${metadata.out.dir}" includes="metadata.properties" />
+      <srcfiles dir="${out.build.dir}/org/apache/derbyBuild" includes="ODBCMetadataGenerator.class,odbcgen_fragments.properties" />
+    </uptodate>
+  </target>
+
+  <target name="verifyodbcgen">
+    <available classname="org.apache.derbyBuild.ODBCMetadataGenerator"
+               property="odbcgen.available">
+      <classpath>
+        <pathelement path="${out.build.dir}"/>
+      </classpath>
+    </available>
+  </target>
+
+  <target name="noODBC" unless="odbcgen.available">
+    <echo level="error" message=""/>
+    <echo level="error" message="***** ODBC Metadata not available *****"/>
+    <echo level="error" message=" ***** Run &quot;all&quot; target first *****"/>
+    <echo level="error" message=""/>
+    <fail message="  Exiting ant build..."/>
   </target>
 
   <target name="client" depends="shared">
-    <ant dir="${derby.client.src.dir}"/>
+
+    <javac
+      source="${min.version}"
+      target="${min.version}"
+      nowarn="on"
+      debug="${debug}" debuglevel="${debuglevel}"
+      depend="${depend}"
+      deprecation="${deprecation}"
+      optimize="${optimize}"
+      proceed="${proceed}"
+      verbose="${verbose}"
+      srcdir="${derby.client.src.dir}"
+      destdir="${out.client.dir}">
+      <compilerarg value="-Xlint"/>
+      <modulepath>
+        <pathelement location="${out.shared.dir}"/>
+      </modulepath>
+   </javac>
   </target>
 
   <target name="prebuild" depends="makeOutDirs">
-    <mkdir dir="${out.dir}"/>
-    <ant dir="${derby.build.src.dir}/org/apache/derbyPreBuild"/>
+
+    <property file="${properties.dir}/defaultcompiler.properties"/>
+
+    <!-- Needed by ReleaseProperties -->
+    <javac
+      source="${min.version}"
+      target="${min.version}"
+      nowarn="on"
+      debug="true"
+      depend="${depend}"
+      deprecation="${deprecation}"
+      optimize="${optimize}"
+      proceed="${proceed}"
+      verbose="${verbose}"
+      srcdir="${derby.shared.src.dir}"
+      destdir="${out.shared.dir}"
+      includeantruntime="false"
+      includes="org/apache/derby/shared/common/info/PropertyNames.java"
+    >
+      <classpath>
+        <pathelement path="${ant.core.lib}"/>
+      </classpath>
+      <compilerarg value="-Xlint:unchecked"/>
+    </javac>
+
+    <javac
+      source="${min.version}"
+      target="${min.version}"
+      nowarn="on"
+      debug="true"
+      depend="${depend}"
+      deprecation="${deprecation}"
+      optimize="${optimize}"
+      proceed="${proceed}"
+      verbose="${verbose}"
+      srcdir="${derby.build.src.dir}"
+      destdir="${out.build.dir}"
+      includeantruntime="false"
+      includes="org/apache/derbyPreBuild/*.java"
+    >
+      <classpath>
+        <pathelement path="${ant.core.lib}"/>
+        <pathelement path="${out.shared.dir}"/>
+      </classpath>
+      <compilerarg value="-Xlint:unchecked"/>
+    </javac>
+
   </target>
 
-  <target name="build">
-    <ant dir="${derby.build.src.dir}"/>
-  </target>
-
-  <target name="demo" depends="buildsource,vti-demo">
+  <target name="demo" depends="vti-demo">
     <ant dir="${derby.demo.src.dir}"/>
   </target>
 
@@ -657,7 +1343,7 @@
 	
   <target name="build-test-jars" description="Build jar files used in tests." depends="buildsource" >
 
-    <ant dir="${derby.testing.src.dir}/${derby.testing.functest.dir}/tests/lang" target="build-test-jars" />
+    <ant dir="${derby.testing.src.dir}" target="build-test-jars" />
 
   </target>
 
@@ -774,31 +1460,34 @@
     <ant dir="${derby.engine.dir}/impl/sql"  target="parser"/>
   </target>
 
-  <target name="genParser" depends="chkparser" unless="parser.done">
-    <echo level="info" message="  ${msg}"/>
-    <delete>
-      <fileset dir="${outroot}/${directory}" includes="${rmfiles}"/>
-    </delete>
-    <java classname="javacc"
-          classpath="${javacc}"
-                dir="${derbysrc.dir}/${srcroot}/${directory}"
-               fork="yes"
-        failonerror="true">
-      <arg value="-OUTPUT_DIRECTORY=${outroot}/${directory}"/>
-      <arg value="${jjfile}"/>
-    </java>
-    <!-- Qualify reference to tokenImage to fix issue with inheritence -->
-    <!-- IBM JDK 1.3.1. See DERBY-1078                                 -->
-    <replaceregexp file="${outroot}/${directory}/${chkfile}" match="tokenImage" 
-                   replace="${constantsfile}.tokenImage"/>
-  </target>
-
-  <target name="chkparser">
-    <uptodate property="parser.done"
-              targetfile="${outroot}/${directory}/${chkfile}" >
-      <srcfiles dir="${derbysrc.dir}/${srcroot}/${directory}" includes="${jjfile}" />
-    </uptodate>
-  </target>
+  <macrodef name="genParser">
+    <attribute name="chkfile"/>
+    <attribute name="constantsfile"/>
+    <attribute name="directory"/>
+    <attribute name="msg"/>
+    <attribute name="jjfile"/>
+    <attribute name="outroot"/>
+    <attribute name="rmfiles"/>
+    <attribute name="srcroot"/>
+    <sequential>
+      <echo level="info" message="  @{msg}"/>
+      <delete>
+        <fileset dir="@{outroot}/@{directory}" includes="@{rmfiles}"/>
+      </delete>
+      <java classname="javacc"
+            classpath="${javacc}"
+                  dir="${derbysrc.dir}/@{srcroot}/@{directory}"
+                 fork="yes"
+          failonerror="true">
+        <arg value="-OUTPUT_DIRECTORY=@{outroot}/@{directory}"/>
+        <arg value="@{jjfile}"/>
+      </java>
+      <!-- Qualify reference to tokenImage to fix issue with inheritence -->
+      <!-- IBM JDK 1.3.1. See DERBY-1078                                 -->
+      <replaceregexp file="@{outroot}/@{directory}/@{chkfile}" match="tokenImage" 
+                    replace="@{constantsfile}.tokenImage"/>
+    </sequential>
+  </macrodef>
 
 <!-- =================================================================== -->
 <!--                     Build the stub FELIX (OSGI) implementation                 -->
@@ -829,41 +1518,28 @@
 <!-- =================================================================== -->
 
 <target name="binscripts" depends="check-binscripts" unless="binscripts.done">
-  <antcall target="makebinscript">
-    <param name="script" value="dblook"/>
-  </antcall>
 
-  <antcall target="makebinscript">
-    <param name="script" value="ij"/>
-  </antcall>
-
-  <antcall target="makebinscript">
-    <param name="script" value="sysinfo"/>
-  </antcall>
-
-  <antcall target="makebinscript">
-    <param name="script" value="NetworkServerControl"/>
-  </antcall>
-
-  <antcall target="makebinscript">
-    <param name="script" value="startNetworkServer"/>
-  </antcall>
-
-  <antcall target="makebinscript">
-    <param name="script" value="stopNetworkServer"/>
-  </antcall>
+  <makebinscript script="dblook"/>
+  <makebinscript script="ij"/>
+  <makebinscript script="sysinfo"/>
+  <makebinscript script="NetworkServerControl"/>
+  <makebinscript script="startNetworkServer"/>
+  <makebinscript script="stopNetworkServer"/>
 
   <!-- All the scripts should be executable. -->
   <chmod perm="+x" dir="${generated.bin.dir}" includes="*"/>
 
 </target>
 
-<target name="makebinscript">
-  <concat destfile="${generated.bin.dir}/${script}">
-    <fileset file="bin/templates/derby_common.sh"/>
-    <fileset file="bin/templates/${script}"/>
-  </concat>
-</target>
+<macrodef name="makebinscript">
+  <attribute name="script"/>
+  <sequential>
+    <concat destfile="${generated.bin.dir}/@{script}">
+      <fileset file="bin/templates/derby_common.sh"/>
+      <fileset file="bin/templates/@{script}"/>
+    </concat>
+  </sequential>
+</macrodef>
 
 <target name="check-binscripts">
   <dependset>
@@ -901,7 +1577,7 @@
       last build, run clobber and rebuild to regenerate it.
   -->
 
-  <target name="class_size_catalog" depends="cscuptodate" unless="csc.uptodate">
+  <target name="class_size_catalog" depends="compiles_engine_and_derbyBuild,cscuptodate" unless="csc.uptodate">
     <java classname="org.apache.derbyBuild.ClassSizeCrawler"
           fork="yes"
           failonerror="yes">
@@ -1004,7 +1680,7 @@
 
   <target
       name="javadoc"
-      depends="init,initjars,publishedapi,derbydocs,toolsdocs,grammardocs,demodocs"
+      depends="publishedapi,derbydocs,toolsdocs,grammardocs,demodocs"
       description="Build all of the javadoc, including the public api, the production javadoc, and the testing javadoc."
   />
 
@@ -1060,7 +1736,6 @@
     	     Overview="${basedir}/published_api_overview.html"
              Windowtitle="Apache Derby ${major}.${minor} API Documentation"   
              Header="Apache Derby ${major}.${minor}"
-             Footer="${javadoc.Footer}"
              bottom="Apache Derby ${major}.${minor} API Documentation  -  &lt;i&gt;Copyright &amp;copy; 2004,${copyright.year} The Apache Software Foundation. All Rights Reserved.&lt;/i&gt;">
 
       <Doctitle> Apache Derby ${major}.${minor} API Documentation</Doctitle>   
@@ -1128,6 +1803,8 @@
       />
 
       <arg value="-Xdoclint:none"/>
+      <arg value="-notimestamp"/>
+      <arg value="-quiet"/>
     </javadoc>
 
     <!-- Copy the logo needed by the Doctitle attribute above -->
@@ -1186,7 +1863,7 @@
         modulenames="${module.name.commons},${module.name.engine},${module.name.client},${module.name.server},${module.name.tools},${module.name.optionaltools},${module.name.runner},${module.name.tests}"
 
         packagenames="org.*"
-        additionalparam="-J-mx500M"
+        additionalparam="-J-mx1000M"
         access="private"
         breakiterator="yes"
         useexternalfile="yes"
@@ -1194,7 +1871,6 @@
     	Overview="${basedir}/published_api_overview.html"
         windowtitle="Apache Derby V${major}.${minor} Internals"
         doctitle="Apache Derby V${major}.${minor} Internals"
-        Footer="${javadoc.Footer}"
         bottom="Apache Derby V${major}.${minor} Internals - &lt;i&gt;Copyright &amp;copy; 2004,${copyright.year} The Apache Software Foundation. All Rights Reserved.&lt;/i&gt;"
       >
 
@@ -1211,6 +1887,8 @@
 
       <arg value="-Xdoclint:none"/>
       <arg value="--show-module-contents"/><arg value="all"/>
+      <arg value="-notimestamp"/>
+      <arg value="-quiet"/>
     </javadoc>
 
     <!-- Copy the module diagrams used by the module overviews -->
@@ -1253,6 +1931,8 @@
     >
      <fileset dir="${derby.demo.src.dir}/vtis/java"/>
       <arg value="${xarg.doclint}"/>
+      <arg value="-notimestamp"/>
+      <arg value="-quiet"/>
     </javadoc>
 
 
@@ -1348,12 +2028,12 @@
 
   <target
       name="buildjars"
-      depends="initjars,derbysharedjar,derbyjar,derbynetjar,derbyclientjar,derbytoolsjar,derbyoptionaltoolsjar,derbyrunjar,derbywar,derbylocalejars,derbytestingjar,jardriftcheck"
+      depends="derbysharedjar,derbyjar,derbynetjar,derbyclientjar,derbytoolsjar,derbyoptionaltoolsjar,derbyrunjar,derbywar,derbylocalejars,derbytestingjar,jardriftcheck"
       description="Build all of the Derby jar files."
 
   />
 
-  <target name="initjars" depends="setsanityname,getsvnversion,setCompilerProperties">
+  <target name="initjars" depends="setsanityname,getsvnversion">
     <property name="derby.jar.dir" value="${jarsdist.dir}/${sanity.name}"/>
     <property name="derby.jar.topdir" value="${jarsdist.dir}"/>
     <mkdir dir="${derby.jar.dir}"/>
@@ -1470,7 +2150,7 @@
 
 <!-- - - - - - - - - - - - -  derbytools.jar target - - - - - - - - - - -->
 
-  <target name="derbytoolsjar" depends="setsanityname">
+  <target name="derbytoolsjar" depends="initjars">
 
     <echo level="info" message="Beginning derbytools.jar ${sanity.name} build"/>
 
@@ -1516,7 +2196,7 @@
 
 <!-- - - - - - - - - - - - -  derbyoptionaltools.jar target - - - - - - - - - - -->
 
-  <target name="derbyoptionaltoolsjar" depends="setsanityname">
+  <target name="derbyoptionaltoolsjar" depends="initjars">
 
     <echo level="info" message="Beginning derbyoptionaltools.jar ${sanity.name} build"/>
 
@@ -1562,7 +2242,7 @@
 
 <!-- - - - - - - - - - - - - - derbynet.jar target - - - - - - - - - - - -->
 
-  <target name="derbynetjar" depends="setsanityname">
+  <target name="derbynetjar" depends="initjars">
 
     <echo level="info" message="Beginning derbynet.jar ${sanity.name} build"/>
 
@@ -1603,7 +2283,7 @@
 
 <!-- - - - - - - - - - - - - - derbyclient.jar target - - - - - - - - -->
 
- <target name="derbyclientjar" depends="setsanityname,initjars">
+ <target name="derbyclientjar" depends="initjars">
 
     <echo level="info" message="Beginning derbyclient.jar ${sanity.name} build"/>
 
@@ -1659,7 +2339,7 @@
 
 <!-- - - - - - - - - - - - - - derbyshared.jar target - - - - - - - - - - - -->
 
-  <target name="derbysharedjar" depends="setsanityname">
+  <target name="derbysharedjar" depends="initjars">
 
     <echo level="info" message="Beginning derbyshared.jar ${sanity.name} build"/>
 
@@ -1695,7 +2375,7 @@
 
 <!-- - - - - - - - - - - - - - derbyrun.jar target  - - - - - - - - - -->
    
-  <target name="derbyrunjar" depends="setsanityname,initjars">
+  <target name="derbyrunjar" depends="initjars">
 
     <echo level="info" message="Beginning derbyrun.jar build"/>
 
@@ -1744,86 +2424,77 @@
     <!-- copy boilerplate common to derby jar files -->
     <antcall target="meta-inf-common"/>
 
-    <!-- call localejar for each locale -->
+    <!-- call macro localejar for each locale -->
 
-    <antcall target="localejar">
-      <param name="locale.iname" value="cs"/>
-      <param name="locale.ename" value="Czech/International [cs]"/>
-    </antcall>
-    <antcall target="localejar">
-      <param name="locale.iname" value="de_DE"/>
-      <param name="locale.ename" value="German/Germany [de_DE]"/>
-    </antcall>
-    <antcall target="localejar">
-      <param name="locale.iname" value="es"/>
-      <param name="locale.ename" value="Spanish/International [es]"/>
-    </antcall>
-    <antcall target="localejar">
-      <param name="locale.iname" value="fr"/>
-      <param name="locale.ename" value="French/International [fr]"/>
-    </antcall>
-    <antcall target="localejar">
-      <param name="locale.iname" value="hu"/>
-      <param name="locale.ename" value="Hungarian/International [hu]"/>
-    </antcall>
-    <antcall target="localejar">
-      <param name="locale.iname" value="it"/>
-      <param name="locale.ename" value="Italian/International [it]"/>
-    </antcall>
-    <antcall target="localejar">
-      <param name="locale.iname" value="ja_JP"/>
-      <param name="locale.ename" value="Japanese/Japan [ja_JP]"/>
-    </antcall>
-    <antcall target="localejar">
-      <param name="locale.iname" value="ko_KR"/>
-      <param name="locale.ename" value="Korean/Korea [ko_KR]"/>
-    </antcall>
-    <antcall target="localejar">
-      <param name="locale.iname" value="pl"/>
-      <param name="locale.ename" value="Polish/International [pl]"/>
-    </antcall>
-    <antcall target="localejar">
-      <param name="locale.iname" value="pt_BR"/>
-      <param name="locale.ename" value="Portuguese/Brazil [pt_BR]"/>
-    </antcall>
-    <antcall target="localejar">
-      <param name="locale.iname" value="ru"/>
-      <param name="locale.ename" value="Russian/International [ru]"/>
-    </antcall>
-    <antcall target="localejar">
-      <param name="locale.iname" value="zh_CN"/>
-      <param name="locale.ename" value="Simplified_Chinese/PR_China [zh_CN]"/>
-    </antcall>
-    <antcall target="localejar">
-      <param name="locale.iname" value="zh_TW"/>
-      <param name="locale.ename" value="Chinese/Taiwan_Traditional [zh_TW]"/>
-    </antcall>
+    <localejar
+      locale.iname="cs"
+      locale.ename="Czech/International [cs]"/>
+    <localejar
+      locale.iname="de_DE"
+      locale.ename="German/Germany [de_DE]"/>
+    <localejar
+      locale.iname="es"
+      locale.ename="Spanish/International [es]"/>
+    <localejar
+      locale.iname="fr"
+      locale.ename="French/International [fr]"/>
+    <localejar
+      locale.iname="hu"
+      locale.ename="Hungarian/International [hu]"/>
+    <localejar
+      locale.iname="it"
+      locale.ename="Italian/International [it]"/>
+    <localejar
+      locale.iname="ja_JP"
+      locale.ename="Japanese/Japan [ja_JP]"/>
+    <localejar
+      locale.iname="ko_KR"
+      locale.ename="Korean/Korea [ko_KR]"/>
+    <localejar
+      locale.iname="pl"
+      locale.ename="Polish/International [pl]"/>
+    <localejar
+      locale.iname="pt_BR"
+      locale.ename="Portuguese/Brazil [pt_BR]"/>
+    <localejar
+      locale.iname="ru"
+      locale.ename="Russian/International [ru]"/>
+    <localejar
+      locale.iname="zh_CN"
+      locale.ename="Simplified_Chinese/PR_China [zh_CN]"/>
+    <localejar
+      locale.iname="zh_TW"
+      locale.ename="Chinese/Taiwan_Traditional [zh_TW]"/>
+
   </target>
 
-  <target name="localejar">
- 
-    <echo level="info" message="Building derbyLocale_${locale.iname}.jar"/>
+  <macrodef name="localejar">
+    <attribute name="locale.iname"/>
+    <attribute name="locale.ename"/>
+    <attribute name="locale.output.dir"
+               default="${out.dir}/${locale.stub}@{locale.iname}/org/apache/derby/info/${locale.stub}@{locale.iname}"/>
+    <sequential>
 
-    <!-- generate new locale property file -->
-    <property name="locale.output.dir" value="${out.dir}/${locale.stub}${locale.iname}/org/apache/derby/info/${locale.stub}${locale.iname}"/>
-    <antcall target="localeinfowriter">
-      <param name="info.buildnumber" value="${changenumber}"/>
-      <param name="info.iname" value="_${locale.iname}"/>
-      <param name="info.ename" value="${locale.ename}"/>
-      <param name="info.productfile" value="derbyLocale_${locale.iname}.jar"/>
-      <param name="info.file" value="${locale.output.dir}/info.properties"/>
-    </antcall>   
+      <echo level="info" message="Building derbyLocale_@{locale.iname}.jar"/>
 
-    <jar destfile="${derby.jar.dir}/derbyLocale_${locale.iname}.jar"
-         basedir="${out.dir}/${locale.stub}${locale.iname}"
-         compress="true"
-         filesonly="true"
-      >
-      <fileset dir="${derby.jar.dir}/lists"
-               includes="META-INF/LICENSE,META-INF/NOTICE"/>
-    </jar>
-  </target>
-    
+      <localeinfowriter
+        info.buildnumber="${changenumber}"
+              info.iname="_@{locale.iname}"
+              info.ename="@{locale.ename}"
+              info.file="@{locale.output.dir}/info.properties"
+        info.productfile="derbyLocale_@{locale.iname}.jar"/>
+
+      <jar destfile="${derby.jar.dir}/derbyLocale_@{locale.iname}.jar"
+          basedir="${out.dir}/${locale.stub}@{locale.iname}"
+          compress="true"
+          filesonly="true"
+        >
+        <fileset dir="${derby.jar.dir}/lists"
+                includes="META-INF/LICENSE,META-INF/NOTICE"/>
+      </jar>
+    </sequential>
+  </macrodef>
+
 <!-- - - - - - - - - - - - derby testing jar target - - - - - - - - - - -->
 
   <target name="derbytestingjar" depends="initjars,ckderbytesting" if="derbyTesting.available">
@@ -1976,39 +2647,6 @@
          <param name="checkinComment" value="Check in SQLState tables as part of building a release."/>
          <param name="fileName" value="${refdir}/rrefexcept71493.dita"/>
       </antcall>
-
-   </target>
-
-   <!-- Checkin the generated security policy documentation to the docs client -->
-   <target name="copy-security-policy-docs">
-
-     <property name="sec.dir" value="${docs.root}/src/security"/>
-     <property name="gen.dita.dir" value="${generated.src.engine.dir}/${derby.dir}/security"/>
-
-     <copy todir="${sec.dir}">
-       <fileset dir="${gen.dita.dir}" includes="*.dita"/>
-     </copy>
-
-     <antcall target="checkinfile">
-        <param name="checkinComment" value="Check in rsecbasicclient.dita as part of building a release."/>
-        <param name="fileName" value="${sec.dir}/rsecbasicclient.dita"/>
-     </antcall>
-     <antcall target="checkinfile">
-        <param name="checkinComment" value="Check in rsecbasicengine.dita as part of building a release."/>
-        <param name="fileName" value="${sec.dir}/rsecbasicengine.dita"/>
-     </antcall>
-     <antcall target="checkinfile">
-        <param name="checkinComment" value="Check in rsecbasicserver.dita as part of building a release."/>
-        <param name="fileName" value="${sec.dir}/rsecbasicserver.dita"/>
-     </antcall>
-     <antcall target="checkinfile">
-        <param name="checkinComment" value="Check in rsecbasictools.dita as part of building a release."/>
-        <param name="fileName" value="${sec.dir}/rsecbasictools.dita"/>
-     </antcall>
-     <antcall target="checkinfile">
-        <param name="checkinComment" value="Check in rsecpolicysample.dita as part of building a release."/>
-        <param name="fileName" value="${sec.dir}/rsecpolicysample.dita"/>
-     </antcall>
 
    </target>
 
@@ -2385,6 +3023,7 @@
   	 	   errorproperty="tests.failed"
   	       failureproperty="tests.failed">
       <jvmarg value="${derby.tests.jacoco.agent}"/>
+      <syspropertyset> <propertyref prefix="java.security" /> </syspropertyset>
       <sysproperty key="derby.tests.jacoco.agent" value="${derby.tests.jacoco.agent}"/>
       <sysproperty key="derbyTesting.oldReleasePath" value="${derbyTesting.oldReleasePath}"/>
       <!-- This property is needed to keep EMMA silent when measuring codecoverage -->
@@ -2455,6 +3094,7 @@
                errorproperty="tests.failed"
                failureproperty="tests.failed">
           <jvmarg value="${derby.tests.jacoco.agent}"/>
+          <syspropertyset> <propertyref prefix="java.security" /> </syspropertyset>
           <sysproperty key="derby.tests.jacoco.agent" value="${derby.tests.jacoco.agent}"/>
           <!-- Pass on properties from the command line to the spawned VM. -->
           <syspropertyset id="system-properties-passed-on">
@@ -2488,6 +3128,7 @@
   	 	   errorproperty="tests.failed"
   	       failureproperty="tests.failed">
       <jvmarg value="${derby.tests.jacoco.agent}"/>
+      <syspropertyset> <propertyref prefix="java.security" /> </syspropertyset>
       <sysproperty key="derby.tests.jacoco.agent" value="${derby.tests.jacoco.agent}"/>
       <!-- Pass on properties from the command line to the spawned VM. -->
       <syspropertyset id="system-properties-passed-on">
@@ -2516,6 +3157,7 @@
   	 	   errorproperty="tests.failed"
   	       failureproperty="tests.failed">
       <jvmarg value="${derby.tests.jacoco.agent}"/>
+      <syspropertyset> <propertyref prefix="java.security" /> </syspropertyset>
       <sysproperty key="derby.tests.jacoco.agent" value="${derby.tests.jacoco.agent}"/>
       <!-- Pass on properties from the command line to the spawned VM. -->
       <syspropertyset id="system-properties-passed-on">
@@ -2543,6 +3185,7 @@
             errorproperty="tests.failed"
             failureproperty="tests.failed">
         <jvmarg value="${derby.tests.jacoco.agent}"/>
+        <syspropertyset> <propertyref prefix="java.security" /> </syspropertyset>
         <sysproperty key="derby.tests.jacoco.agent" value="${derby.tests.jacoco.agent}"/>
         <!-- Pass on properties from the command line to the spawned VM. -->
         <syspropertyset id="system-properties-passed-on">
@@ -2572,6 +3215,7 @@
             failureproperty="tests.failed">
         <jvmarg value="${derby.tests.jacoco.agent}"/>
         <sysproperty key="derby.tests.jacoco.agent" value="${derby.tests.jacoco.agent}"/>
+        <syspropertyset> <propertyref prefix="java.security" /> </syspropertyset>
         <!-- Pass on properties from the command line to the spawned VM. -->
         <syspropertyset id="system-properties-passed-on">
           <propertyref builtin="commandline"/>
@@ -2612,7 +3256,10 @@
   </target>
 
   <!-- Run a single junit test or suite -->
-  <target name="junit-single" depends="junit-init">
+  <target name="junit-single"
+          depends="junit-init"
+          description="Run one JUnit test with the classpath"
+          >
     <condition property="noTestclassSet" value="">
       <not>
         <isset property="derby.junit.testclass"/>
@@ -2628,6 +3275,7 @@
            errorproperty="tests.failed"
            failureproperty="tests.failed">
       <jvmarg value="${derby.tests.jacoco.agent}"/>
+      <syspropertyset> <propertyref prefix="java.security" /> </syspropertyset>
       <sysproperty key="derby.tests.jacoco.agent" value="${derby.tests.jacoco.agent}"/>
       <!-- This property is needed to keep EMMA silent when measuring codecoverage -->
       <sysproperty key="emma.verbosity.level" value="silent"/>
@@ -2733,7 +3381,10 @@
 <!-- The old harness tests are being phased out, so just borrow some     -->
 <!-- functionality from the JUnit setup.                                 -->
 
-  <target name="test-derbyall" depends="junit-init">
+<target name="test-derbyall"
+        depends="junit-init"
+        description="Old harness tests with classpath"
+        >
     <path id="derbyall.classpath">
       <fileset dir="${derby.junit.test.jars}" includes="*.jar"/>
    	  <pathelement path="${derby.junit.classpath}"/>
@@ -2745,6 +3396,7 @@
         fork="yes" dir="junit_${derby.junit.timestamp}/derbyall">
       <jvmarg value="${derby.tests.jacoco.agent}"/>
       <sysproperty key="jvmflags" value="${derby.tests.jacoco.agent}"/>
+      <syspropertyset> <propertyref prefix="java.security" /> </syspropertyset>
       <!-- Note the duplicate specification, don't know why it's needed. -->
       <sysproperty key="testSpecialProps" value="noSecurityManager=true^noSecurityManager=true"/>
       <arg value="derbyall"/>
@@ -2774,6 +3426,7 @@
           fork="yes"
           dir="junit_${derby.junit.timestamp}/derbyall"
     >
+      <syspropertyset> <propertyref prefix="java.security" /> </syspropertyset>
       <jvmarg value="--add-modules"/>
       <jvmarg value="org.apache.derby.tests,junit"/>
       <arg value="derbyall"/>
@@ -2805,6 +3458,7 @@
     >
       <sysproperty key="derbyTesting.oldReleasePath" value="${derbyTesting.oldReleasePath}"/>
       <sysproperty key="derbyTesting.oldVersionsPath" value="${derbyTesting.oldVersionsPath}"/>
+      <syspropertyset> <propertyref prefix="java.security" /> </syspropertyset>
 
       <jvmarg value="--add-modules"/>
       <jvmarg value="org.apache.derby.tests"/>
@@ -2845,6 +3499,7 @@
     >
       <sysproperty key="derbyTesting.oldReleasePath" value="${derbyTesting.oldReleasePath}"/>
       <sysproperty key="derbyTesting.oldVersionsPath" value="${derbyTesting.oldVersionsPath}"/>
+      <syspropertyset> <propertyref prefix="java.security" /> </syspropertyset>
 
       <jvmarg value="--add-modules"/>
       <jvmarg value="org.apache.derby.tests"/>
@@ -3083,9 +3738,6 @@ you should not have to do this.
         <!-- copy the generated sqlstate tables to the docs client and check it in -->
         <antcall target="copyerrordocs"/>
 
-        <!-- copy the generated policy file documentation to the docs client and check it in -->
-        <antcall target="copy-security-policy-docs"/>
-
         <!-- sync the clients to guarantee that we are up-to-date -->
         <antcall target="updatesvnclients"/>
 
@@ -3175,6 +3827,17 @@ you should not have to do this.
           propertyName="derby.release.id"
           prompt="Enter the id of this release (e.g., 10.7.1.0) >  "
         />
+
+        <!-- Replace the dots with underscores, see https://issues.apache.org/jira/browse/DERBY-7093 -->
+        <loadresource property="derby.release.download.page.name">
+          <propertyresource name="derby.release.id"/>
+          <filterchain>
+            <tokenfilter>
+              <filetokenizer/>
+              <replacestring from="." to="_"/>
+            </tokenfilter>
+          </filterchain>
+        </loadresource>
 
     </target>
 
@@ -3419,7 +4082,7 @@ you should not have to do this.
         />
         <transformReleaseNotes
             inputFileName="${relnotes.src}"
-            outputFileName="${relnotes.target.dir}/release-${derby.release.id}.html"
+            outputFileName="${relnotes.target.dir}/release-${derby.release.download.page.name}.html"
             cliXconfFileName="${website.root}/src/documentation/conf/cli.xconf"
             releaseId="${derby.release.id}"
         />
@@ -3427,7 +4090,7 @@ you should not have to do this.
         <!-- Copy the cgi script which enables mirroring for the new release -->
         <copy
             file="${relnotes.target.dir}/release-template.cgi"
-            tofile="${relnotes.target.dir}/release-${derby.release.id}.cgi"
+            tofile="${relnotes.target.dir}/release-${derby.release.download.page.name}.cgi"
           />
 
     </target>

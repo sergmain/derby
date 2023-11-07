@@ -22,8 +22,6 @@
 package org.apache.derby.impl.sql.execute.rts;
 
 import org.apache.derby.iapi.sql.execute.ResultSetStatistics;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import org.apache.derby.catalog.UUID;
 import org.apache.derby.shared.common.reference.SQLState;
 import org.apache.derby.iapi.services.context.ContextService;

@@ -21,9 +21,6 @@
 
 package org.apache.derby.shared.common.reference;
 
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -172,18 +169,9 @@ public class ModuleUtil
         Throwable error = null;
         try
         {
-            retval = AccessController.doPrivileged
-              (
-               new PrivilegedExceptionAction<InputStream>()
-               {
-                   public InputStream run() throws IOException
-                   {
-                       return module.getResourceAsStream(resourceName);
-                   }
-               }
-               );
+            retval = module.getResourceAsStream(resourceName);
         }
-        catch (PrivilegedActionException pae) { error = pae; }
+        catch (Exception pae) { error = pae; }
 
         if (error != null)
         {

@@ -21,8 +21,6 @@
 
 package org.apache.derby.impl.store.access.btree.index;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Properties;
 
 import org.apache.derby.shared.common.reference.SQLState;
@@ -373,21 +371,12 @@ public class B2IFactory implements ConglomerateFactory, ModuleControl
 	}
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
 }

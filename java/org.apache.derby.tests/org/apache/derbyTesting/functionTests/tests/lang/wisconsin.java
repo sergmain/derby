@@ -26,8 +26,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -217,19 +215,9 @@ public class wisconsin {
      * @param url URL obtained from getTestResource
      * @return An open stream
     */
-    protected static InputStream openTestResource(final URL url)
-        throws PrivilegedActionException
+    protected static InputStream openTestResource(final URL url) throws IOException
     {
-        return AccessController.doPrivileged
-        (new java.security.PrivilegedExceptionAction<InputStream>(){
-
-            public InputStream run() throws IOException {
-            return url.openStream();
-
-            }
-
-        }
-         );     
+        return url.openStream();
     }
     
     /**
@@ -240,17 +228,6 @@ public class wisconsin {
      */
     protected static URL getTestResource(final String name)
     {
-
-    return AccessController.doPrivileged
-        (new java.security.PrivilegedAction<URL>(){
-
-            public URL run(){
-            return this.getClass().getClassLoader().
-                getResource(name);
-
-            }
-
-        }
-         );
+        return wisconsin.class.getClassLoader().getResource(name);
     }  
 }

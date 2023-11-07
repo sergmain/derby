@@ -21,10 +21,17 @@
 
 /**
  * <p>
+ * This module corresponds to <i>derby.jar</i>. Note that the public embedded JDBC driver
+ * (<i>org.apache.derby.jdbc.EmbeddedDriver</i>) lives in the <i>org.apache.derby.tools</i>
+ * module. This public driver is only required by applications which shutdown and reboot
+ * the embedded engine.
+ * </p>
+ * 
+ * <p>
  * The smallest footprint, core Derby configuration consists of the embedded engine. In
  * this configuration, Derby is a complete, secure, transactional,
  * recoverable data manager which runs in the same JVM as the user's
- * application. This configuration includes an embedded JDBC driver,
+ * application. This configuration includes a module-protected JDBC driver,
  * accessed via <i>java.sql.DriverManager.getConnection()</i>. More
  * functionality can be enabled by adding other, optional modules to this configuration:
  * </p>

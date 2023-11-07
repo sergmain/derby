@@ -27,7 +27,6 @@ import junit.framework.Test;
 import org.apache.derby.optional.api.LuceneUtils;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.DatabasePropertyTestSetup;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.SupportFilesSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
@@ -51,8 +50,6 @@ public class LuceneJarLoadingTest extends GeneratedColumnsHelper
     private static  final   String      ALICE = "ALICE";
     private static  final   String      FRANK = "FRANK";
     private static  final   String[]    LEGAL_USERS = { TEST_DBO, ALICE, RUTH, FRANK  };
-
-    private static  final   String      POLICY_FILE = "org/apache/derbyTesting/functionTests/tests/lang/luceneSupport.policy";
 
     /** the jar file which contains the custom Analyzer and QueryParser */
     private static  final   String      EXTERNAL_JAR_NAME = "myLuceneClasses.jar";
@@ -128,7 +125,7 @@ public class LuceneJarLoadingTest extends GeneratedColumnsHelper
         BaseTestSuite suite = (BaseTestSuite)TestConfiguration.embeddedSuite(
             LuceneJarLoadingTest.class );
 
-        Test        secureTest = new SecurityManagerSetup( suite, POLICY_FILE );
+        Test        secureTest = suite;
         Test        authenticatedTest = DatabasePropertyTestSetup.builtinAuthentication
             ( secureTest, LEGAL_USERS, "LuceneJarLoadingPermissions" );
         Test        authorizedTest = TestConfiguration.sqlAuthorizationDecoratorSingleUse( authenticatedTest, DB_NAME, true );
@@ -166,7 +163,7 @@ public class LuceneJarLoadingTest extends GeneratedColumnsHelper
              "call syscs_util.syscs_set_database_property( 'derby.database.classpath', '" + INTERNAL_JAR_NAME + "' )"
              );
 
-        LuceneSupportPermsTest.loadTestTable( ruthConnection );
+        LuceneSupportTest.loadTestTable( ruthConnection );
 
         goodStatement( dboConnection, LOAD_TOOL );
         goodStatement( ruthConnection, INDEX_TEXT_TABLE );
@@ -183,7 +180,7 @@ public class LuceneJarLoadingTest extends GeneratedColumnsHelper
         // cleanup
         goodStatement( ruthConnection, DROP_TEXT_INDEX );
         goodStatement( dboConnection, UNLOAD_TOOL );
-        LuceneSupportPermsTest.unloadTestTable( ruthConnection );
+        LuceneSupportTest.unloadTestTable( ruthConnection );
     }
 
     /**

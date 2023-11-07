@@ -88,10 +88,6 @@ import java.io.FileNotFoundException;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 
 import java.util.Properties;
 import java.util.zip.CRC32;
@@ -202,12 +198,12 @@ import java.util.zip.CRC32;
 	<P>Multithreading considerations:<BR>
 	Log Factory must be MT-safe.
 	<P>
-	Class is final as it has methods with privilege blocks
-	and implements PrivilegedExceptionAction.
+	Class is final because it used to have methods with privilege blocks.
+	See DERBY-7138.
 	*/
 
 public final class LogToFile implements LogFactory, ModuleControl, ModuleSupportable,
-								  Serviceable, java.security.PrivilegedExceptionAction<Object>
+								  Serviceable
 {
 
 	private static final    long INT_LENGTH = 4L;
@@ -5693,14 +5689,21 @@ public final class LogToFile implements LogFactory, ModuleControl, ModuleSupport
 		action = 2;
         activeFile = file;
         activePerms = perms;
-        try
-        {
-            return (StorageRandomAccessFile) java.security.AccessController.doPrivileged(this);
+
+        try {
+            return (StorageRandomAccessFile) run();
         }
-        catch (java.security.PrivilegedActionException pae)
-        {
-            throw (IOException) pae.getException();
-        }
+        catch (StandardException se) { throw wrapSE(se); }
+    }
+
+    /**
+     * This method compensates for the fact that callers of run()
+     * have to handle the StandardException raised by that method.
+     * We don't expect that this method will ever be called.
+     */
+    private IOException wrapSE(Exception se)
+    {
+        return new IOException(se.getMessage(), se);
     }
 
     private synchronized OutputStreamWriter privGetOutputStreamWriter(StorageFile file)
@@ -5708,114 +5711,110 @@ public final class LogToFile implements LogFactory, ModuleControl, ModuleSupport
     {
         action = 10;
         activeFile = file;
-        try
-        {
-            return (OutputStreamWriter) java.security.AccessController.doPrivileged(this);
+
+        try {
+            return (OutputStreamWriter) run();
         }
-        catch (java.security.PrivilegedActionException pae)
-        {
-            throw (IOException) pae.getException();
-        }
+        catch (StandardException se) { throw wrapSE(se); }
     }
 
     protected boolean privCanWrite(StorageFile file)
     {
-		return runBooleanAction(3, file);
+        return runBooleanAction(3, file);
     }
 
     protected boolean privMkdirs(StorageFile file) throws IOException
     {
         this.action = 4;
         this.activeFile = file;
+
         try {
-            return ((Boolean) AccessController.doPrivileged(this));
-        } catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getCause();
+            return (Boolean) run();
         }
+        catch (StandardException se) { throw wrapSE(se); }
     }
 
-	private synchronized String[] privList(File file)
+    private synchronized String[] privList(File file)
     {
-		action = 8;
+        action = 8;
         toFile = file;
 
-        try
-        {
-			return (String[]) java.security.AccessController.doPrivileged(this);
-		}
-        catch (java.security.PrivilegedActionException pae)
+        try {
+            return (String[]) run();
+        }
+        catch (Exception pae)
         {
             return null;
         }
-	}
+    }
     
-	private synchronized String[] privList(StorageFile file)
+    private synchronized String[] privList(StorageFile file)
     {
-		action = 5;
+        action = 5;
         activeFile = file;
 
         try
         {
-			return (String[]) java.security.AccessController.doPrivileged(this);
-		}
-        catch (java.security.PrivilegedActionException pae)
+            return (String[]) run();
+        }
+        catch (Exception pae)
         {
             return null;
         }
-	}
+    }
 
 
-	private synchronized boolean privCopyFile(StorageFile from, File to)
-            throws StandardException
-	{
-		action = 6;
-		activeFile = from;
-		toFile = to;
+    private synchronized boolean privCopyFile(StorageFile from, File to)
+        throws StandardException
+    {
+        action = 6;
+        activeFile = from;
+        toFile = to;
         try
         {
-			return ((Boolean) java.security.AccessController.doPrivileged(this)).booleanValue();
-		}
-        catch (java.security.PrivilegedActionException pae)
+            return (Boolean) run();
+        }
+        catch (Exception pae)
         {
-            if (pae.getCause() instanceof StandardException) {
+            if (pae instanceof StandardException) {
                 throw (StandardException)pae.getCause();
             }
 
             return false;
         }
-	}
+    }
 
-	private synchronized boolean privCopyFile(File from, StorageFile to)
-	{
-		action = 9;
-		activeFile = to;
-		toFile = from;
+    private synchronized boolean privCopyFile(File from, StorageFile to)
+    {
+        action = 9;
+        activeFile = to;
+        toFile = from;
         try
         {
-			return ((Boolean) java.security.AccessController.doPrivileged(this)).booleanValue();
-		}
-        catch (java.security.PrivilegedActionException pae)
+            return (Boolean) run();
+        }
+        catch (Exception pae)
         {
             return false;
         }	
-	}
+    }
 
-	private boolean privRemoveDirectory(StorageFile file)
-	{
-		return runBooleanAction(7, file);
-	}
+    private boolean privRemoveDirectory(StorageFile file)
+    {
+        return runBooleanAction(7, file);
+    }
 
 
-	private synchronized boolean runBooleanAction(int action, StorageFile file) {
-		this.action = action;
-		this.activeFile = file;
+    private synchronized boolean runBooleanAction(int action, StorageFile file) {
+        this.action = action;
+        this.activeFile = file;
 
-		try {
-			return ((Boolean) java.security.AccessController.doPrivileged(this)).booleanValue();
-		} catch (java.security.PrivilegedActionException pae) {
-			return false;
-		}
-	}
+        try {
+            return (Boolean) run();
+        } catch (Exception pae) {
+            return false;
+        }
+    }
 
     /** set the endPosition of the log and make sure the new position won't spill off the end of the log */
     private void    setEndPosition( long newPosition )
@@ -5961,103 +5960,46 @@ public final class LogToFile implements LogFactory, ModuleControl, ModuleSupport
      */
     private  static  ContextService    getContextService()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ContextService>()
-             {
-                 public ContextService run()
-                 {
-                     return ContextService.getFactory();
-                 }
-             }
-             );
+        return ContextService.getFactory();
     }
 
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object findServiceModule( final Object serviceModule, final String factoryInterface)
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.findServiceModule( serviceModule, factoryInterface );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.findServiceModule( serviceModule, factoryInterface );
     }
 
     /**
-     * Privileged module lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private static  Object getServiceModule( final Object serviceModule, final String factoryInterface )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     return Monitor.getServiceModule( serviceModule, factoryInterface );
-                 }
-             }
-             );
+        return Monitor.getServiceModule( serviceModule, factoryInterface );
     }
     
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  boolean isFullUpgrade( final Properties startParams, final String oldVersionInfo )
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Boolean>()
-                 {
-                     public Boolean run()
-                         throws StandardException
-                     {
-                         return Monitor.isFullUpgrade( startParams, oldVersionInfo );
-                     }
-                 }
-                 ).booleanValue();
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.isFullUpgrade( startParams, oldVersionInfo );
     }
 }
 

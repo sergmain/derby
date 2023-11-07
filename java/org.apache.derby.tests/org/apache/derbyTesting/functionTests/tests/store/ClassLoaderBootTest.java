@@ -24,9 +24,7 @@ package org.apache.derbyTesting.functionTests.tests.store;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLStreamHandlerFactory;
-import java.security.AccessController;
 import java.security.CodeSource;
-import java.security.PrivilegedAction;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
@@ -38,7 +36,6 @@ import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.CleanDatabaseTestSetup;
 import org.apache.derbyTesting.junit.JDBC;
 import org.apache.derbyTesting.junit.JDBCDataSource;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.SystemPropertyTestSetup;
 
 
@@ -103,8 +100,7 @@ public class ClassLoaderBootTest extends BaseJDBCTestCase {
         setup = new SystemPropertyTestSetup(setup,p);
         // DERBY-2813 prevents test from running with security manager
         // on. Have to run without security manager for now.
-        return SecurityManagerSetup.noSecurityManager(setup);
-        //return setup;
+        return setup;
     }
 
 
@@ -138,13 +134,7 @@ public class ClassLoaderBootTest extends BaseJDBCTestCase {
     private DerbyURLClassLoader createDerbyClassLoader(final URL[] urls) 
         throws Exception 
     {
-        return AccessController.doPrivileged(
-            new PrivilegedAction<DerbyURLClassLoader>(){
-                 public DerbyURLClassLoader run()
-                 {
-                     return new DerbyURLClassLoader(urls);
-                 }
-             });
+        return new DerbyURLClassLoader(urls);
     }
 
 
@@ -220,20 +210,11 @@ public class ClassLoaderBootTest extends BaseJDBCTestCase {
 }
 
     private void setThreadLoader(final ClassLoader which) {
-        AccessController.doPrivileged(new PrivilegedAction<Void>(){
-            public Void run()  {
-                java.lang.Thread.currentThread().setContextClassLoader(which);
-              return null;
-            }
-        });
+        Thread.currentThread().setContextClassLoader(which);
     }
 
     private ClassLoader getThreadLoader() {
-        return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>(){
-            public ClassLoader run()  {
-                return java.lang.Thread.currentThread().getContextClassLoader();
-            }
-        });
+        return java.lang.Thread.currentThread().getContextClassLoader();
     }
 
 	private static void assertPreventDualBoot(SQLException ne) {

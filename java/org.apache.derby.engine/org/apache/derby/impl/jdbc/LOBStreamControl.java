@@ -27,10 +27,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UTFDataFormatException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import org.apache.derby.shared.common.error.StandardException;
 import org.apache.derby.shared.common.reference.Property;
 import org.apache.derby.shared.common.reference.SQLState;
@@ -97,23 +93,13 @@ final class LOBStreamControl {
                 Property.DATABASE_MODULE, conn.getDBName());
         final DataFactory df = (DataFactory) findServiceModule(
                 monitor, DataFactory.MODULE);
-        try {
-            AccessController.doPrivileged (new PrivilegedExceptionAction<Object>() {
-                public Object run() throws IOException {
-                    //create a temporary file
-                    StorageFile lobFile =
-                        df.getStorageFactory().createTemporaryFile("lob", null);
-                    if (df.databaseEncrypted()) {
-                        tmpFile = new EncryptedLOBFile (lobFile, df);
-                    } else {
-                        tmpFile = new LOBFile (lobFile);
-                    }
-                    return null;
-                }
-            });
-        }
-        catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getCause();
+        //create a temporary file
+        StorageFile lobFile =
+            df.getStorageFactory().createTemporaryFile("lob", null);
+        if (df.databaseEncrypted()) {
+            tmpFile = new EncryptedLOBFile (lobFile, df);
+        } else {
+            tmpFile = new LOBFile (lobFile);
         }
 
         conn.addLobFile(tmpFile);
@@ -493,18 +479,13 @@ final class LOBStreamControl {
     // This method in java.lang.Object was deprecated as of build 167
     // of JDK 9. See DERBY-6932.
     //
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation","removal"})
     protected void finalize() throws Throwable {
         free();
     }
 
     private void deleteFile(final StorageFile file) {
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
-            public Object run() {
-                file.delete();
-                return null;
-            }
-        });
+        file.delete();
     }
 
     /**
@@ -629,46 +610,22 @@ final class LOBStreamControl {
         return updateCount;
     }
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object findServiceModule( final Object serviceModule, final String factoryInterface)
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.findServiceModule( serviceModule, factoryInterface );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.findServiceModule( serviceModule, factoryInterface );
     }
 
     /**
-     * Privileged service lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private static  Object findService( final String factoryInterface, final String serviceName )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     return Monitor.findService( factoryInterface, serviceName );
-                 }
-             }
-             );
+        return Monitor.findService( factoryInterface, serviceName );
     }
     
 }

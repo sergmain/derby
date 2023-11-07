@@ -261,6 +261,7 @@ public class MemoryLeakFixesTest extends BaseJDBCTestCase {
      * we get an OOM. If we get low on memory, force the finalizer to catch up.
      * 
      */
+    @SuppressWarnings({"deprecation","removal"})
     private static void runFinalizerIfNeeded() {
         
         Runtime rt = Runtime.getRuntime();

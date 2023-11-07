@@ -25,9 +25,6 @@ package org.apache.derby.impl.store.replication.net;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import javax.net.ServerSocketFactory;
 import org.apache.derby.shared.common.error.StandardException;
 import org.apache.derby.shared.common.reference.MessageId;
@@ -155,17 +152,8 @@ public class ReplicationMessageReceive {
         }
         serverSocket.setSoTimeout(timeout);
         Socket client = null;
-        try {
-            //Start listening on the socket and accepting the connection
-            client =
-                AccessController.doPrivileged(new PrivilegedExceptionAction<Socket>() {
-                    public Socket run() throws IOException {
-                        return serverSocket.accept();
-                    }
-                });
-        } catch(PrivilegedActionException pea) {
-            throw (IOException) pea.getException();
-        }
+        //Start listening on the socket and accepting the connection
+        client = serverSocket.accept();
 
         //create the SocketConnection object using the client connection.
         socketConn = new SocketConnection(client);
@@ -196,19 +184,10 @@ public class ReplicationMessageReceive {
         //create a ServerSocket at the specified host name and the
         //port number.
         ServerSocket ss = null;
-        try { 
-            ss = AccessController.doPrivileged
-            (new PrivilegedExceptionAction<ServerSocket>() {
-                public ServerSocket run() throws IOException  {
-                    ServerSocketFactory sf = ServerSocketFactory.getDefault();
-                    return sf.createServerSocket(slaveAddress.getPortNumber(),
-                            0, slaveAddress.getHostAddress());
-                }
-            });
-            return ss;
-        } catch(PrivilegedActionException pea) {
-            throw (IOException) pea.getException();
-        }
+        ServerSocketFactory sf = ServerSocketFactory.getDefault();
+        ss = sf.createServerSocket(slaveAddress.getPortNumber(),
+                                   0, slaveAddress.getHostAddress());
+        return ss;
     }
     
     /**

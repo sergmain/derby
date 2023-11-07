@@ -22,7 +22,6 @@
 package org.apache.derby.shared.common.error;
 
 import java.lang.reflect.InvocationTargetException;
-import java.security.PrivilegedActionException;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 
@@ -404,10 +403,8 @@ public class StandardException extends Exception
      */
     private static boolean isVacuousWrapper(Throwable t) {
         // The only interesting information in an InvocationTargetException
-        // or a PrivilegedActionException is the cause, so consider them
-        // vacuous if they have a cause.
-        if (t instanceof InvocationTargetException
-                || t instanceof PrivilegedActionException) {
+        // is its cause.
+        if (t instanceof InvocationTargetException) {
             return (t.getCause() != null);
         }
 

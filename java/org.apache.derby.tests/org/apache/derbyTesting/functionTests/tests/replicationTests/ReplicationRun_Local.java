@@ -25,8 +25,6 @@ import junit.framework.Test;
 import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.NetworkServerTestSetup;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
-
 
 /**
  * Run a replication test on localhost
@@ -61,7 +59,7 @@ public class ReplicationRun_Local extends ReplicationRun
         
         suite.addTestSuite( ReplicationRun_Local.class );
         
-        return SecurityManagerSetup.noSecurityManager(suite);
+        return suite;
 
     }
     
@@ -75,7 +73,7 @@ public class ReplicationRun_Local extends ReplicationRun
         suite.addTest( new ReplicationRun_Local( "testReplication_Local_TestStraightReplication", user, password ) );
         suite.addTest( new ReplicationRun_Local( "testReplication_Local_LogFilesSynched", user, password ) );
 
-        return SecurityManagerSetup.noSecurityManager( suite );
+        return suite;
     }
     
     //////////////////////////////////////////////////////////////

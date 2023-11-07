@@ -25,8 +25,6 @@ import org.apache.derby.iapi.jdbc.InternalDriver;
 import org.apache.derby.iapi.sql.conn.LanguageConnectionContext;
 import org.apache.derby.iapi.util.InterruptStatus;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.sql.SQLException;
 
 /**
@@ -166,31 +164,23 @@ abstract class ConnectionChild {
         }
     }
     
-	/**
-	  *	Get and cache the LanguageConnectionContext for this connection.
-	  */
-	LanguageConnectionContext	getLanguageConnectionContext( final EmbedConnection conn )
-	{
+    /**
+     *	Get and cache the LanguageConnectionContext for this connection.
+     */
+    LanguageConnectionContext	getLanguageConnectionContext( final EmbedConnection conn )
+    {
         if ( lcc == null ) { lcc = getLCC( conn ); }
 
         return lcc;
-	}
-	/**
-	  *	Gets the LanguageConnectionContext for this connection.
-	  */
-	static LanguageConnectionContext	getLCC( final EmbedConnection conn )
-	{
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<LanguageConnectionContext>()
-             {
-                 public LanguageConnectionContext run()
-                 {
-                     return conn.getLanguageConnection();
-                 }
-             }
-             );
-	}
+    }
+    
+    /**
+     *	Gets the LanguageConnectionContext for this connection.
+     */
+    static LanguageConnectionContext	getLCC( final EmbedConnection conn )
+    {
+        return conn.getLanguageConnection();
+    }
 
 }
 

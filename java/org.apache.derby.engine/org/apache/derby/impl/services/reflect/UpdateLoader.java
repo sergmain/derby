@@ -40,8 +40,6 @@ import org.apache.derby.iapi.services.property.PropertyUtil;
 import org.apache.derby.shared.common.reference.Property;
 
 import java.io.InputStream;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import org.apache.derby.shared.common.reference.MessageId;
 import org.apache.derby.shared.common.reference.Module;
@@ -116,34 +114,25 @@ final class UpdateLoader implements LockOwner {
 		initializeFromClassPath(classpath);
 	}
 
-	private void initializeFromClassPath(String classpath) throws StandardException {
+    private void initializeFromClassPath(String classpath) throws StandardException {
 
-		final String[][] elements = IdUtil.parseDbClassPath(classpath);
+        final String[][] elements = IdUtil.parseDbClassPath(classpath);
 		
-		final int jarCount = elements.length;
-		jarList = new JarLoader[jarCount];
+        final int jarCount = elements.length;
+        jarList = new JarLoader[jarCount];
 			
         if (jarCount != 0) {
-            // Creating class loaders is a restricted operation
-            // so we need to use a privileged block.
-            AccessController.doPrivileged
-            (new java.security.PrivilegedAction<Object>(){
-                
-                public Object run(){    
-    		      for (int i = 0; i < jarCount; i++) {
-    			     jarList[i] = new JarLoader(UpdateLoader.this, elements[i], vs);
-    		      }
-                  return null;
-                }
-            });
+            for (int i = 0; i < jarCount; i++) {
+                jarList[i] = new JarLoader(UpdateLoader.this, elements[i], vs);
+            }
         }
-		if (vs != null) {
-			vs.println(MessageService.getTextMessage(MessageId.CM_CLASS_LOADER_START, classpath ));
-		}
+        if (vs != null) {
+            vs.println(MessageService.getTextMessage(MessageId.CM_CLASS_LOADER_START, classpath ));
+        }
 		
-		thisClasspath = classpath;
-		initDone = false;
-	}
+        thisClasspath = classpath;
+        initDone = false;
+    }
 
 	/**
 		Load the class from the class path. Called by JarLoader
@@ -429,39 +418,21 @@ final class UpdateLoader implements LockOwner {
     
     
     /**
-     * Privileged lookup of a Context. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Context    getContextOrNull( final String contextID )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Context>()
-             {
-                 public Context run()
-                 {
-                     return ContextService.getContextOrNull( contextID );
-                 }
-             }
-             );
+        return ContextService.getContextOrNull( contextID );
     }
     
     /**
-     * Privileged module lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private static  Object getServiceModule( final Object serviceModule, final String factoryInterface )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     return Monitor.getServiceModule( serviceModule, factoryInterface );
-                 }
-             }
-             );
+        return Monitor.getServiceModule( serviceModule, factoryInterface );
     }
 
 }

@@ -32,7 +32,6 @@ import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.JDBC;
 import org.apache.derbyTesting.junit.JDBCDataSource;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
 
@@ -62,11 +61,10 @@ public class InvalidLDAPServerAuthenticationTest extends BaseJDBCTestCase {
         BaseTestSuite suite =
             new BaseTestSuite("InvalidLDAPServerAuthenticationTest");
 
-        suite.addTest(SecurityManagerSetup.noSecurityManager(baseSuite(
-                "testInvalidLDAPServerConnectionError")));
+        suite.addTest(baseSuite(
+                "testInvalidLDAPServerConnectionError"));
         suite.addTest(TestConfiguration.clientServerDecorator(
-                SecurityManagerSetup.noSecurityManager(
-                baseSuite("testInvalidLDAPServerConnectionError"))));
+                baseSuite("testInvalidLDAPServerConnectionError")));
         return suite;            
     }
 

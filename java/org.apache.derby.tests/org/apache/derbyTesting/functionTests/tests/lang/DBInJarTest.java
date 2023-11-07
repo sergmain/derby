@@ -34,8 +34,6 @@ import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.CleanDatabaseTestSetup;
 import org.apache.derbyTesting.junit.JDBC;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
-
 
 public class DBInJarTest extends BaseJDBCTestCase {
 
@@ -236,9 +234,7 @@ public class DBInJarTest extends BaseJDBCTestCase {
     protected static Test baseSuite(String name) {
         BaseTestSuite suite = new BaseTestSuite(name);
         suite.addTestSuite(DBInJarTest.class);
-        // Don't run with security manager, we need access to user.dir to archive
-        // the database.
-        return new CleanDatabaseTestSetup(SecurityManagerSetup.noSecurityManager(suite)) 
+        return new CleanDatabaseTestSetup(suite) 
         {
             /**
              * Creates the procedure used in the test cases.

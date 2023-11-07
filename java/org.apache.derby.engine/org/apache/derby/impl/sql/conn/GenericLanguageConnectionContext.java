@@ -1999,6 +1999,7 @@ public class GenericLanguageConnectionContext
      * execution time, set transaction isolation level calls this method before
      * changing the isolation level.
      */
+    @SuppressWarnings({"deprecation","removal"})
     public boolean verifyAllHeldResultSetsAreClosed()
             throws StandardException
     {
@@ -2086,6 +2087,7 @@ public class GenericLanguageConnectionContext
      *
      * @exception StandardException thrown on failure
      */
+    @SuppressWarnings({"deprecation","removal"})
     public boolean verifyNoOpenResultSets(PreparedStatement pStmt, Provider provider,
                                        int action)
             throws StandardException

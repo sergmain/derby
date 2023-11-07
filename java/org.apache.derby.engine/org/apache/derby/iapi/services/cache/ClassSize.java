@@ -25,8 +25,6 @@ import org.apache.derby.shared.common.sanity.SanityManager;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 
 public class ClassSize
@@ -64,11 +62,11 @@ public class ClassSize
         if (tmpRefSize < 4) {
             Runtime runtime = Runtime.getRuntime();
             runtime.gc();
-            runtime.runFinalization();
+            runFinalization(runtime);
             long memBase = runtime.totalMemory() - runtime.freeMemory();
             Object[] junk = new Object[10000];
             runtime.gc();
-            runtime.runFinalization();
+            runFinalization(runtime);
             long memUsed = runtime.totalMemory() - runtime.freeMemory() - memBase;
             int sz = (int)((memUsed + junk.length/2)/junk.length);
             tmpRefSize = ( 4 > sz) ? 4 : sz;
@@ -77,6 +75,15 @@ public class ClassSize
         refSize = tmpRefSize;
         minObjectSize = 4*refSize;
     }
+
+    /**
+     * This method exists merely to suppress the "removal" warning.
+     */
+    @SuppressWarnings({"deprecation","removal"})
+    private static void runFinalization(Runtime runtime)
+    {
+        runtime.runFinalization();
+    }        
 
     /**
      * do not try to use the catalog.
@@ -251,11 +258,6 @@ public class ClassSize
      * size of an array field does not depend on the size of the array. Similarly the size of
      * an object (reference) field does not depend on the object.
      *
-     * Note that this method will throw a SecurityException if the SecurityManager does not
-     * let this class execute the method Class.getDeclaredFields(). If this is a concern try
-     * to compute the size coefficients at build time.
-     * see org.apache.derbyBuild.ClassSizeCrawler
-     *
      * @param cl A class
      * @return the size estimate in bytes.
      *
@@ -343,16 +345,6 @@ public class ClassSize
      *      required permission to read the property is missing.
      */
     private static final String getSystemProperty(final String propName) {
-        try {
-            return AccessController.doPrivileged(
-                    new PrivilegedAction<String>() {
-                        public String run() {
-                            return System.getProperty(propName, null);
-                        }
-                });
-        } catch (SecurityException se) {
-            // Ignore exception and return null.
-            return null;
-        }
+        return System.getProperty(propName, null);
     }
 }

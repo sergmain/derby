@@ -61,7 +61,6 @@ public class IjConnNameTest extends ScriptTestCase {
         props.setProperty("ij.showNoCountForSelect", "true");
         
         Test test = new SystemPropertyTestSetup(new IjConnNameTest(test_script), props);
-        //test = SecurityManagerSetup.noSecurityManager(test);
         test = new CleanDatabaseTestSetup(test);   
         
         return getIJConfig(test); 

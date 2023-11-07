@@ -410,8 +410,6 @@ public class ClassInspector
 			e = cnfe;
 		} catch (NoSuchFieldException nsfep) {
 			e = nsfep;
-		} catch (SecurityException se) {
-			e = se;
 		}
 
 		throw StandardException.newException(
@@ -899,7 +897,7 @@ nextMethod:	for (int i = 0; i < methods.length; i++) {
         @param className Name of class
         @return the class
 		@exception ClassNotFoundException Class cannot be found, or
-		a SecurityException or LinkageException was thrown loading the class.
+		LinkageException was thrown loading the class.
 	*/
 	public Class<?> getClass(String className) throws ClassNotFoundException {
 

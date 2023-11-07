@@ -30,9 +30,6 @@ import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.Connection;
@@ -229,17 +226,9 @@ public abstract class SimpleJsonUtils
         final String name_of_file = fileName;
         
         try {
-            fis = AccessController.doPrivileged(
-             new PrivilegedExceptionAction<FileInputStream>()
-             {
-                 public FileInputStream run() throws IOException
-                 {
-                     return new FileInputStream( name_of_file );
-                 }
-             }
-             );
+            fis = new FileInputStream( name_of_file );
         }
-        catch (PrivilegedActionException pae) { throw ToolUtilities.wrap( pae ); }
+        catch (Exception pae) { throw ToolUtilities.wrap( pae ); }
 
         return readArrayFromStream( fis, characterSetName );
     }
@@ -262,18 +251,10 @@ public abstract class SimpleJsonUtils
         final   String  url_string = urlString;
         
         try {
-            inputStream = AccessController.doPrivileged(
-             new PrivilegedExceptionAction<InputStream>()
-             {
-                 public InputStream run() throws IOException, MalformedURLException
-                 {
-                     URL url = new URL( url_string );
-                     return url.openStream();
-                 }
-             }
-             );
+            URL url = new URL( url_string );
+            inputStream = url.openStream();
         }
-        catch (PrivilegedActionException pae) { throw ToolUtilities.wrap( pae ); }
+        catch (Exception pae) { throw ToolUtilities.wrap( pae ); }
         
         return readArrayFromStream( inputStream, characterSetName );
     }

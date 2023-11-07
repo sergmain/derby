@@ -21,12 +21,7 @@
 
 package org.apache.derby.iapi.jdbc;
 
-import java.security.AccessController;
-import java.security.AccessControlException;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 import java.security.Permission;
-import java.security.PrivilegedAction;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -418,7 +413,8 @@ public class InternalDriver implements ModuleControl, Driver {
     }
 
     /**
-     * Checks for shutdown System Privileges.
+     * Checks for shutdown System Privileges. This is a NOP now because
+     * we have removed support for the SecurityManager.
      *
      * To perform this check the following policy grant is required
      * <ul>
@@ -440,38 +436,20 @@ public class InternalDriver implements ModuleControl, Driver {
      * @throws SQLException if the privileges check fails
      */
     private void checkShutdownPrivileges(String user) throws SQLException {
-        // approve action if not running under a security manager
-        if (System.getSecurityManager() == null) {
-            return;
-        }
-
-        // the check
-        try {
-            final Permission sp = new SystemPermission(
-                SystemPermission.ENGINE, SystemPermission.SHUTDOWN);
-            checkSystemPrivileges(user, sp);
-        } catch (AccessControlException ace) {
-            throw Util.generateCsSQLException(
-				SQLState.AUTH_SHUTDOWN_MISSING_PERMISSION,
-				user, (Object)ace); // overloaded method
-        } catch (Exception e) {
-            throw Util.generateCsSQLException(
-				SQLState.AUTH_SHUTDOWN_MISSING_PERMISSION,
-				user, (Object)e); // overloaded method
-        }
+        return;
     }
 
-	public int getMajorVersion() {
-		return getMonitor().getEngineVersion().getMajorVersion();
-	}
+    public int getMajorVersion() {
+        return getMonitor().getEngineVersion().getMajorVersion();
+    }
 	
-	public int getMinorVersion() {
-		return getMonitor().getEngineVersion().getMinorVersion();
-	}
+    public int getMinorVersion() {
+        return getMonitor().getEngineVersion().getMinorVersion();
+    }
 
-	public boolean jdbcCompliant() {
-		return true;
-	}
+    public boolean jdbcCompliant() {
+        return true;
+    }
 
 	/*
 	** URL manipulation
@@ -640,39 +618,16 @@ public class InternalDriver implements ModuleControl, Driver {
 		return this.authenticationService;
 	}
 
-	/*
-		Methods to be overloaded in sub-implementations such as
-		a tracing driver.
-	 */
+    /*
+      Methods to be overloaded in sub-implementations such as
+      a tracing driver.
+    */
     EmbedConnection getNewEmbedConnection( final String url, final Properties info)
         throws SQLException
     {
         final   InternalDriver  myself = this;
 
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<EmbedConnection>()
-                 {
-                     public EmbedConnection run()
-                         throws SQLException
-                     {
-                         return new EmbedConnection(myself, url, info);
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            Throwable   cause = pae.getCause();
-            if ( (cause != null) && (cause instanceof SQLException) )
-            {
-                throw (SQLException) cause;
-            }
-            else
-            {
-                throw Util.javaException( pae );
-            }
-        }
+        return new EmbedConnection(myself, url, info);
     }
 
 	private ConnectionContext getConnectionContext() {
@@ -1002,77 +957,41 @@ public class InternalDriver implements ModuleControl, Driver {
 
     
     /**
-     * Privileged lookup of the ContextService. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ContextService    getContextService()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ContextService>()
-             {
-                 public ContextService run()
-                 {
-                     return ContextService.getFactory();
-                 }
-             }
-             );
+        return ContextService.getFactory();
     }
 
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
     
     /**
-     * Privileged module lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private static  Object getSystemModule( final String factoryInterface )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     return Monitor.getSystemModule( factoryInterface );
-                 }
-             }
-             );
+        return Monitor.getSystemModule( factoryInterface );
     }
 
     /**
-     * Privileged service lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private static  Object findService( final String factoryInterface, final String serviceName )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     return Monitor.findService( factoryInterface, serviceName );
-                 }
-             }
-             );
+        return Monitor.findService( factoryInterface, serviceName );
     }
     
 }

@@ -26,9 +26,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.Connection;
@@ -150,19 +147,7 @@ public class ConnectionMethodsTest extends Wrapper41Test
         ps.setInt(1,1000);
         clob = conn.createClob();
 
-        try {
-            is = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<FileInputStream>() {
-                public FileInputStream run() throws FileNotFoundException {
-                    return new FileInputStream("extin/short.txt");
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            // e.getException() should be an instance of FileNotFoundException,
-            // as only "checked" exceptions will be "wrapped" in a
-            // PrivilegedActionException.
-            throw (FileNotFoundException) e.getException();
-        }
+        is =  new FileInputStream("extin/short.txt");
         OutputStream os = clob.setAsciiStream(1);
         ArrayList<Integer> beforeUpdateList = new ArrayList<Integer>();
 
@@ -226,19 +211,7 @@ public class ConnectionMethodsTest extends Wrapper41Test
         ps.setInt(1,1000);
         blob = conn.createBlob();
 
-        try {
-            is = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<FileInputStream>() {
-                public FileInputStream run() throws FileNotFoundException {
-                    return new FileInputStream("extin/short.txt");
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            // e.getException() should be an instance of FileNotFoundException,
-            // as only "checked" exceptions will be "wrapped" in a
-            // PrivilegedActionException.
-            throw (FileNotFoundException) e.getException();
-        }
+        is = new FileInputStream("extin/short.txt");
 
         OutputStream os = blob.setBinaryStream(1);
         ArrayList<Integer> beforeUpdateList = new ArrayList<Integer>();
@@ -510,23 +483,8 @@ public class ConnectionMethodsTest extends Wrapper41Test
 
         // abort the connection
         try {
-            //
-            // This doPrivileged block absolves outer code blocks (like JUnit)
-            // of the need to be granted SQLPermission( "callAbort" ). However,
-            // derbyTesting.jar still needs that permission.
-            //
-            AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object    run() throws Exception
-                     {
-                         DirectExecutor  executor = new DirectExecutor();
-                         wrapper1.abort( executor );
-                         return null;
-                     }
-                 }
-                 );
+            DirectExecutor  executor = new DirectExecutor();
+            wrapper1.abort( executor );
         }
         catch (Exception e)
         {

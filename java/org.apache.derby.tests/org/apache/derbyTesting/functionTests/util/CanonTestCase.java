@@ -29,9 +29,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 
@@ -136,20 +133,14 @@ abstract class CanonTestCase extends BaseJDBCTestCase {
      * 
      * @param rawOutput
      * @throws IOException
-     * @throws PrivilegedActionException
      */
-    private void dumpForFail(byte[] rawOutput) throws IOException,
-            PrivilegedActionException {
+    private void dumpForFail(byte[] rawOutput) throws IOException
+    {
 
         File folder = getFailureFolder();
         final File outFile = new File(folder, getName() + ".out");
 
-        OutputStream outStream = AccessController
-                .doPrivileged(new PrivilegedExceptionAction<OutputStream>() {
-                    public OutputStream run() throws IOException {
-                        return new FileOutputStream(outFile);
-                    }
-                });
+        OutputStream outStream = new FileOutputStream(outFile);
 
         outStream.write(rawOutput);
         outStream.flush();

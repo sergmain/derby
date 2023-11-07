@@ -23,9 +23,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
 
 import junit.extensions.TestSetup;
 import junit.framework.Test;
@@ -80,46 +77,24 @@ public class ClasspathSetup extends TestSetup
 
     protected void setUp()
     {
-        AccessController.doPrivileged
-            (
-             new PrivilegedAction<Void>()
-             {
-                 public Void run()
-                 { 
-                     _originalClassLoader = Thread.currentThread().getContextClassLoader();
+        _originalClassLoader = Thread.currentThread().getContextClassLoader();
 
-                     _newClassLoader = new URLClassLoader( new URL[] { _resource }, _originalClassLoader );
+        _newClassLoader = new URLClassLoader( new URL[] { _resource }, _originalClassLoader );
 
-                     Thread.currentThread().setContextClassLoader( _newClassLoader );
-                     
-                     return null;
-                 }
-             }
-             );
+        Thread.currentThread().setContextClassLoader( _newClassLoader );
     }
     
     protected void tearDown() throws Exception
     {
-        AccessController.doPrivileged
-            (
-             new PrivilegedExceptionAction<Void>()
-             {
-                 public Void run() throws IOException
-                 { 
-                     Thread.currentThread().setContextClassLoader( _originalClassLoader );
+        Thread.currentThread().setContextClassLoader( _originalClassLoader );
 
-                     // On Java 7 and higher, URLClassLoader implements the
-                     // Closable interface and has a close() method. Use that
-                     // method, if it's available, to free all resources
-                     // associated with the class loader. DERBY-2162.
-                     if (_newClassLoader instanceof Closeable) {
-                        ((Closeable) _newClassLoader).close();
-                     }
-
-                     return null;
-                 }
-             }
-             );
+        // On Java 7 and higher, URLClassLoader implements the
+        // Closable interface and has a close() method. Use that
+        // method, if it's available, to free all resources
+        // associated with the class loader. DERBY-2162.
+        if (_newClassLoader instanceof Closeable) {
+            ((Closeable) _newClassLoader).close();
+        }
 
         _originalClassLoader = null;
         _newClassLoader = null;

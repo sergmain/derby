@@ -21,10 +21,6 @@
 
 package org.apache.derbyTesting.functionTests.util;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.sql.*;
 import java.io.*;
 
@@ -66,8 +62,6 @@ public class TestRoutines {
 		// sleep
 		s.execute("CREATE PROCEDURE TESTROUTINE.SLEEP(IN SLEEP_TIME_MS BIGINT) NO SQL EXTERNAL NAME 'org.apache.derbyTesting.functionTests.util.TestRoutines.sleep' language java parameter style java");
 
-		s.execute("CREATE FUNCTION TESTROUTINE.HAS_SECURITY_MANAGER() RETURNS INT NO SQL EXTERNAL NAME 'org.apache.derbyTesting.functionTests.util.TestRoutines.hasSecurityManager' language java parameter style java");
-
 		s.execute("CREATE FUNCTION TESTROUTINE.READ_FILE(FILE_NAME VARCHAR(60), ENCODING VARCHAR(60)) RETURNS VARCHAR(32000) NO SQL EXTERNAL NAME 'org.apache.derbyTesting.functionTests.util.TestRoutines.readFile' language java parameter style java");
 		s.close();
 	}
@@ -79,16 +73,7 @@ public class TestRoutines {
 	*/
 	public static void setSystemProperty(final String key, final String value) {
 		
-		// needs to run in a privileged block as it will be
-		// called through a SQL statement and thus a generated
-		// class. The generated class on the stack has no permissions
-		// granted to it.
-		AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-            	System.setProperty(key, value);
-                return null; // nothing to return
-            }
-        });
+           	System.setProperty(key, value);
 		
 	}
 	/**
@@ -101,35 +86,16 @@ public class TestRoutines {
 	}
 	
 	/**
-	 * TESTROUTINE.HAS_SECURITY_MANAGER()
-	 * @return 0 if no security manager is installed, 1 if one is.
-	 */
-	public static int hasSecurityManager()
-	{
-		return System.getSecurityManager() == null ? 0 : 1;
-	}
-	
-	/**
 	TESTROUTINE.READ_FILE(FILE_NAME VARCHAR(60), ENCODING VARCHAR(60)) RETURNS VARCHAR(32000)
 	Read a file using the passed in encoding display its contents
 	as ASCII with unicode esacpes..
-	 * @throws PrivilegedActionException 
 	 * @throws IOException 
    */
     public static String readFile(final String fileName, final String encoding)
-    throws PrivilegedActionException, IOException
+    throws IOException
     {
 
-		// needs to run in a privileged block as it will be
-		// called through a SQL statement and thus a generated
-		// class. The generated class on the stack has no permissions
-		// granted to it.
-        FileInputStream fin = AccessController.doPrivileged(
-        new PrivilegedExceptionAction<FileInputStream>() {
-            public FileInputStream run() throws FileNotFoundException {
-				return new FileInputStream(fileName); // nothing to return
-			}
-		});
+        FileInputStream fin = new FileInputStream(fileName); // nothing to return
     	
     	InputStreamReader isr = new InputStreamReader(
     			new BufferedInputStream(fin, 32*1024), encoding);

@@ -80,7 +80,6 @@ public class DBOAccessTest extends GeneratedColumnsHelper
     private static  final   String      SYSCS_IMPORT_DATA = "SYSCS_UTIL.SYSCS_IMPORT_DATA";
     private static  final   String      SYSCS_IMPORT_DATA_LOBS_FROM_EXTFILE = "SYSCS_UTIL.SYSCS_IMPORT_DATA_LOBS_FROM_EXTFILE";
     private static  final   String      SYSCS_BULK_INSERT = "SYSCS_UTIL.SYSCS_BULK_INSERT";
-    private static  final   String      SYSCS_RELOAD_SECURITY_POLICY = "SYSCS_UTIL.SYSCS_RELOAD_SECURITY_POLICY";
     private static  final   String      SYSCS_SET_USER_ACCESS = "SYSCS_UTIL.SYSCS_SET_USER_ACCESS";
     private static  final   String      SYSCS_GET_USER_ACCESS = "SYSCS_UTIL.SYSCS_GET_USER_ACCESS";
     private static  final   String      SYSCS_INVALIDATE_STORED_STATEMENTS = "SYSCS_UTIL.SYSCS_INVALIDATE_STORED_STATEMENTS";
@@ -325,7 +324,6 @@ public class DBOAccessTest extends GeneratedColumnsHelper
         vet6616( dboConnection, janetConnection, SYSCS_IMPORT_DATA, false );
         vet6616( dboConnection, janetConnection, SYSCS_IMPORT_DATA_LOBS_FROM_EXTFILE, false );
         vet6616( dboConnection, janetConnection, SYSCS_BULK_INSERT, false );
-        vet6616( dboConnection, janetConnection, SYSCS_RELOAD_SECURITY_POLICY, false );
         vet6616( dboConnection, janetConnection, SYSCS_SET_USER_ACCESS, false );
         vet6616( dboConnection, janetConnection, SYSCS_GET_USER_ACCESS, true );
         vet6616( dboConnection, janetConnection, SYSCS_INVALIDATE_STORED_STATEMENTS, false );
@@ -547,10 +545,6 @@ public class DBOAccessTest extends GeneratedColumnsHelper
                 fail();
             }
             catch (SQLException se) { vetError( SYNTAX_ERROR, se ); }
-        }
-        else if ( SYSCS_RELOAD_SECURITY_POLICY.equals( routineName ) )
-        {
-            SystemProcedures.SYSCS_RELOAD_SECURITY_POLICY();
         }
         else if ( SYSCS_SET_USER_ACCESS.equals( routineName ) )
         {

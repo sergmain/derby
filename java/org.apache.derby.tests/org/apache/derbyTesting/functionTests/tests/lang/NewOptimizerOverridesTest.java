@@ -36,7 +36,6 @@ import org.apache.derby.iapi.services.context.ContextManager;
 import org.apache.derby.iapi.sql.conn.LanguageConnectionContext;
 import org.apache.derby.impl.jdbc.EmbedConnection;
 import org.apache.derbyTesting.junit.BaseTestSuite;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -101,12 +100,7 @@ public class NewOptimizerOverridesTest  extends GeneratedColumnsHelper
 
         suite.addTest( TestConfiguration.embeddedSuite( NewOptimizerOverridesTest.class ) );
 
-        // use a policy file which allows the xml-based plan reader to access fields in the ResultSet graph
-        return new SecurityManagerSetup
-            (
-             suite,
-             "org/apache/derbyTesting/functionTests/tests/lang/resultSetReader.policy"
-             );
+        return suite;
     }
 
     protected void    setUp()

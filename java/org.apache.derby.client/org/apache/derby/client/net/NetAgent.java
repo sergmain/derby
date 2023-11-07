@@ -26,8 +26,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketException;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
 
 import org.apache.derby.client.am.Agent;
 import org.apache.derby.client.am.DisconnectException;
@@ -143,14 +141,13 @@ public class NetAgent extends Agent {
         }
 
         try {
-            socket_ = (Socket)AccessController.doPrivileged(
-                new OpenSocketAction(server, port, clientSSLMode_));
-        } catch (PrivilegedActionException e) {
+            socket_ = (new OpenSocketAction(server, port, clientSSLMode_)).run();
+        } catch (Exception e) {
             throw new DisconnectException(this,
                 new ClientMessageId(SQLState.CONNECT_UNABLE_TO_CONNECT_TO_SERVER),
-                e.getException(),
-                e.getException().getClass().getName(), server, port,
-                e.getException().getMessage());
+                e,
+                e.getClass().getName(), server, port,
+                e.getMessage());
         }
 
         // Set TCP/IP Socket Properties

@@ -25,8 +25,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import junit.framework.Test;
 import org.apache.derbyTesting.junit.BaseTestSuite;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
-
 
 /**
  * Run a replication test on localhost
@@ -55,7 +53,7 @@ public class ReplicationRun_Local_StateTest_part1_3 extends ReplicationRun
         
         suite.addTestSuite( ReplicationRun_Local_StateTest_part1_3.class );
         
-        return SecurityManagerSetup.noSecurityManager(suite);
+        return suite;
     }
     
     //////////////////////////////////////////////////////////////

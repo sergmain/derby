@@ -91,11 +91,6 @@ public class ClassInfo implements InstanceGetter {
 				useConstructor = false;
 				return getNewInstance();
 
-			} catch (SecurityException se) {
-				// not allowed to to get a handle on the constructor
-				// just use the standard mechanism.
-				useConstructor = false;
-				return getNewInstance();
 			}
 		}
 

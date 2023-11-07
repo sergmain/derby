@@ -21,10 +21,6 @@
 
 package org.apache.derbyTesting.unitTests.services;
 
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-
 import org.apache.derbyTesting.unitTests.harness.T_MultiIterations;
 import org.apache.derbyTesting.unitTests.harness.T_Fail;
 
@@ -726,22 +722,7 @@ public class T_LockFactory extends T_MultiIterations
     private  static  Object  startSystemModule( final String factoryInterface )
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.startSystemModule( factoryInterface );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.startSystemModule( factoryInterface );
     }
 
 }

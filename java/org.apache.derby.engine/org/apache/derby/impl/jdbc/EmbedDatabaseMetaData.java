@@ -42,8 +42,6 @@ import org.apache.derby.shared.common.reference.Limits;
 
 import java.util.Properties;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.sql.DatabaseMetaData;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -90,7 +88,7 @@ import org.apache.derby.iapi.util.InterruptStatus;
  * @see <a href="http://java.sun.com/products/jdbc/download.html#corespec30">JDBC 3.0 Specification</a>
  */
 public class EmbedDatabaseMetaData extends ConnectionChild
-	implements DatabaseMetaData, java.security.PrivilegedAction<Object> {
+	implements DatabaseMetaData {
 
     private static final int ILLEGAL_UDT_TYPE = 0;
     
@@ -3808,29 +3806,20 @@ public class EmbedDatabaseMetaData extends ConnectionChild
 		return (s == null ? "%" : s);
 	}
 
-	/**
-	  *	Gets the LanguageConnectionContext for this connection.
-	  *
-	  *	@return	the lcc for this connection
-	  *
-	  */
-	private	LanguageConnectionContext	getLanguageConnectionContext()
-	{
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<LanguageConnectionContext>()
-             {
-                 public LanguageConnectionContext run()
-                 {
-                     return getEmbedConnection().getLanguageConnection();
-                 }
-             }
-             );
-	}
+    /**
+     *	Gets the LanguageConnectionContext for this connection.
+     *
+     *	@return	the lcc for this connection
+     *
+     */
+    private	LanguageConnectionContext	getLanguageConnectionContext()
+    {
+        return getEmbedConnection().getLanguageConnection();
+    }
 
-	/*
-	** Priv block code, moved out of the old Java2 version.
-	*/
+    /*
+    ** Priv block code, moved out of the old Java2 version.
+    */
 
     /**
      * Loads the query descriptions from metadata.properties and
@@ -3838,18 +3827,17 @@ public class EmbedDatabaseMetaData extends ConnectionChild
      * <code>queryDescriptions_net</code>.
      */
     private void loadQueryDescriptions() {
-        java.security.AccessController.doPrivileged(this);
+        run();
     }
 
-	/**
-	 * Performs a privileged action. Reads the query descriptions.
-	 *
-	 * @return <code>null</code>
-	 */
-	public final Object run() {
-		// SECURITY PERMISSION - IP3
-		PBloadQueryDescriptions();
-		return null;
-	}
+    /**
+     * Reads the query descriptions.
+     *
+     * @return <code>null</code>
+     */
+    public final Object run() {
+        PBloadQueryDescriptions();
+        return null;
+    }
 
 }

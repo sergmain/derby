@@ -28,7 +28,6 @@ import java.sql.SQLException;
 import junit.framework.Test;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.DatabasePropertyTestSetup;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.SupportFilesSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
@@ -54,8 +53,6 @@ public class LuceneBackupTest extends GeneratedColumnsHelper
     private static  final   String      ALICE = "ALICE";
     private static  final   String      FRANK = "FRANK";
     private static  final   String[]    LEGAL_USERS = { TEST_DBO, ALICE, RUTH, FRANK  };
-
-    private static  final   String      POLICY_FILE = "org/apache/derbyTesting/functionTests/tests/lang/luceneSupport.policy";
 
     private static  final   String      ENGLISH_ANALYZER =
         "org.apache.derbyTesting.functionTests.tests.lang.LuceneCoarseAuthorizationTest.getEnglishAnalyzer";
@@ -117,7 +114,7 @@ public class LuceneBackupTest extends GeneratedColumnsHelper
         BaseTestSuite suite = (BaseTestSuite)TestConfiguration.embeddedSuite(
             LuceneBackupTest.class );
 
-        Test        secureTest = new SecurityManagerSetup( suite, POLICY_FILE );
+        Test        secureTest = suite;
         Test        authenticatedTest = DatabasePropertyTestSetup.builtinAuthentication
             ( secureTest, LEGAL_USERS, "LuceneBackupPermissions" );
         Test        authorizedTest = TestConfiguration.sqlAuthorizationDecoratorSingleUse( authenticatedTest, DB_NAME, true );

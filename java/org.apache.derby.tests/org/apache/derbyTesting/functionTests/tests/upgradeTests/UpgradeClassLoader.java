@@ -27,8 +27,6 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import junit.framework.Assert;
 
@@ -63,11 +61,7 @@ public class UpgradeClassLoader
             getSystemProperty(_Suite.OLD_RELEASE_PATH_PROPERTY);
 
     private static String getSystemProperty(final String key) {
-        return AccessController.doPrivileged(new PrivilegedAction<String>() {
-            public String run() {
-                return System.getProperty(key);
-            }
-        });
+        return System.getProperty(key);
     }
 
     protected static String getTextVersion(int[] iv)
@@ -84,12 +78,7 @@ public class UpgradeClassLoader
      */
     public static ClassLoader makeClassLoader( final int[] version )
     {
-        ClassLoader oldLoader = AccessController.doPrivileged(
-                new PrivilegedAction<ClassLoader>() {
-            public ClassLoader run() {
-                return createClassLoader(version);
-            }
-        });
+        ClassLoader oldLoader = createClassLoader(version);
 
         if (oldLoader == null)
         {

@@ -32,9 +32,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.security.PrivilegedAction;
-import java.security.AccessController;
-import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -232,161 +229,153 @@ abstract class BaseMonitor
 		}
 	}
 
-	protected final void runWithState(Properties properties, PrintWriter log) {
+    protected final void runWithState(Properties properties, PrintWriter log) {
 
-		bootProperties = properties;
-		logging = log;
+        bootProperties = properties;
+        logging = log;
 
-		// false indicates the full monitor is required, not the lite.
+        // false indicates the full monitor is required, not the lite.
         if (!initialize(false)) {
             dumpTempWriter(true);
             return;
         }
 
-		// if monitor is already set then the system is already
-		// booted or in the process of booting or shutting down.
-		if ( setMonitor( this ) ) { return; }
+        // if monitor is already set then the system is already
+        // booted or in the process of booting or shutting down.
+        if ( setMonitor( this ) ) { return; }
 
-		MessageService.setFinder(this);
+        MessageService.setFinder(this);
 
-		if (SanityManager.DEBUG) {
-			reportOn = Boolean.valueOf(PropertyUtil.getSystemProperty("derby.monitor.verbose")).booleanValue();
-		}
+        if (SanityManager.DEBUG) {
+            reportOn = Boolean.valueOf(PropertyUtil.getSystemProperty("derby.monitor.verbose")).booleanValue();
+        }
 
-		// Set up the application properties
-		applicationProperties = readApplicationProperties();
+        // Set up the application properties
+        applicationProperties = readApplicationProperties();
 
-		// The security manager may not let us get the System properties
-		// object itself, although it may let us look at the properties in it.
-		Properties systemProperties = null;
+        // The security manager may not let us get the System properties
+        // object itself, although it may let us look at the properties in it.
+        Properties systemProperties = null;
 
-		if (SanityManager.DEBUG) {
-			// In a production system having this call would
-			// mean would we have to document it for security
-			// permission reasons. Since we don't require it and
-			// its a big security hole to allow external code to
-			// overwrite our own implementations we just support
-			// it for debugging. This means VM executions such as
-			// java -Dderby.module.javaCompiler=com.ibm.db2j.impl.BasicServices.JavaCompiler.JavaLang.JLJava ...
-			// would only work with a sane codeline.
-			try {
-				systemProperties = System.getProperties();
-			} catch (SecurityException se) {
-			}
-		}
+        if (SanityManager.DEBUG) {
+            // In a production system having this call would
+            // mean would we have to document it for security
+            // permission reasons. Since we don't require it and
+            // its a big security hole to allow external code to
+            // overwrite our own implementations we just support
+            // it for debugging. This means VM executions such as
+            // java -Dderby.module.javaCompiler=com.ibm.db2j.impl.BasicServices.JavaCompiler.JavaLang.JLJava ...
+            // would only work with a sane codeline.
+            systemProperties = System.getProperties();
+        }
 
-		Vector<Class<?>> bootImplementations = getImplementations(bootProperties, false);
+        Vector<Class<?>> bootImplementations = getImplementations(bootProperties, false);
 
-		Vector<Class<?>> systemImplementations = null;
-		Vector<Class<?>> applicationImplementations = null;
+        Vector<Class<?>> systemImplementations = null;
+        Vector<Class<?>> applicationImplementations = null;
 
-		// TEMP - making this sanity only breaks the unit test code
-		// I will fix soon, djd.
-		if (true || SanityManager.DEBUG) {
-			// Don't allow external code to override our implementations.
-			systemImplementations = getImplementations(systemProperties, false);
-			applicationImplementations = getImplementations(applicationProperties, false);
-		}
+        // TEMP - making this sanity only breaks the unit test code
+        // I will fix soon, djd.
+        if (true || SanityManager.DEBUG) {
+            // Don't allow external code to override our implementations.
+            systemImplementations = getImplementations(systemProperties, false);
+            applicationImplementations = getImplementations(applicationProperties, false);
+        }
 
         Vector<Class<?>> defaultImplementations = getDefaultImplementations();
 
-		int implementationCount = 0;
-		if (bootImplementations != null)
-			implementationCount++;
+        int implementationCount = 0;
+        if (bootImplementations != null)
+            implementationCount++;
 
-		// TEMP - making this sanity only breaks the unit test code
-		if (true || SanityManager.DEBUG) {
-			// Don't allow external code to override our implementations.
-			if (systemImplementations != null)
-				implementationCount++;
-			if (applicationImplementations != null)
-				implementationCount++;
-		}
+        // TEMP - making this sanity only breaks the unit test code
+        if (true || SanityManager.DEBUG) {
+            // Don't allow external code to override our implementations.
+            if (systemImplementations != null)
+                implementationCount++;
+            if (applicationImplementations != null)
+                implementationCount++;
+        }
 
-		if (defaultImplementations != null)
-			implementationCount++;
+        if (defaultImplementations != null)
+            implementationCount++;
 
         implementationSets = new ArrayList<List<Class<?>>>(implementationCount);
 
-		if (bootImplementations != null)
+        if (bootImplementations != null)
             implementationSets.add(bootImplementations);
 		
-		if (true || SanityManager.DEBUG) {
-			// Don't allow external code to override our implementations.
-			if (systemImplementations != null)
+        if (true || SanityManager.DEBUG) {
+            // Don't allow external code to override our implementations.
+            if (systemImplementations != null)
                 implementationSets.add(systemImplementations);
-			if (applicationImplementations != null)
+            if (applicationImplementations != null)
                 implementationSets.add(applicationImplementations);
-		}
+        }
 
-		if (defaultImplementations != null)
+        if (defaultImplementations != null)
             implementationSets.add(defaultImplementations);
 
-		if (SanityManager.DEBUG) {
-			// Look for the derby.debug.* properties.
-			if (applicationProperties != null) {
-				addDebugFlags(applicationProperties.getProperty(Monitor.DEBUG_FALSE), false);
-				addDebugFlags(applicationProperties.getProperty(Monitor.DEBUG_TRUE), true);
-			}
+        if (SanityManager.DEBUG) {
+            // Look for the derby.debug.* properties.
+            if (applicationProperties != null) {
+                addDebugFlags(applicationProperties.getProperty(Monitor.DEBUG_FALSE), false);
+                addDebugFlags(applicationProperties.getProperty(Monitor.DEBUG_TRUE), true);
+            }
 
-			addDebugFlags(PropertyUtil.getSystemProperty(Monitor.DEBUG_FALSE), false);
-			addDebugFlags(PropertyUtil.getSystemProperty(Monitor.DEBUG_TRUE), true);
-		}
+            addDebugFlags(PropertyUtil.getSystemProperty(Monitor.DEBUG_FALSE), false);
+            addDebugFlags(PropertyUtil.getSystemProperty(Monitor.DEBUG_TRUE), true);
+        }
 
-		try {
-			systemStreams = (InfoStreams) Monitor.startSystemModule("org.apache.derby.shared.common.stream.InfoStreams");
+        try {
+            systemStreams = (InfoStreams) Monitor.startSystemModule("org.apache.derby.shared.common.stream.InfoStreams");
 
-			if (SanityManager.DEBUG) {
-				SanityManager.SET_DEBUG_STREAM(systemStreams.stream().getPrintWriter());
-			}
+            if (SanityManager.DEBUG) {
+                SanityManager.SET_DEBUG_STREAM(systemStreams.stream().getPrintWriter());
+            }
 
-			contextService = new ContextService();
+            contextService = new ContextService();
 
-			uuidFactory = (UUIDFactory) Monitor.startSystemModule("org.apache.derby.iapi.services.uuid.UUIDFactory");
+            uuidFactory = (UUIDFactory) Monitor.startSystemModule("org.apache.derby.iapi.services.uuid.UUIDFactory");
 
             timerFactory = (TimerFactory)Monitor.startSystemModule("org.apache.derby.iapi.services.timer.TimerFactory");
             
             Monitor.startSystemModule(Module.JMX);
 
-		} catch (StandardException se) {
+        } catch (StandardException se) {
 
-			// if we can't create an error log or a context then there's no point going on
-			reportException(se);
-			// dump any messages we have been saving ...
-			dumpTempWriter(true);
-
-			return;
-        } catch (AccessControlException e) {
+            // if we can't create an error log or a context then there's no point going on
+            reportException(se);
+            // dump any messages we have been saving ...
             dumpTempWriter(true);
-            throw e;
+
+            return;
         }
 
-		// switch cover to the real error stream and
-		// dump any messages we have been saving ...
-		dumpTempWriter(false);
+        // switch cover to the real error stream and
+        // dump any messages we have been saving ...
+        dumpTempWriter(false);
 
-		if (SanityManager.DEBUG && reportOn) {
-			dumpProperties("-- Boot Properties --", bootProperties);
-			dumpProperties("-- System Properties --", systemProperties);
-			dumpProperties("-- Application Properties --", applicationProperties);
-		}
-        
-        
+        if (SanityManager.DEBUG && reportOn) {
+            dumpProperties("-- Boot Properties --", bootProperties);
+            dumpProperties("-- System Properties --", systemProperties);
+            dumpProperties("-- Application Properties --", applicationProperties);
+        }
 
-		// bootup all the service providers
-		determineSupportedServiceProviders();
+        // bootup all the service providers
+        determineSupportedServiceProviders();
 
-		// See if automatic booting of persistent services is required
-		boolean bootAll = Boolean.valueOf(PropertyUtil.getSystemProperty(Property.BOOT_ALL)).booleanValue();
+        // See if automatic booting of persistent services is required
+        boolean bootAll = Boolean.valueOf(PropertyUtil.getSystemProperty(Property.BOOT_ALL)).booleanValue();
 
 
-		startServices(bootProperties, bootAll);
-		startServices(systemProperties, bootAll);
-		startServices(applicationProperties, bootAll);
+        startServices(bootProperties, bootAll);
+        startServices(systemProperties, bootAll);
+        startServices(applicationProperties, bootAll);
 
-		if (bootAll) // only if automatic booting is required
-			bootPersistentServices( );
-	}
+        if (bootAll) // only if automatic booting is required
+        { bootPersistentServices( ); }
+    }
 
     public  String  getCanonicalServiceName( String userSpecifiedName )
         throws StandardException
@@ -1368,8 +1357,6 @@ nextModule:
 
 			return properties;
 
-		} catch (SecurityException se) {
-			return null;
 		} catch (IOException ioe) {
 			report(ioe.toString() + " (" + Property.PROPERTIES_FILE + ")");
 			reportException(ioe);
@@ -2097,68 +2084,40 @@ nextModule:
     }
 
     /**
-     * Privileged lookup of the ContextService. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ContextService    getContextService()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ContextService>()
-             {
-                 public ContextService run()
-                 {
-                     return ContextService.getFactory();
-                 }
-             }
-             );
+        return ContextService.getFactory();
     }    
 
     /**
-     * Privileged shutdown of the ContextService. Must be private so that user code
+     *  Must be private so that user code
      * can't call this entry point.
      */
     private  static  void    stopContextService()
     {
-        AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     ContextService.stop();
-                     Monitor.clearMonitor();
-                     return null;
-                 }
-             }
-             );
+        ContextService.stop();
+        Monitor.clearMonitor();
     }    
 
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point. Returns true if the system is
      * already booted or in the process of shutting down.
      */
     private  static  boolean    setMonitor( final BaseMonitor baseMonitor )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Boolean>()
-             {
-                 public Boolean run()
-                 {
-                     return !Monitor.setMonitor( baseMonitor );
-                 }
-             }
-             ).booleanValue();
+        return !Monitor.setMonitor( baseMonitor );
     }
 
     /**
-		Initialize the monitor wrt the current environemnt.
-		Returns false if the monitor cannot be initialized, true otherwise.
-	*/
-	abstract boolean initialize(boolean lite);
-
+       Initialize the monitor wrt the current environemnt.
+       Returns false if the monitor cannot be initialized, true otherwise.
+    */
+    abstract boolean initialize(boolean lite);
+    
     class ProviderEnumeration implements Enumeration<PersistentService>
     {
         private Enumeration<String> serviceProvidersKeys = (serviceProviders == null) ? null :

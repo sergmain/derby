@@ -22,8 +22,6 @@ package org.apache.derbyTesting.functionTests.tests.replicationTests;
 
 import junit.framework.Test;
 import org.apache.derbyTesting.junit.BaseTestSuite;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
-
 
 /**
  * This is NOT a test but an attempt
@@ -51,7 +49,7 @@ public class ReplicationRun_CleanUp extends ReplicationRun
         
         suite.addTestSuite( ReplicationRun_CleanUp.class );
         
-        return SecurityManagerSetup.noSecurityManager(suite);
+        return suite;
     }
     
     public void testReplication_CleanUp()

@@ -24,10 +24,6 @@ package org.apache.derby.impl.sql.catalog;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
-import java.security.AccessController;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -173,7 +169,7 @@ import org.apache.derby.shared.common.error.MessageUtils;
  */
 @SuppressWarnings("UseOfObsoleteCollectionType")
 public final class	DataDictionaryImpl
-	implements DataDictionary, CacheableFactory, ModuleControl, ModuleSupportable,java.security.PrivilegedAction<Properties>
+	implements DataDictionary, CacheableFactory, ModuleControl, ModuleSupportable
 {
 
     private static final String		CFG_SYSTABLES_ID = "SystablesIdentifier";
@@ -13558,27 +13554,25 @@ public final class	DataDictionaryImpl
 
 
 
-	/*
-	** Priv block code to load net work server meta data queries.
-	*/
+    /*
+    ** Priv block code to load net work server meta data queries.
+    */
 
-	private String spsSet;
-	private final synchronized Properties getQueryDescriptions(boolean net) {
-		spsSet = net ? "metadata_net.properties" : "/org/apache/derby/impl/jdbc/metadata.properties";
-		return java.security.AccessController.doPrivileged(this);
-	}
+    private String spsSet;
+    private final synchronized Properties getQueryDescriptions(boolean net) {
+        spsSet = net ? "metadata_net.properties" : "/org/apache/derby/impl/jdbc/metadata.properties";
+        return run();
+    }
 
-	public final Properties run() {
-		// SECURITY PERMISSION - IP3
-		Properties p = new Properties();
-		try {
-
-			// SECURITY PERMISSION - IP3
-			InputStream is = getClass().getResourceAsStream(spsSet);
-			p.load(is);
-			is.close();
-		} catch (IOException ioe) {}
-		return p;
+    public final Properties run() {
+        // SECURITY PERMISSION - IP3
+        Properties p = new Properties();
+        try {
+            InputStream is = getClass().getResourceAsStream(spsSet);
+            p.load(is);
+            is.close();
+        } catch (IOException ioe) {}
+        return p;
 	}
 
 
@@ -14678,121 +14672,56 @@ public final class	DataDictionaryImpl
     }
 
     /**
-     * Privileged lookup of the ContextService. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ContextService    getContextService()
     {
-        if ( System.getSecurityManager() == null )
-        {
-            return ContextService.getFactory();
-        }
-        else
-        {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedAction<ContextService>()
-                 {
-                     public ContextService run()
-                     {
-                         return ContextService.getFactory();
-                     }
-                 }
-                 );
-        }
+        return ContextService.getFactory();
     }
 
     
     /**
-     * Privileged lookup of a Context. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Context    getContextOrNull( final String contextID )
     {
-        if ( System.getSecurityManager() == null )
-        {
-            return ContextService.getContextOrNull( contextID );
-        }
-        else
-        {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedAction<Context>()
-                 {
-                     public Context run()
-                     {
-                         return ContextService.getContextOrNull( contextID );
-                     }
-                 }
-                 );
-        }
+        return ContextService.getContextOrNull( contextID );
     }
 
     /**
-     * Privileged lookup of a Context. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Context    getContext( final String contextID )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Context>()
-             {
-                 public Context run()
-                 {
-                     return ContextService.getContext( contextID );
-                 }
-             }
-             );
+        return ContextService.getContext( contextID );
     }
     
     /**
-     * Privileged Monitor lookup. Must be package private so that user code
+     *  Must be package private so that user code
      * can't call this entry point.
      */
     static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
     
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object  startSystemModule( final String factoryInterface )
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.startSystemModule( factoryInterface );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.startSystemModule( factoryInterface );
     }
 
     
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object bootServiceModule
@@ -14802,47 +14731,17 @@ public final class	DataDictionaryImpl
          )
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.bootServiceModule( create, serviceModule, factoryInterface, properties );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.bootServiceModule( create, serviceModule, factoryInterface, properties );
     }
 
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object findServiceModule( final Object serviceModule, final String factoryInterface)
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.findServiceModule( serviceModule, factoryInterface );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.findServiceModule( serviceModule, factoryInterface );
     }
     
 }

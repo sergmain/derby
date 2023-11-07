@@ -30,10 +30,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,33 +37,22 @@ import java.util.List;
  * A set of operations on {@link java.io.File} that wraps the
  * operations in privileged block of code. This class is intended to provide
  * these methods for testcases to reduce the hassle of having to wrap file
- * operations in privileged code blocks.
- * <p>
- * Derby needs to use privileged blocks in some places to avoid
- * {@link SecurityException}s being thrown, as the required privileges are
- * often granted to Derby itself, but not the higher level application code.
+ * operations in privileged code blocks. This is now a NOP due to the work
+ * done on DERBY-7138.
  */
 public class PrivilegedFileOpsForTests {
 
-	/**
+    /**
      * Get the file length.
      *
      * @return Byte length of the file.
-     * @throws SecurityException if the required permissions to read the file,
-     *      or the path it is in, are missing
      * @see File#length
      */
-    public static long length(final File file)
-            throws SecurityException {
+    public static long length(final File file) {
         if (file == null) {
             throw new IllegalArgumentException("file cannot be <null>");
         }
-        return AccessController.doPrivileged(
-                    new PrivilegedAction<Long>() {
-                        public Long run() {
-                            return file.length();
-                        }
-                    });
+        return file.length();
     }
 
     /**
@@ -75,20 +60,14 @@ public class PrivilegedFileOpsForTests {
      *
      * @param file File for absolute path
      * @return Absolute path of the file.
-     * @throws SecurityException if the required permissions to access the file,
      *      
      * @see File#getAbsolutePath
      */
-    public static String getAbsolutePath(final File file)
-            throws SecurityException {
+    public static String getAbsolutePath(final File file) {
         if (file == null) {
             throw new IllegalArgumentException("file cannot be <null>");
         }
-        return AccessController.doPrivileged(
-                new PrivilegedAction<String>() {
-                    public String run() throws SecurityException {
-                        return file.getAbsolutePath();
-                    }});
+        return file.getAbsolutePath();
     }
 
     /**
@@ -96,20 +75,14 @@ public class PrivilegedFileOpsForTests {
      *
      * @param file File to be queried
      * @return Its URI
-     * @throws SecurityException if the test lacks the required permissions to access the file,
      *      
      * @see File#getAbsolutePath
      */
-    public static URI toURI(final File file)
-            throws SecurityException {
+    public static URI toURI(final File file) {
         if (file == null) {
             throw new IllegalArgumentException("file cannot be <null>");
         }
-        return AccessController.doPrivileged(
-                new PrivilegedAction<URI>() {
-                    public URI run() throws SecurityException {
-                        return file.toURI();
-                    }});
+        return file.toURI();
     }
 
     /**
@@ -128,17 +101,7 @@ public class PrivilegedFileOpsForTests {
                                       final File directory)
             throws IOException
     {
-        try {
-            return AccessController.doPrivileged(
-                new PrivilegedExceptionAction<File>() {
-                    @Override
-                    public File run() throws IOException {
-                        return File.createTempFile(prefix, suffix, directory);
-                    }
-                });
-        } catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getCause();
-        }
+        return File.createTempFile(prefix, suffix, directory);
     }
 
     /**
@@ -146,8 +109,6 @@ public class PrivilegedFileOpsForTests {
      *
      * @param file the file to open a stream for
      * @return A input stream reading from the specified file.
-     * @throws SecurityException if the required permissions to read the file,
-     *      or the path it is in, are missing
      * @throws FileNotFoundException if the specified file does not exist
      */
     public static FileInputStream getFileInputStream(final File file) 
@@ -155,58 +116,33 @@ public class PrivilegedFileOpsForTests {
     	if (file == null) {
             throw new IllegalArgumentException("file cannot be <null>");
         }
-        try {
-            return AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<FileInputStream>() {
-                public FileInputStream run() throws FileNotFoundException {
-                    return new FileInputStream(file);
-                }
-            });
-        } catch (PrivilegedActionException pae) {
-            throw (FileNotFoundException)pae.getException();
-        }
+        return new FileInputStream(file);
     }
 
     /**
      * Check if the file exists.
      *
      * @return {@code true} if file exists, {@code false} otherwise
-     * @throws SecurityException if the required permissions to read the file,
-     *      or the path it is in, are missing
      * @see File#exists
      */
-    public static boolean exists(final File file)
-            throws SecurityException {
+    public static boolean exists(final File file) {
         if (file == null) {
             throw new IllegalArgumentException("file cannot be <null>");
         }
-        return AccessController.doPrivileged(
-                    new PrivilegedAction<Boolean>() {
-                        public Boolean run() {
-                            return file.exists();
-                        }
-                    });
+        return file.exists();
     }
 
     /**
      * Delete a file
      *
      * @return {@code true} if file was deleted, {@code false} otherwise
-     * @throws SecurityException if the required permissions to read the file,
-     *      or the path it is in, are missing
      * @see File#delete
      */
-    public static boolean delete(final File file)
-            throws SecurityException {
+    public static boolean delete(final File file) {
         if (file == null) {
             throw new IllegalArgumentException("file cannot be <null>");
         }
-        return AccessController.doPrivileged(
-                    new PrivilegedAction<Boolean>() {
-                        public Boolean run() {
-                            return file.delete();
-                        }
-                    });
+        return file.delete();
     }
 
     /**
@@ -215,11 +151,7 @@ public class PrivilegedFileOpsForTests {
      * @return {@code true} if and only if the directory was created
      */
     public static boolean mkdir(final File dir) {
-        return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-            public Boolean run() {
-                return dir.mkdir();
-            }
-        });
+        return dir.mkdir();
     }
 
     /**
@@ -233,11 +165,7 @@ public class PrivilegedFileOpsForTests {
     public static boolean setReadable(final File file,
                                       final boolean readable,
                                       final boolean ownerOnly) {
-        return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-            public Boolean run() {
-                return file.setReadable(readable, ownerOnly);
-            }
-        });
+        return file.setReadable(readable, ownerOnly);
     }
 
     /**
@@ -246,12 +174,7 @@ public class PrivilegedFileOpsForTests {
      * @return {@code true} if successful, {@code false} otherwise
      */
     public static boolean setReadOnly(final File file) {
-        return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-            @Override
-            public Boolean run() {
-                return file.setReadOnly();
-            }
-        });
+        return file.setReadOnly();
     }
 
     /**
@@ -260,25 +183,13 @@ public class PrivilegedFileOpsForTests {
      * @param file the file to obtain a reader for
      * @return An unbuffered reader for the specified file.
      * @throws FileNotFoundException if the specified file does not exist
-     * @throws SecurityException if the required permissions to read the file,
-     *      or the path it is in, are missing
      */
     public static FileReader getFileReader(final File file)
             throws FileNotFoundException {
         if (file == null) {
             throw new IllegalArgumentException("file cannot be <null>");
         }
-        try {
-            return AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<FileReader>() {
-                        public FileReader run()
-                                throws FileNotFoundException {
-                            return new FileReader(file);
-                        }
-                    });
-        } catch (PrivilegedActionException pae) {
-            throw (FileNotFoundException)pae.getCause();
-        }
+        return new FileReader(file);
     }
 
     /**
@@ -287,25 +198,13 @@ public class PrivilegedFileOpsForTests {
      * @param file the file to obtain a writer for
      * @return An writer for the specified file.
      * @throws IOException if the file cannot be opened
-     * @throws SecurityException if the required permissions to write to the file,
-     *      or the path it is in, are missing
      */
     public static FileWriter getFileWriter(final File file)
             throws IOException {
         if (file == null) {
             throw new IllegalArgumentException("file cannot be <null>");
         }
-        try {
-            return AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<FileWriter>() {
-                        public FileWriter run()
-                                throws IOException {
-                            return new FileWriter(file);
-                        }
-                    });
-        } catch (PrivilegedActionException pae) {
-            throw (IOException)pae.getCause();
-        }
+        return new FileWriter(file);
     }
 
     /**
@@ -315,8 +214,7 @@ public class PrivilegedFileOpsForTests {
      * @see java.io.File#listFiles()
      */
     public static File[] listFiles(File dir) {
-        return AccessController.doPrivileged(
-                (PrivilegedAction<File[]>) () -> dir.listFiles());
+        return dir.listFiles();
     }
     
     /**
@@ -328,21 +226,9 @@ public class PrivilegedFileOpsForTests {
      * @param source  Source file or directory to copy
      * @param target  Target file or directory to copy to
      * @throws IOException
-     * @throws SecurityException
      */    
     public static void copy(final File source, final File target) throws IOException {
-        try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                public Void run() throws IOException {
-                    recursiveCopy(source,target);
-                    return null;
-                }
-                });
-        } catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getException();
-        
-        }
-        
+        recursiveCopy(source,target);
     }
     /**
      * Do a recursive copy from source to target.  If target exists it will 
@@ -428,8 +314,6 @@ public class PrivilegedFileOpsForTests {
      * @param file the file to create a stream for
      * @return An output stream.
      * @throws FileNotFoundException if the specified file does not exist
-     * @throws SecurityException if the required permissions to write the file,
-     *      or the path it is in, are missing
      */
     public static FileOutputStream getFileOutputStream(final File file)
             throws FileNotFoundException {
@@ -443,8 +327,6 @@ public class PrivilegedFileOpsForTests {
      * @param append whether to append or overwrite an existing file
      * @return An output stream.
      * @throws FileNotFoundException if the specified file does not exist
-     * @throws SecurityException if the required permissions to write the file,
-     *      or the path it is in, are missing
      */
     public static FileOutputStream getFileOutputStream(final File file,
                                                        final boolean append)
@@ -452,17 +334,7 @@ public class PrivilegedFileOpsForTests {
         if (file == null) {
             throw new IllegalArgumentException("file cannot be <null>");
         }
-        try {
-            return AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<FileOutputStream>() {
-                        public FileOutputStream run()
-                                throws FileNotFoundException {
-                            return new FileOutputStream(file, append);
-                        }
-                    });
-        } catch (PrivilegedActionException pae) {
-            throw (FileNotFoundException)pae.getCause();
-        }
+        return new FileOutputStream(file, append);
     }
 
     /**
@@ -483,12 +355,7 @@ public class PrivilegedFileOpsForTests {
             throw new FileNotFoundException(getAbsolutePath(dir));
         }
         final ArrayList<File> notDeleted = new ArrayList<File>();
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                deleteRecursively(dir, notDeleted);
-                return null;
-            }
-        });
+        deleteRecursively(dir, notDeleted);
 
         return notDeleted.toArray(new File[notDeleted.size()]);
     }
@@ -546,20 +413,15 @@ public class PrivilegedFileOpsForTests {
      * @return A string with file information (human-readable).
      */
     public static String getFileInfo(final File f) {
-        return AccessController.doPrivileged(new PrivilegedAction<String>() {
-            public String run() {
-                if (!f.exists()) {
-                    return "(non-existant)";
-                }
-                StringBuilder sb = new StringBuilder();
-                sb.append("(isDir=").append(f.isDirectory()).
-                        append(", canRead=").append(f.canRead()).
-                        append(", canWrite=").append(f.canWrite()).
-                        append(", size=").append(f.length()).append(')');
-                return sb.toString();
-            }
-        });
+        if (!f.exists()) {
+            return "(non-existant)";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("(isDir=").append(f.isDirectory()).
+            append(", canRead=").append(f.canRead()).
+            append(", canWrite=").append(f.canWrite()).
+            append(", size=").append(f.length()).append(')');
+        return sb.toString();
     }
-    
 
- }
+}

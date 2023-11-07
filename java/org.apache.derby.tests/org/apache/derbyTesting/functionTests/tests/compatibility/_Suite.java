@@ -30,7 +30,6 @@ import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.Derby;
 import org.apache.derbyTesting.junit.DerbyDistribution;
 import org.apache.derbyTesting.junit.DerbyVersion;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.ServerSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
@@ -146,13 +145,7 @@ public class _Suite
         BaseTestSuite suite = new BaseTestSuite();
         addVersionCombinations(suite);
         TestConfiguration config = TestConfiguration.getCurrent();
-        return new SecurityManagerSetup(
-                new ServerSetup(suite, "localhost", config.getPort()),
-                // Need permission for getProtectionDomain to determine what
-                // to put on the classpath for the spawned process(es).
-                VersionCombinationConfigurator.class.getName().
-                    replaceAll("\\.", "/") + ".policy",
-                true);
+        return new ServerSetup(suite, "localhost", config.getPort());
     }
 
     /**

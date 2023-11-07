@@ -31,10 +31,6 @@ import java.util.Locale;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.NoSuchElementException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 import javax.sql.ConnectionPoolDataSource;
 import javax.sql.DataSource;
 import javax.sql.XADataSource;
@@ -171,13 +167,7 @@ public class TestUtil {
 	{
 		if (framework != UNKNOWN_FRAMEWORK)
 			return framework;
-              String frameworkString = AccessController.doPrivileged
-                  (new PrivilegedAction<String>() {
-                          public String run() {
-                              return System.getProperty("framework");
-                          }
-                      }
-                   );              
+              String frameworkString = System.getProperty("framework");
 		// last attempt to get useprocess to do networkserver stuff.
 		// If a suite has useprocess, it's possible there was no property set.
 		if (frameworkString == null)
@@ -219,13 +209,7 @@ public class TestUtil {
     */
     public static String getHostName()
     {
-        String hostName = AccessController.doPrivileged
-            (new PrivilegedAction<String>() {
-                    public String run() {
-                        return System.getProperty("hostName");
-                    }
-                }
-             );    
+        String hostName = System.getProperty("hostName");
         if (hostName == null)
             hostName="localhost";
         return hostName;
@@ -289,19 +273,8 @@ public class TestUtil {
                             break;
 		}
                                 
-              try {
-                  AccessController.doPrivileged
-                      (new PrivilegedExceptionAction<Void>() {
-                              public Void run() throws Exception {
-                                  Class<?> clazz = Class.forName(driverName);
-                                  clazz.getConstructor().newInstance();
-                                  return null;
-                              }
-                          }
-                       );
-              } catch (PrivilegedActionException e) {
-                  throw e.getException();
-              }
+                Class<?> clazz = Class.forName(driverName);
+                clazz.getConstructor().newInstance();
         }
 
 
@@ -900,36 +873,16 @@ public class TestUtil {
     public static void dumpAllStackTracesIfSupported(PrintWriter log)
 	{
 		try {
-			String version = AccessController.doPrivileged
-				(new PrivilegedAction<String>(){
-						public String run(){
-							return System.getProperty("java.version");
-						}
-					}
-				 );
-                   
+			String version = System.getProperty("java.version");
+                  
 			JavaVersionHolder j=  new JavaVersionHolder(version); 
 			
 			if (j.atLeast(1,5)){
-				Class<?> c = Class.forName("org.apache.derbyTesting.functionTests.util.ThreadDump");
-				final Method m = c.getMethod("getStackDumpString",new Class[] {});
+                            Class<?> c = Class.forName("org.apache.derbyTesting.functionTests.util.ThreadDump");
+                            final Method m = c.getMethod("getStackDumpString",new Class[] {});
 				
-				String dump;
-				try {
-					dump = AccessController.doPrivileged
-						(new PrivilegedExceptionAction<String>(){
-								public String run() throws
-									IllegalArgumentException, 
-									IllegalAccessException, 
-									InvocationTargetException{
-									return (String) m.invoke(null);
-								}
-							}
-						 );
-				}     catch (PrivilegedActionException e) {
-					throw  e.getException();
-				}
-				log.println(dump);                    
+                            String dump = (String) m.invoke(null);
+                            log.println(dump);                    
 			}                     
 		}
 		catch (Exception e){

@@ -23,8 +23,6 @@ package org.apache.derby.impl.sql.execute;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.sql.SQLWarning;
 import java.sql.Timestamp;
 import java.util.Arrays;
@@ -1149,16 +1147,7 @@ implements NoPutResultSet
     {
         if ( klass == null ) { return; }
         
-        Field[] fields = AccessController.doPrivileged
-            (
-             new PrivilegedAction<Field[]>()
-             {
-                 public Field[] run()
-                 {
-                     return klass.getDeclaredFields();
-                 }
-             }
-             );
+        Field[] fields = klass.getDeclaredFields();
 
         for ( Field field : fields )
         {

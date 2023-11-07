@@ -23,7 +23,6 @@ package org.apache.derbyTesting.functionTests.tests.derbynet;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.security.AccessController;
 import java.sql.SQLException;
 import java.util.Locale;
 import java.util.Properties;
@@ -35,7 +34,6 @@ import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.Derby;
 import org.apache.derbyTesting.junit.JDBC;
 import org.apache.derbyTesting.junit.NetworkServerTestSetup;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
 /** 
@@ -54,9 +52,6 @@ import org.apache.derbyTesting.junit.TestConfiguration;
 
 public class ServerPropertiesTest  extends BaseJDBCTestCase {
     
-    //create own policy file
-    private static final String POLICY_FILE_NAME =
-        "org/apache/derbyTesting/functionTests/tests/derbynet/ServerPropertiesTest.policy";
     private int[] portsSoFar;
     private int basePort;
     
@@ -76,7 +71,6 @@ public class ServerPropertiesTest  extends BaseJDBCTestCase {
         
         // this fixture doesn't use a client/server setup, instead does the 
         // relevant starting/stopping inside the test
-        // Add security manager policy that allows executing java commands
         suite.addTest(decorateTest("ttestSetPortPriority", 
                 new String[] {}, new String[] {}, false));
         
@@ -171,13 +165,9 @@ public class ServerPropertiesTest  extends BaseJDBCTestCase {
         return test;
     }   
     
-    // grant ALL FILES execute, and getPolicy permissions,
-    // as well as write for the trace files.
+    // this used to install a security manager.
     private static Test decorateWithPolicy(Test test) {
-        //
-        // Install a security manager using the initial policy file.
-        //
-        return new SecurityManagerSetup(test, POLICY_FILE_NAME);
+        return test;
     }
     
     private static Properties getTheProperties() {
@@ -375,21 +365,16 @@ public class ServerPropertiesTest  extends BaseJDBCTestCase {
                 Integer.toString(firstAlternatePort));
 
         final String derbyHome = getSystemProperty("derby.system.home");
-        boolean b = AccessController.doPrivileged
-        (new java.security.PrivilegedAction<Boolean>(){
-            public Boolean run(){
-                boolean fail = false;
-                try {
-                    FileOutputStream propFile = 
-                        new FileOutputStream(derbyHome + File.separator + "derby.properties");
-                    derbyProperties.store(propFile,"testing derby.properties");
-                    propFile.close();
-                } catch (IOException ioe) {
-                    fail = true;
-                }
-                return fail;
-            }
-        });
+        boolean b = false;
+        try {
+            FileOutputStream propFile = 
+                new FileOutputStream(derbyHome + File.separator + "derby.properties");
+            derbyProperties.store(propFile,"testing derby.properties");
+            propFile.close();
+        } catch (IOException ioe) {
+            b = true;
+        }
+
         if (b)
         {
             checkWhetherNeedToShutdown(new int[] {TestConfiguration.getCurrent().getPort()}, "failed to write derby.properties");

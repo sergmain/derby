@@ -42,7 +42,7 @@ public class Derby {
     public static boolean hasEmbedded()
     {
         // classes folder - assume all is available.
-        if (!SecurityManagerSetup.isJars)
+        if (!TestConfiguration.isJars)
             return true;
 
         return hasCorrectJar("/derby.jar",
@@ -59,7 +59,7 @@ public class Derby {
         }
 
         // classes folder - assume all is available.
-        if (!SecurityManagerSetup.isJars)
+        if (!TestConfiguration.isJars)
             return true;
         
         return hasCorrectJar("/derbynet.jar",
@@ -71,7 +71,7 @@ public class Derby {
     public static boolean hasTools()
     {
         // classes folder - assume all is available.
-        if (!SecurityManagerSetup.isJars)
+        if (!TestConfiguration.isJars)
             return true;
             
         return hasCorrectJar("/derbytools.jar",
@@ -90,7 +90,7 @@ public class Derby {
         }
 
         // classes folder - assume all is available.
-        if (!SecurityManagerSetup.isJars) {
+        if (!TestConfiguration.isJars) {
             return true;
         }
 
@@ -102,7 +102,7 @@ public class Derby {
     
     private static boolean hasCorrectJar(String jarName, String className)
     {
-        URL url = SecurityManagerSetup.getURL(className);
+        URL url = TestConfiguration.getURL(className);
         if (url == null)
             return false;
         

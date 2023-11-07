@@ -90,11 +90,7 @@ import java.io.IOException;
 
 import java.net.URL;
 
-import java.security.AccessController;
 import java.security.CodeSource;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 
 /**
 
@@ -116,7 +112,7 @@ that file was made to inherit from this one.
 **/
 
 public class BaseDataFileFactory
-    implements DataFactory, CacheableFactory, ModuleControl, ModuleSupportable, PrivilegedExceptionAction<Object>
+    implements DataFactory, CacheableFactory, ModuleControl, ModuleSupportable
 {
 
     StorageFactory storageFactory;
@@ -202,7 +198,7 @@ public class BaseDataFileFactory
 
 	private Hashtable<String,StorageFile> postRecoveryRemovedFiles;
 
-    // PrivilegedAction actions
+    // actions
     private int actionCode;
     private static final int REMOVE_TEMP_DIRECTORY_ACTION           = 2;
     private static final int GET_CONTAINER_PATH_ACTION              = 3;
@@ -262,37 +258,36 @@ public class BaseDataFileFactory
 		return true;
 	}
 
-	public void	boot(boolean create, Properties startParams) 
+    public void	boot(boolean create, Properties startParams) 
         throws StandardException 
     {
-
-		jbmsVersion = getMonitor().getEngineVersion();
+        jbmsVersion = getMonitor().getEngineVersion();
 		
-		jvmVersion = buildJvmVersion();
+        jvmVersion = buildJvmVersion();
 		
-		osInfo = buildOSinfo();
+        osInfo = buildOSinfo();
 		
-		jarCPath = jarClassPath(getClass());
+        jarCPath = jarClassPath(getClass());
 
-		dataDirectory = startParams.getProperty(PersistentService.ROOT);
+        dataDirectory = startParams.getProperty(PersistentService.ROOT);
 
-		UUIDFactory uf = getMonitor().getUUIDFactory();
+        UUIDFactory uf = getMonitor().getUUIDFactory();
 
-		identifier = uf.createUUID();
+        identifier = uf.createUUID();
 
         PersistentService ps = getMonitor().getServiceType(this);
 
         try
         {
             storageFactory =
-            ps.getStorageFactoryInstance(
-                true,
-                dataDirectory,
-                startParams.getProperty(
-                    Property.STORAGE_TEMP_DIRECTORY,
-                    PropertyUtil.getSystemProperty(
-                        Property.STORAGE_TEMP_DIRECTORY)),
-                identifier.toANSIidentifier());
+                ps.getStorageFactoryInstance(
+                    true,
+                    dataDirectory,
+                    startParams.getProperty(
+                        Property.STORAGE_TEMP_DIRECTORY,
+                        PropertyUtil.getSystemProperty(
+                            Property.STORAGE_TEMP_DIRECTORY)),
+                    identifier.toANSIidentifier());
         }
         catch(IOException ioe)
         {
@@ -326,128 +321,128 @@ public class BaseDataFileFactory
 
         try
         {
-            AccessController.doPrivileged( this);
+            run();
         }
-        catch (PrivilegedActionException pae)
+        catch (Exception pae)
         { 
             // BOOT_ACTION does not throw any exceptions.
         }
         
         String value =
             startParams.getProperty(Property.FORCE_DATABASE_LOCK,
-                PropertyUtil.getSystemProperty(Property.FORCE_DATABASE_LOCK));
+                                    PropertyUtil.getSystemProperty(Property.FORCE_DATABASE_LOCK));
         throwDBlckException =
             Boolean.valueOf(
                 (value != null ? value.trim() : value)).booleanValue();
 
-		if (!isReadOnly())		// read only db, not interested in filelock
-			getJBMSLockOnDB(identifier, uf, dataDirectory);
+        if (!isReadOnly())		// read only db, not interested in filelock
+            getJBMSLockOnDB(identifier, uf, dataDirectory);
 
 
-		//If the database is being restored/created from backup
-		//the restore the data directory(seg*) from backup
-		String restoreFrom =null;
-		restoreFrom = startParams.getProperty(Attribute.CREATE_FROM);
-		if(restoreFrom == null)
-			restoreFrom = startParams.getProperty(Attribute.RESTORE_FROM);
-		if(restoreFrom == null)
-			restoreFrom = startParams.getProperty(Attribute.ROLL_FORWARD_RECOVERY_FROM);
+        //If the database is being restored/created from backup
+        //the restore the data directory(seg*) from backup
+        String restoreFrom =null;
+        restoreFrom = startParams.getProperty(Attribute.CREATE_FROM);
+        if(restoreFrom == null)
+            restoreFrom = startParams.getProperty(Attribute.RESTORE_FROM);
+        if(restoreFrom == null)
+            restoreFrom = startParams.getProperty(Attribute.ROLL_FORWARD_RECOVERY_FROM);
 
-		if (restoreFrom !=null)
-		{
-			try
+        if (restoreFrom !=null)
+        {
+            try
             {
                 // restoreFrom and createFrom operations also need to know if database 
                 // is encrypted
                 String dataEncryption = 
                     startParams.getProperty(Attribute.DATA_ENCRYPTION);
                 databaseEncrypted = Boolean.valueOf(dataEncryption).booleanValue();
-				restoreDataDirectory(restoreFrom);
-			}
+                restoreDataDirectory(restoreFrom);
+            }
             catch(StandardException se)
-			{
-				releaseJBMSLockOnDB();
-				throw se;
-			}
-		}
+            {
+                releaseJBMSLockOnDB();
+                throw se;
+            }
+        }
 
-		logMsg(LINE);
+        logMsg(LINE);
         String messageID = (isReadOnly())  ?
             MessageId.STORE_BOOT_MSG_READ_ONLY
             : MessageId.STORE_BOOT_MSG;
         boolean logBootTrace = Boolean.valueOf(startParams.getProperty(Property.LOG_BOOT_TRACE,
-               PropertyUtil.getSystemProperty(Property.LOG_BOOT_TRACE))).booleanValue();
+                                                                       PropertyUtil.getSystemProperty(Property.LOG_BOOT_TRACE))).booleanValue();
         logMsg(new Date() +
-			   MessageService.getTextMessage(messageID,
+               MessageService.getTextMessage(messageID,
                                              jbmsVersion,
                                              identifier,
                                              dataDirectory,
                                              // cast to Object so we get object hash code
                                              (Object) this.getClass().getClassLoader(),
                                              jarCPath
-                                             ));
-		//Log the JVM version info
-		logMsg(jvmVersion);
+                   ));
+        //Log the JVM version info
+        logMsg(jvmVersion);
 
-		//Log the OS info
-		logMsg(osInfo);
+        //Log the OS info
+        logMsg(osInfo);
 
-		//Log derby.system.home It will have null value if user didn't set it
-		logMsg(Property.SYSTEM_HOME_PROPERTY+"=" + 
-				PropertyUtil.getSystemProperty(Property.SYSTEM_HOME_PROPERTY));
+        //Log derby.system.home It will have null value if user didn't set it
+        logMsg(Property.SYSTEM_HOME_PROPERTY+"=" + 
+               PropertyUtil.getSystemProperty(Property.SYSTEM_HOME_PROPERTY));
 		
-		//Log properties related to redirection of derby.log 
-		String target = 
-			PropertyUtil.getSystemProperty(Property.ERRORLOG_STYLE_PROPERTY);
-		if (target != null)
-			logMsg(Property.ERRORLOG_STYLE_PROPERTY+"=" + target);
+        //Log properties related to redirection of derby.log 
+        String target = 
+            PropertyUtil.getSystemProperty(Property.ERRORLOG_STYLE_PROPERTY);
+        if (target != null)
+            logMsg(Property.ERRORLOG_STYLE_PROPERTY+"=" + target);
         
-		target = 
-			PropertyUtil.getSystemProperty(Property.ERRORLOG_FILE_PROPERTY);
-		if (target != null)
-			logMsg(Property.ERRORLOG_FILE_PROPERTY+"=" + target);
+        target = 
+            PropertyUtil.getSystemProperty(Property.ERRORLOG_FILE_PROPERTY);
+        if (target != null)
+            logMsg(Property.ERRORLOG_FILE_PROPERTY+"=" + target);
 		
-		target = 
-			PropertyUtil.getSystemProperty(Property.ERRORLOG_METHOD_PROPERTY);
-		if (target != null)
-			logMsg(Property.ERRORLOG_METHOD_PROPERTY+"=" + target);
+        target = 
+            PropertyUtil.getSystemProperty(Property.ERRORLOG_METHOD_PROPERTY);
+        if (target != null)
+            logMsg(Property.ERRORLOG_METHOD_PROPERTY+"=" + target);
 		
-		target = 
-			PropertyUtil.getSystemProperty(Property.ERRORLOG_FIELD_PROPERTY);
-		if (target != null)
-			logMsg(Property.ERRORLOG_FIELD_PROPERTY+"=" + target);
+        target = 
+            PropertyUtil.getSystemProperty(Property.ERRORLOG_FIELD_PROPERTY);
+        if (target != null)
+            logMsg(Property.ERRORLOG_FIELD_PROPERTY+"=" + target);
 
         if (logBootTrace)
-           Monitor.logThrowable(new Throwable("boot trace"));
-		uf = null;
+            Monitor.logThrowable(new Throwable("boot trace"));
+        uf = null;
 
 
 
-		CacheFactory cf = (CacheFactory) 
+        CacheFactory cf = (CacheFactory) 
             startSystemModule(
                 org.apache.derby.shared.common.reference.Module.CacheFactory);
 
         // Initialize the page cache
-	    int pageCacheSize = getIntParameter(
-					RawStoreFactory.PAGE_CACHE_SIZE_PARAMETER,
-                    null,
-                    RawStoreFactory.PAGE_CACHE_SIZE_DEFAULT,
-                    RawStoreFactory.PAGE_CACHE_SIZE_MINIMUM,
-                    RawStoreFactory.PAGE_CACHE_SIZE_MAXIMUM);
+        int pageCacheSize = getIntParameter(
+            RawStoreFactory.PAGE_CACHE_SIZE_PARAMETER,
+            null,
+            RawStoreFactory.PAGE_CACHE_SIZE_DEFAULT,
+            RawStoreFactory.PAGE_CACHE_SIZE_MINIMUM,
+            RawStoreFactory.PAGE_CACHE_SIZE_MAXIMUM);
 
-		pageCache =
+        pageCache =
             cf.newCacheManager(
                 this, "PageCache", pageCacheSize / 2, pageCacheSize);
 
         // Initialize the container cache
-	    int fileCacheSize = getIntParameter(
-                    RawStoreFactory.CONTAINER_CACHE_SIZE_PARAMETER,
-                    null,
-                    RawStoreFactory.CONTAINER_CACHE_SIZE_DEFAULT,
-                    RawStoreFactory.CONTAINER_CACHE_SIZE_MINIMUM,
-                    RawStoreFactory.CONTAINER_CACHE_SIZE_MAXIMUM);
+        int fileCacheSize = getIntParameter(
+            RawStoreFactory.CONTAINER_CACHE_SIZE_PARAMETER,
+            null,
+            RawStoreFactory.CONTAINER_CACHE_SIZE_DEFAULT,
+            RawStoreFactory.CONTAINER_CACHE_SIZE_MINIMUM,
+            RawStoreFactory.CONTAINER_CACHE_SIZE_MAXIMUM);
 
-		containerCache = 
+        containerCache = 
             cf.newCacheManager(
                 this, "ContainerCache", fileCacheSize / 2, fileCacheSize);
 
@@ -456,22 +451,22 @@ public class BaseDataFileFactory
         pageCache.registerMBean(dataDirectory);
         containerCache.registerMBean(dataDirectory);
 
-		if (create)
-		{
-			String noLog =
-				startParams.getProperty(Property.CREATE_WITH_NO_LOG);
+        if (create)
+        {
+            String noLog =
+                startParams.getProperty(Property.CREATE_WITH_NO_LOG);
 
-			inCreateNoLog = 
+            inCreateNoLog = 
                 (noLog != null && Boolean.valueOf(noLog).booleanValue());
-		}
+        }
 
-		droppedTableStubInfo = new Hashtable<LogInstant,Object[]>();
+        droppedTableStubInfo = new Hashtable<LogInstant,Object[]>();
 
         // If derby.system.durability=test then set flags to disable sync of
         // data pages at allocation when file is grown, disable sync of data
         // writes during checkpoint
         if (Property.DURABILITY_TESTMODE_NO_SYNC.equalsIgnoreCase(
-            PropertyUtil.getSystemProperty(Property.DURABILITY_PROPERTY)))
+                PropertyUtil.getSystemProperty(Property.DURABILITY_PROPERTY)))
         {
             // - disable syncing of data during checkpoint.
             dataNotSyncedAtCheckpoint = true;
@@ -480,10 +475,10 @@ public class BaseDataFileFactory
             // is set to a mode, where syncs wont be forced and the
             // possible consequences of setting this mode
             Monitor.logMessage(MessageService.getTextMessage(
-            	MessageId.STORE_DURABILITY_TESTMODE_NO_SYNC,
-            	Property.DURABILITY_PROPERTY,
-                Property.DURABILITY_TESTMODE_NO_SYNC));
-		}
+                                   MessageId.STORE_DURABILITY_TESTMODE_NO_SYNC,
+                                   Property.DURABILITY_PROPERTY,
+                                   Property.DURABILITY_TESTMODE_NO_SYNC));
+        }
         else if (Performance.MEASURE)
         {
             // development build only feature, must by hand set the 
@@ -502,10 +497,10 @@ public class BaseDataFileFactory
                     "Warning: " + 
                     Property.STORAGE_DATA_NOT_SYNCED_AT_CHECKPOINT +
                     "set to true.");
-		}
+        }
 
         fileHandler = new RFResource( this);
-	} // end of boot
+    } // end of boot
 
 	public void	stop() 
     {
@@ -1559,9 +1554,9 @@ public class BaseDataFileFactory
             actionCode = REMOVE_TEMP_DIRECTORY_ACTION;
             try
             {
-                AccessController.doPrivileged( this);
+                run();
             }
-            catch (PrivilegedActionException pae)
+            catch (Exception pae)
             {
                 // removeTempDirectory does not throw an exception
             }
@@ -1620,9 +1615,9 @@ public class BaseDataFileFactory
             this.stub = stub;
             try
             {
-                return (StorageFile) AccessController.doPrivileged( this);
+                return (StorageFile) run();
             }
-            catch (PrivilegedActionException pae)
+            catch (Exception pae)
             { 
                 // getContainerPath does not throw an exception
                 return null;
@@ -1632,7 +1627,7 @@ public class BaseDataFileFactory
         { 
             this.containerId = null; 
         }
-	}
+    }
 
 
 	/**
@@ -1657,24 +1652,24 @@ public class BaseDataFileFactory
 
 
 
-	/**
-		Remove stubs in this database.  Stubs are committed deleted containers
-	*/
-	private synchronized void removeStubs()
-	{
+    /**
+       Remove stubs in this database.  Stubs are committed deleted containers
+    */
+    private synchronized void removeStubs()
+    {
         if( storageFactory != null) 
         {
             actionCode = REMOVE_STUBS_ACTION;
             try
             {
-                AccessController.doPrivileged( this);
+                run();
             }
-            catch (PrivilegedActionException pae)
+            catch (Exception pae)
             {
                 // removeStubs does not throw an exception
             } 
         }
-	}
+    }
 
 	/**
 	 * keeps track of information about the stub files of the  committed deleted
@@ -1700,65 +1695,63 @@ public class BaseDataFileFactory
 		}
 	}    
 
-	/**
-	 * Delete the stub files that are not required for recovery. A stub file
-	 * is not required to be around if the recovery is not going to see
-	 * any log record that belongs to that container. Since the stub files
-	 * are created as a post commit operation, they are not necessary during
-	 * undo operation of the recovery.
-	 *
-	 * To remove a stub file we have to be sure that it was created before the
-	 * redoLWM in the check point record. We can be sure that the stub is not
-	 * required if the log instant when it was created is less than the redoLWM.
-	 */
-	public void removeDroppedContainerFileStubs(
-    LogInstant redoLWM) 
+    /**
+     * Delete the stub files that are not required for recovery. A stub file
+     * is not required to be around if the recovery is not going to see
+     * any log record that belongs to that container. Since the stub files
+     * are created as a post commit operation, they are not necessary during
+     * undo operation of the recovery.
+     *
+     * To remove a stub file we have to be sure that it was created before the
+     * redoLWM in the check point record. We can be sure that the stub is not
+     * required if the log instant when it was created is less than the redoLWM.
+     */
+    public void removeDroppedContainerFileStubs(LogInstant redoLWM) 
         throws StandardException
-	{
-	
-		if (droppedTableStubInfo != null) 
-		{
-			synchronized(droppedTableStubInfo)
-			{
-				for (Enumeration<LogInstant> e = droppedTableStubInfo.keys(); 
+    {
+        if (droppedTableStubInfo != null) 
+        {
+            synchronized(droppedTableStubInfo)
+            {
+                for (Enumeration<LogInstant> e = droppedTableStubInfo.keys(); 
                      e.hasMoreElements(); ) 
-				{
-					LogInstant logInstant  = e.nextElement();
-					if(logInstant.lessThan(redoLWM))
-					{
+                {
+                    LogInstant logInstant  = e.nextElement();
+                    if(logInstant.lessThan(redoLWM))
+                    {
 						
-						Object[] removeInfo = 
+                        Object[] removeInfo = 
                             droppedTableStubInfo.get(logInstant);
-						Object identity = removeInfo[1];
-						//delete the entry in the container cache.
-						Cacheable ccentry =	containerCache.findCached(identity);
-						if(ccentry!=null)
-							containerCache.remove(ccentry);
+                        Object identity = removeInfo[1];
+                        //delete the entry in the container cache.
+                        Cacheable ccentry =	containerCache.findCached(identity);
+                        if(ccentry!=null)
+                            containerCache.remove(ccentry);
 
-						//delete the stub we don't require it during recovery
+                        //delete the stub we don't require it during recovery
                         synchronized( this)
                         {
                             actionFile = (StorageFile)removeInfo[0];
                             actionCode = DELETE_IF_EXISTS_ACTION;
                             try
                             {
-                                if (AccessController.doPrivileged(this) != null) 
+                                if (run() != null) 
                                 {
                                     //if we successfuly delete the file remove 
                                     //it from the hash table.
                                     droppedTableStubInfo.remove(logInstant);
                                 }
                             }
-                            catch (PrivilegedActionException pae)
+                            catch (Exception pae)
                             {
                                 // DELETE_IF_EXISTS does not throw an exception
                             }
                         }
-					}
-				}
-			}
-		}
-	}
+                    }
+                }
+            }
+        }
+    }
 
 
 
@@ -1778,39 +1771,38 @@ public class BaseDataFileFactory
      * code.
      * <p>
      *
-	 * @return The largest containerid in seg0.
+     * @return The largest containerid in seg0.
      **/
-	private synchronized long findMaxContainerId()
-	{
+    private synchronized long findMaxContainerId()
+    {
         actionCode = FIND_MAX_CONTAINER_ID_ACTION;
         try
         {
-            return ((Long) AccessController.doPrivileged( this)).longValue();
+            return (Long) run();
         }
-        catch (PrivilegedActionException pae)
+        catch (Exception pae)
         { 
             // findMaxContainerId does not throw an exception
             return 0;
         }
-	}
+    }
 
-	private void bootLogFactory(
-    boolean     create, 
-    Properties  startParams) 
+    private void bootLogFactory(
+        boolean     create, 
+        Properties  startParams) 
         throws StandardException 
     {
-
-		if (isReadOnly())
+        if (isReadOnly())
         {
-			startParams.put(
+            startParams.put(
                 LogFactory.RUNTIME_ATTRIBUTES, LogFactory.RT_READONLY);
         }
 
-		logFactory = (LogFactory)
-			bootServiceModule(
+        logFactory = (LogFactory)
+            bootServiceModule(
                 create, this, 
                 rawStoreFactory.getLogFactoryModule(), startParams);
-	}
+    }
 
 
 	/**
@@ -1862,22 +1854,22 @@ public class BaseDataFileFactory
 		@exception StandardException another JBMS is already attached to the
 		database at this directory
 	*/
-	private void getJBMSLockOnDB(
-    UUID        myUUID, 
-    UUIDFactory uuidFactory, 
-    String      databaseDirectory)
-		 throws StandardException
-	{
-		if (fileLockOnDB != null) // I already got the lock!
-			return;
+    private void getJBMSLockOnDB(
+        UUID        myUUID, 
+        UUIDFactory uuidFactory, 
+        String      databaseDirectory)
+        throws StandardException
+    {
+        if (fileLockOnDB != null) // I already got the lock!
+            return;
 
-		if (isReadOnly())
-			return;
-		if (SanityManager.DEBUG)
-		{
-			if (myUUID == null)
-				SanityManager.THROWASSERT("myUUID == null");
-		}
+        if (isReadOnly())
+            return;
+        if (SanityManager.DEBUG)
+        {
+            if (myUUID == null)
+                SanityManager.THROWASSERT("myUUID == null");
+        }
 
         synchronized( this)
         {
@@ -1888,11 +1880,12 @@ public class BaseDataFileFactory
             
             try
             {
-                AccessController.doPrivileged( this);
+                run();
             }
-            catch (PrivilegedActionException pae) 
-            { 
-                throw (StandardException) pae.getException(); 
+            catch (IOException pae) 
+            {
+                // should never happen
+                throw StandardException.plainWrapException(pae);
             }
             finally
             {
@@ -1902,10 +1895,10 @@ public class BaseDataFileFactory
             }
         }
 
-		// OK file lock is reliable, we think... keep the fileLockOnDB file
-		// descriptor open to prevent other JBMS from booting
-		// fileLockOnDB is not null in this case
-	}
+        // OK file lock is reliable, we think... keep the fileLockOnDB file
+        // descriptor open to prevent other JBMS from booting
+        // fileLockOnDB is not null in this case
+    }
 
     // Called from within a privilege block
     private void privGetJBMSLockOnDB() throws StandardException
@@ -2087,19 +2080,19 @@ public class BaseDataFileFactory
         }
     } // end of privGetJBMSLockOnDB
 
-	private void releaseJBMSLockOnDB()
-	{
-		if (isReadOnly())
-			return;
+    private void releaseJBMSLockOnDB()
+    {
+        if (isReadOnly())
+        { return; }
 
         synchronized( this)
         {
             actionCode = RELEASE_LOCK_ON_DB_ACTION;
             try
             {
-                AccessController.doPrivileged( this);
+                run();
             }
-            catch (PrivilegedActionException pae)
+            catch (Exception pae)
             {
                 // do nothing - it may be read only medium, who knows what the
                 // problem is
@@ -2109,7 +2102,7 @@ public class BaseDataFileFactory
                 fileLockOnDB = null;
             }
         }
-	}
+    }
 
     private void privReleaseJBMSLockOnDB() throws IOException
     {
@@ -2209,26 +2202,15 @@ public class BaseDataFileFactory
      **/
     private static String jarClassPath(final Class cls)
     {
-        return AccessController.doPrivileged( new PrivilegedAction<String>()
-        {
-          public String run()
-          {
-              CodeSource cs = null;
-              try {
-                  cs = cls.getProtectionDomain().getCodeSource();
-              }
-              catch (SecurityException se) {
-                  return se.getMessage();
-              }
+        CodeSource cs = null;
+        cs = cls.getProtectionDomain().getCodeSource();
   
-              if ( cs == null || cs.getLocation() == null )
-                  return null;        
+        if ( cs == null || cs.getLocation() == null )
+            return null;        
       
-              URL result = cs.getLocation ();
+        URL result = cs.getLocation ();
       
-              return result.toString();
-          }
-        });
+        return result.toString();
     }
     
     /**
@@ -2238,24 +2220,15 @@ public class BaseDataFileFactory
      * security exception.
      */
     private static String buildOSinfo () {
-    	return AccessController.doPrivileged(new PrivilegedAction<String>(){
-    		public String run() {
-    			String osInfo = "";
-    			try {
-    				String currentProp = PropertyUtil.getSystemProperty("os.name");
-    				if (currentProp != null)
-    					osInfo = "os.name="+currentProp+"\n";
-    				if ((currentProp = PropertyUtil.getSystemProperty("os.arch")) != null)
-    					osInfo += "os.arch="+currentProp+"\n";
-    				if ((currentProp = PropertyUtil.getSystemProperty("os.version")) != null)
-    					osInfo += "os.version="+currentProp;
-    			}
-    			catch(SecurityException se){
-    				return se.getMessage();
-    			}
-    			return osInfo;
-    		}
-    	});
+        String osInfo = "";
+        String currentProp = PropertyUtil.getSystemProperty("os.name");
+        if (currentProp != null)
+            osInfo = "os.name="+currentProp+"\n";
+        if ((currentProp = PropertyUtil.getSystemProperty("os.arch")) != null)
+            osInfo += "os.arch="+currentProp+"\n";
+        if ((currentProp = PropertyUtil.getSystemProperty("os.version")) != null)
+            osInfo += "os.version="+currentProp;
+        return osInfo;
     }
     
     /**
@@ -2265,28 +2238,17 @@ public class BaseDataFileFactory
      * security exception.
      */
     private static String buildJvmVersion () {
-        return AccessController.doPrivileged( new PrivilegedAction<String>()
-        {
-           public String run()
-           {      
-             String jvmversion = "";
-             try {
-                 String currentProp  = PropertyUtil.getSystemProperty("java.vendor");
-                 if ( currentProp != null)
-                     jvmversion = "java.vendor=" + currentProp;
-                 if ((currentProp = PropertyUtil.getSystemProperty("java.runtime.version")) != null)
-                     jvmversion += "\njava.runtime.version=" + currentProp;
-                 if ((currentProp = PropertyUtil.getSystemProperty("java.fullversion")) != null)
-                     jvmversion += "\njava.fullversion=" + currentProp ;         
-                 if ((currentProp = PropertyUtil.getSystemProperty("user.dir")) != null)
-                     jvmversion += "\nuser.dir=" + currentProp ;         
-              }
-              catch (SecurityException se) {
-                   return se.getMessage();
-              }
-              return jvmversion;
-            }
-        });
+        String jvmversion = "";
+        String currentProp  = PropertyUtil.getSystemProperty("java.vendor");
+        if ( currentProp != null)
+            jvmversion = "java.vendor=" + currentProp;
+        if ((currentProp = PropertyUtil.getSystemProperty("java.runtime.version")) != null)
+            jvmversion += "\njava.runtime.version=" + currentProp;
+        if ((currentProp = PropertyUtil.getSystemProperty("java.fullversion")) != null)
+            jvmversion += "\njava.fullversion=" + currentProp ;         
+        if ((currentProp = PropertyUtil.getSystemProperty("user.dir")) != null)
+            jvmversion += "\nuser.dir=" + currentProp ;         
+        return jvmversion;
     } // end of buildjvmVersion
         
 	/**
@@ -2332,13 +2294,13 @@ public class BaseDataFileFactory
 		return databaseEncrypted ? rawStoreFactory.random() : 0;
 	}
 
-	/**
-		Add a file to the list of files to be removed post recovery.
-	*/
-	void fileToRemove( StorageFile file, boolean remove) 
+    /**
+       Add a file to the list of files to be removed post recovery.
+    */
+    void fileToRemove( StorageFile file, boolean remove) 
     {
-		if (postRecoveryRemovedFiles == null)
-			postRecoveryRemovedFiles = new Hashtable<String,StorageFile>();
+        if (postRecoveryRemovedFiles == null)
+        { postRecoveryRemovedFiles = new Hashtable<String,StorageFile>(); }
         String path = null;
         synchronized( this)
         {
@@ -2346,9 +2308,9 @@ public class BaseDataFileFactory
             actionFile = file;
             try
             {
-                path = (String) AccessController.doPrivileged( this);
+                path = (String) run();
             }
-            catch (PrivilegedActionException pae) 
+            catch (Exception pae) 
             {
                 // GET_PATH does not throw an exception
             } 
@@ -2357,43 +2319,41 @@ public class BaseDataFileFactory
                 actionFile = null;
             }
         }
-		if (remove)  // to be removed
-			postRecoveryRemovedFiles.put(path, file);
-		else
-			postRecoveryRemovedFiles.remove(path);
-	
-	}
+        if (remove)  // to be removed
+        { postRecoveryRemovedFiles.put(path, file); }
+        else
+        { postRecoveryRemovedFiles.remove(path); }
+    }
 
-	/**
-		Called after recovery is performed.
+    /**
+       Called after recovery is performed.
 
-		@exception StandardException Standard Derby Error Policy
-	*/
-	public void postRecovery() throws StandardException 
+       @exception StandardException Standard Derby Error Policy
+    */
+    public void postRecovery() throws StandardException 
     {
+        DaemonService daemon = rawStoreFactory.getDaemon();
 
-		DaemonService daemon = rawStoreFactory.getDaemon();
+        if (daemon == null)
+            return;
 
-		if (daemon == null)
-			return;
-
-		if (postRecoveryRemovedFiles != null) 
+        if (postRecoveryRemovedFiles != null) 
         {
             synchronized( this)
             {
                 actionCode = POST_RECOVERY_REMOVE_ACTION;
                 try
                 {
-                    AccessController.doPrivileged( this);
+                    run();
                 }
-                catch (PrivilegedActionException pae)
+                catch (Exception pae)
                 {
                     // POST_RECOVERY_REMOVE does not throw an exception
                 }
             }
-			postRecoveryRemovedFiles = null;
-		}
-	}
+            postRecoveryRemovedFiles = null;
+        }
+    }
 
     /**
      * Set up the cache cleaner for the container cache and the page cache.
@@ -2577,42 +2537,42 @@ public class BaseDataFileFactory
 		}
 	}
 
-	/**
+    /**
      * get all the names of the files in seg 0.
      * MT - This method needs to be synchronized to avoid conflicts 
      * with other privileged actions execution in this class.
      * @return An array of all the file names in seg0.
      **/
     synchronized String[] getContainerNames()
-	{
+    {
         actionCode = GET_CONTAINER_NAMES_ACTION;
         try{
-            return (String[]) AccessController.doPrivileged( this);
+            return (String[]) run();
         }
-        catch( PrivilegedActionException pae){ return null;}
-	}
+        catch(Exception pae){ return null;}
+    }
 
 
 
-	/**
-	 * removes the data directory(seg*) from database home directory and
-	 * restores it from backup location.
-	 * This function gets called only when any of the folling attributes
-	 * are specified on connection URL:
-	 * Attribute.CREATE_FROM (Create database from backup if it does not exist)
-	 * Attribute.RESTORE_FROM (Delete the whole database if it exists and 
+    /**
+     * removes the data directory(seg*) from database home directory and
+     * restores it from backup location.
+     * This function gets called only when any of the folling attributes
+     * are specified on connection URL:
+     * Attribute.CREATE_FROM (Create database from backup if it does not exist)
+     * Attribute.RESTORE_FROM (Delete the whole database if it exists and 
      *     then restore * it from backup)
-	 * Attribute.ROLL_FORWARD_RECOVERY_FROM:(Perform Rollforward Recovery;
-	 * except for the log directory everthing else is replced  by the copy  from
-	 * backup. log files in the backup are copied to the existing online log 
+     * Attribute.ROLL_FORWARD_RECOVERY_FROM:(Perform Rollforward Recovery;
+     * except for the log directory everthing else is replced  by the copy  from
+     * backup. log files in the backup are copied to the existing online log 
      * directory.
-	 *
-	 * In all the cases, data directory(seg*) is replaced by the data directory
-	 * directory from backup when this function is called.
-	 */
-	private void restoreDataDirectory(String backupPath) 
+     *
+     * In all the cases, data directory(seg*) is replaced by the data directory
+     * directory from backup when this function is called.
+     */
+    private void restoreDataDirectory(String backupPath) 
         throws StandardException
-	{
+    {
         // Root dir of backup db
         final File backupRoot = new java.io.File(backupPath);		
 
@@ -2622,12 +2582,7 @@ public class BaseDataFileFactory
          * This will fail with a security exception unless the database engine 
          * and all its callers have permission to read the backup directory.
          */
-        String[] bfilelist = AccessController.doPrivileged(
-                                            new PrivilegedAction<String[]>() {
-                                                public String[] run() {
-                                                    return backupRoot.list();
-                                                }
-                                            });
+        String[] bfilelist = backupRoot.list();
         if(bfilelist !=null)
         {
             boolean segmentexist = false;
@@ -2638,22 +2593,10 @@ public class BaseDataFileFactory
                 {
                     // Segment directory in the backup
                     final File bsegdir = new File(backupRoot , bfilelist[i]);
-                    boolean bsegdirExists = (
-                            AccessController.doPrivileged(
-                                new PrivilegedAction<Boolean>() {
-                                    public Boolean run() {
-                                        return Boolean.valueOf(bsegdir.exists());
-                                    }
-                            })).booleanValue();
+                    boolean bsegdirExists = Boolean.valueOf(bsegdir.exists());
                     if (bsegdirExists) {
                         // Make sure the file object points at a directory.
-                        boolean isDirectory = (
-                            AccessController.doPrivileged(
-                            new PrivilegedAction<Boolean>() {
-                                public Boolean run() {
-                                    return Boolean.valueOf(bsegdir.isDirectory());
-                                }
-                            })).booleanValue();
+                        boolean isDirectory = Boolean.valueOf(bsegdir.isDirectory());
                         if (isDirectory) {
                             segmentexist = true;
                             break;
@@ -2665,15 +2608,15 @@ public class BaseDataFileFactory
             if(!segmentexist)
             {
                 throw
-                  StandardException.newException(
-                      SQLState.DATA_DIRECTORY_NOT_FOUND_IN_BACKUP, backupRoot);
+                    StandardException.newException(
+                        SQLState.DATA_DIRECTORY_NOT_FOUND_IN_BACKUP, backupRoot);
             }
         }
         else
         {
 			
             throw StandardException.newException(
-                    SQLState.DATA_DIRECTORY_NOT_FOUND_IN_BACKUP, backupRoot);
+                SQLState.DATA_DIRECTORY_NOT_FOUND_IN_BACKUP, backupRoot);
         }
 
         synchronized (this)
@@ -2683,11 +2626,12 @@ public class BaseDataFileFactory
             this.bfilelist = bfilelist;
             try
             {
-                AccessController.doPrivileged( this);
+                run();
             }
-            catch (PrivilegedActionException pae)
-            { 
-                throw (StandardException) pae.getException();
+            catch (IOException pae)
+            {
+                // should never happen
+                throw StandardException.plainWrapException(pae);
             }
             finally
             {
@@ -2779,22 +2723,10 @@ public class BaseDataFileFactory
     public  boolean luceneLoaded()
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Boolean>()
-                 {
-                     public Boolean run()
-                     {
-                         StorageFactory storageFactory = getStorageFactory();
-                         StorageFile luceneDir = storageFactory.newStorageFile( Database.LUCENE_DIR );
+        StorageFactory storageFactory = getStorageFactory();
+        StorageFile luceneDir = storageFactory.newStorageFile( Database.LUCENE_DIR );
 
-                         return luceneDir.exists();
-                     }
-                 }
-                 ).booleanValue();
-        }
-        catch (PrivilegedActionException pae) { throw StandardException.plainWrapException( pae ); }
+        return luceneDir.exists();
     }
 
     /**
@@ -2805,7 +2737,6 @@ public class BaseDataFileFactory
         return storageFactory;
     }
 
-    // PrivilegedExceptionAction method
     public final Object run() throws IOException, StandardException
     {
         switch( actionCode)
@@ -2992,51 +2923,27 @@ public class BaseDataFileFactory
     } // end of run
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
     
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object  startSystemModule( final String factoryInterface )
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.startSystemModule( factoryInterface );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.startSystemModule( factoryInterface );
     }
 
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object bootServiceModule
@@ -3046,22 +2953,7 @@ public class BaseDataFileFactory
          )
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.bootServiceModule( create, serviceModule, factoryInterface, properties );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.bootServiceModule( create, serviceModule, factoryInterface, properties );
     }
 
 }

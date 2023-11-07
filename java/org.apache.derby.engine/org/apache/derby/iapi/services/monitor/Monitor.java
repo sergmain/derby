@@ -282,7 +282,7 @@ public class Monitor {
 			until an InfoStreams module is successfully started.
 	*/
 
-    @SuppressWarnings("ResultOfObjectAllocationIgnored")
+    @SuppressWarnings({"ResultOfObjectAllocationIgnored", "removal"})
 	public static void startMonitor(Properties bootProperties, PrintWriter logging) {
         // Verify that we have permission to execute this method.
         SecurityUtil.checkDerbyInternalsPrivilege();

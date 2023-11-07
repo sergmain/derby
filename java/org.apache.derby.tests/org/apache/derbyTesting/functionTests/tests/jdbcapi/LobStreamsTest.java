@@ -102,6 +102,7 @@ public class LobStreamsTest extends BaseJDBCTestCase {
      *
      * @throws Exception if something goes wrong
      */
+    @SuppressWarnings({"deprecation","removal"})
     public void testGettingBlobTwice()
             throws Exception {
         setAutoCommit(false);

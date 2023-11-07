@@ -34,7 +34,6 @@ import org.apache.derby.client.ClientDataSourceInterface;
 import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.JDBC;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
 public class SimplePerfTest extends BaseJDBCTestCase
@@ -74,7 +73,7 @@ public class SimplePerfTest extends BaseJDBCTestCase
     public static Test suite(String serverHost, int serverPort, String dbPath)
     {     
         Test t = TestConfiguration.existingServerSuite(SimplePerfTest.class,false,serverHost,serverPort,dbPath);
-        return SecurityManagerSetup.noSecurityManager(t);
+        return t;
    }
     
     /**

@@ -21,8 +21,6 @@ package org.apache.derbyTesting.functionTests.util;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanException;
 import javax.management.MalformedObjectNameException;
@@ -65,12 +63,7 @@ public class DeadlockWatchdog implements Runnable {
         }
         if (!stopped) {
             try {
-                boolean res = AccessController.doPrivileged(
-                        new PrivilegedExceptionAction<Boolean>() {
-                    public Boolean run() throws IOException, MalformedObjectNameException, InstanceNotFoundException, MBeanException, ReflectionException {
-                        return checkForDeadlock();
-                    }
-                });
+                boolean res = checkForDeadlock();
 
                 if (res) {
                     System.err.println("Deadlock detected");

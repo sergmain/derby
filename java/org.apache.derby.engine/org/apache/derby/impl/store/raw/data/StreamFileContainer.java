@@ -58,10 +58,6 @@ import java.io.IOException;
 import java.io.EOFException;
 import java.io.InvalidClassException;
 import java.io.Externalizable;
-import java.security.PrivilegedAction;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 import java.io.FileNotFoundException;
 
 /**
@@ -81,7 +77,7 @@ import java.io.FileNotFoundException;
 **/
 
 
-class StreamFileContainer implements TypedFormat, PrivilegedExceptionAction<Object>
+class StreamFileContainer implements TypedFormat
 {
 
     /**************************************************************************
@@ -171,40 +167,31 @@ class StreamFileContainer implements TypedFormat, PrivilegedExceptionAction<Obje
      * container after the container has been created.
      * <p>
      *
-	 * @exception  StandardException  Standard exception policy.
+     * @exception  StandardException  Standard exception policy.
      **/
-	StreamFileContainer(
+    StreamFileContainer(
     ContainerKey        identity, 
     BaseDataFileFactory dataFactory,
     Properties          prop)
-		throws StandardException 
+        throws StandardException 
     {
-		this.identity       = identity;
-		this.dataFactory    = dataFactory;
+        this.identity       = identity;
+        this.dataFactory    = dataFactory;
 
-		try 
+        file = getFileName(identity, true, false);
+
+        if (privExists(file)) 
         {
-			file = getFileName(identity, true, false);
+            // note I'm left in the no-identity state as fillInIdentity()
+            // hasn't been called.
+            throw StandardException.newException(
+                SQLState.FILE_EXISTS, file);
+        }
 
-            if (privExists(file)) 
-            {
-				// note I'm left in the no-identity state as fillInIdentity()
-                // hasn't been called.
-				throw StandardException.newException(
-                        SQLState.FILE_EXISTS, file);
-			}
-
-			// get the properties to set buffer size
-			// derby.storage.streamFileBufferSize
-			getContainerProperties(prop);
-
-		} 
-        catch (SecurityException se) 
-        {
-			throw StandardException.newException(
-                    SQLState.FILE_CREATE, se, file);
-		}
-	}
+        // get the properties to set buffer size
+        // derby.storage.streamFileBufferSize
+        getContainerProperties(prop);
+    }
 
     /**************************************************************************
      * Private/Protected methods of This class:
@@ -1068,9 +1055,9 @@ class StreamFileContainer implements TypedFormat, PrivilegedExceptionAction<Obje
 
         try
         {
-            Object ret = AccessController.doPrivileged( this);
+            Object ret = run();
             return ((Boolean) ret).booleanValue();
-        }catch( PrivilegedActionException pae) 
+        }catch( IOException pae) 
         { 
             // method executed under this priveleged block 
             // does not throw an exception
@@ -1088,15 +1075,9 @@ class StreamFileContainer implements TypedFormat, PrivilegedExceptionAction<Obje
         actionCode = STORAGE_FILE_MKDIRS_ACTION;
         actionStorageFile = file;
 
-        try
-        {
-            Object ret = AccessController.doPrivileged( this);
+        try {
+            Object ret = run();
             return ((Boolean) ret).booleanValue();
-        }catch( PrivilegedActionException pae) 
-        {
-            // method executed under this priveleged block 
-            // could throw IOException
-            throw (IOException) pae.getCause();
         } 
         finally
         {
@@ -1112,9 +1093,9 @@ class StreamFileContainer implements TypedFormat, PrivilegedExceptionAction<Obje
 
         try
         {
-            Object ret = AccessController.doPrivileged( this);
+            Object ret = run();
             return ((Boolean) ret).booleanValue();
-        }catch( PrivilegedActionException pae) 
+        }catch( IOException pae) 
         { 
             // method executed under this priveleged block 
             // does not throw an exception
@@ -1134,10 +1115,10 @@ class StreamFileContainer implements TypedFormat, PrivilegedExceptionAction<Obje
 
         try
         {
-            return (OutputStream) AccessController.doPrivileged( this);
-        }catch( PrivilegedActionException pae) 
+            return (OutputStream) run();
+        }catch( IOException pae) 
         { 
-            throw (FileNotFoundException)pae.getException();
+            throw (FileNotFoundException)pae;
         } 
         finally
         {
@@ -1154,10 +1135,10 @@ class StreamFileContainer implements TypedFormat, PrivilegedExceptionAction<Obje
 
         try
         {
-            return (InputStream) AccessController.doPrivileged( this);
-        }catch( PrivilegedActionException pae) 
+            return (InputStream) run();
+        }catch( IOException pae) 
         { 
-            throw (FileNotFoundException)pae.getException();
+            throw (FileNotFoundException)pae;
         } 
         finally
         {
@@ -1166,7 +1147,6 @@ class StreamFileContainer implements TypedFormat, PrivilegedExceptionAction<Obje
     }
 
 
-    // PrivilegedAction method
     public Object run() throws IOException
     {
         switch(actionCode)
@@ -1189,39 +1169,21 @@ class StreamFileContainer implements TypedFormat, PrivilegedExceptionAction<Obje
     }
 
     /**
-     * Privileged lookup of the ContextService. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ContextService    getContextService()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ContextService>()
-             {
-                 public ContextService run()
-                 {
-                     return ContextService.getFactory();
-                 }
-             }
-             );
+        return ContextService.getFactory();
     }
 
     /**
-     * Privileged module lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private static  Object getServiceModule( final Object serviceModule, final String factoryInterface )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     return Monitor.getServiceModule( serviceModule, factoryInterface );
-                 }
-             }
-             );
+        return Monitor.getServiceModule( serviceModule, factoryInterface );
     }
 
 }

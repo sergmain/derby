@@ -25,7 +25,6 @@ import java.sql.Connection;
 import junit.framework.Test;
 import org.apache.derbyTesting.functionTests.tests.memorydb.MemoryDbManager;
 import org.apache.derbyTesting.junit.BaseTestSuite;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 
 /**
@@ -87,7 +86,7 @@ public class LuceneInMemoryTest extends GeneratedColumnsHelper
         BaseTestSuite suite = new BaseTestSuite( "LuceneInMemoryTest" );
         
         Test    baseTest = TestConfiguration.embeddedSuite( LuceneInMemoryTest.class );
-		suite.addTest( SecurityManagerSetup.noSecurityManager( baseTest) );
+        suite.addTest( baseTest );
 
         return suite;
     }

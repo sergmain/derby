@@ -73,10 +73,6 @@ import org.apache.derby.iapi.store.replication.slave.SlaveFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.Dictionary;
@@ -858,20 +854,7 @@ public class BasicDatabase implements ModuleControl, ModuleSupportable, Property
     private boolean luceneLoaded()
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Boolean>()
-                 {
-                     public Boolean run()
-                         throws StandardException
-                     {
-                         return getLuceneDir().exists();
-                     }
-                 }
-                 ).booleanValue();
-        }
-        catch (PrivilegedActionException pae) { throw StandardException.plainWrapException( pae ); }
+        return getLuceneDir().exists();
     }
 
     /** Get the location of the Lucene indexes */
@@ -899,7 +882,7 @@ public class BasicDatabase implements ModuleControl, ModuleSupportable, Property
     /**
      * <p>
      * Backup Lucene indexes to the backup directory. This assumes
-     * that the rest of the database has been backup up and sanity
+     * that the rest of the database has been backed up and sanity
      * checks have been run.
      * </p>
      */
@@ -916,71 +899,40 @@ public class BasicDatabase implements ModuleControl, ModuleSupportable, Property
             final   File            targetDir = new File( backupDB, Database.LUCENE_DIR );
             final   StorageFile sourceDir = getLuceneDir();
 
-            AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Boolean run()
-                         throws StandardException
-                     {
-                         if ( !FileUtil.copyDirectory( getStorageFactory(), sourceDir, targetDir, null, null, true ) )
-                         {
-                             throw StandardException.newException
-                                 (
-                                  SQLState.UNABLE_TO_COPY_FILE_FROM_BACKUP,
-                                  sourceDir.getPath(),
-                                  targetDir.getAbsolutePath()
-                                  );
-                         }
-                         
-                         return null;
-                     }
-                 }
-                 );
+            if ( !FileUtil.copyDirectory( getStorageFactory(), sourceDir, targetDir, null, null, true ) )
+            {
+                throw StandardException.newException
+                    (
+                        SQLState.UNABLE_TO_COPY_FILE_FROM_BACKUP,
+                        sourceDir.getPath(),
+                        targetDir.getAbsolutePath()
+                        );
+            }
         }
         catch (IOException ioe) { throw StandardException.plainWrapException( ioe ); }
-        catch (PrivilegedActionException pae) { throw StandardException.plainWrapException( pae ); }
     }
 
     /**
-     * Privileged lookup of the ContextService. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ContextService    getContextService()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ContextService>()
-             {
-                 public ContextService run()
-                 {
-                     return ContextService.getFactory();
-                 }
-             }
-             );
+        return ContextService.getFactory();
     }
 
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
     
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object bootServiceModule
@@ -990,47 +942,17 @@ public class BasicDatabase implements ModuleControl, ModuleSupportable, Property
          )
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.bootServiceModule( create, serviceModule, factoryInterface, properties );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.bootServiceModule( create, serviceModule, factoryInterface, properties );
     }
 
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object findServiceModule( final Object serviceModule, final String factoryInterface)
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.findServiceModule( serviceModule, factoryInterface );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.findServiceModule( serviceModule, factoryInterface );
     }
 
 }

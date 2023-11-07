@@ -280,11 +280,6 @@ public abstract class Util  {
 	}
 
 
-	public static SQLException policyNotReloaded( Throwable t ) {
-        return generateCsSQLException(
-                SQLState.POLICY_NOT_RELOADED, t, t.getMessage());
-	}
-
 	public static SQLException notImplemented() {
 
 		return notImplemented( MessageService.getTextMessage(MessageId.CONN_NO_DETAILS) );

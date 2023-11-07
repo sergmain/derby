@@ -26,10 +26,6 @@ import java.io.OutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.Date;
@@ -334,15 +330,15 @@ public class LuceneSupport implements OptionalTool
     //
     /////////////////////////////////////////////////////////////////////
 
-	/**
-	 * Return a list of Lucene indexes for this database. Filter by schema and table, if given.
-	 */
-	public static LuceneListIndexesVTI listIndexes()
-        throws IOException, PrivilegedActionException, SQLException
+    /**
+     * Return a list of Lucene indexes for this database. Filter by schema and table, if given.
+     */
+    public static LuceneListIndexesVTI listIndexes()
+        throws IOException, SQLException
     {
-		LuceneListIndexesVTI llivti = new LuceneListIndexesVTI();
-		return llivti;
-	}
+        LuceneListIndexesVTI llivti = new LuceneListIndexesVTI();
+        return llivti;
+    }
 	
     /////////////////////////////////////////////////////////////////////
     //
@@ -361,8 +357,8 @@ public class LuceneSupport implements OptionalTool
 	 * @throws SQLException
 	 * @throws IOException
 	 */
-	public static void updateIndex( String schema, String table, String textcol, String indexDescriptorMaker )
-        throws SQLException, IOException, PrivilegedActionException
+    public static void updateIndex( String schema, String table, String textcol, String indexDescriptorMaker )
+        throws SQLException, IOException
     {
         forbidReadOnlyConnections();
 
@@ -406,7 +402,7 @@ public class LuceneSupport implements OptionalTool
          String indexDescriptorMaker,
          String... keyColumns
          )
-        throws SQLException, IOException, PrivilegedActionException
+        throws SQLException, IOException
     {
         forbidReadOnlyConnections();
         
@@ -442,7 +438,7 @@ public class LuceneSupport implements OptionalTool
          boolean create,
          String... keyColumns
          )
-        throws SQLException, IOException, PrivilegedActionException
+        throws SQLException, IOException
     {
         VTITemplate.ColumnDescriptor[] primaryKeys = new VTITemplate.ColumnDescriptor[ 0 ];
 
@@ -1153,7 +1149,7 @@ public class LuceneSupport implements OptionalTool
      * </p>
      */
 	static StorageFile getIndexPropertiesFile( Connection conn, String schema, String table, String textcol )
-        throws SQLException, IOException, PrivilegedActionException
+        throws SQLException, IOException
     {
         return getIndexPropertiesFile( getDerbyLuceneDir( conn, schema, table, textcol ) );
     }
@@ -1164,7 +1160,7 @@ public class LuceneSupport implements OptionalTool
      * </p>
      */
 	static StorageFile getIndexPropertiesFile( DerbyLuceneDir dir )
-        throws SQLException, IOException, PrivilegedActionException
+        throws SQLException, IOException
     {
         StorageFile         propertiesFile = dir.getFile( PROPERTIES_FILE_NAME );
 
@@ -1194,17 +1190,7 @@ public class LuceneSupport implements OptionalTool
             return;
         }
 
-        OutputStream os;
-        try {
-            os = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<OutputStream>() {
-                public OutputStream run() throws IOException {
-                    return file.getOutputStream();
-                }
-            });
-        } catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getCause();
-        }
+        OutputStream os = file.getOutputStream();
 
         properties.store( os, null );
         os.flush();
@@ -1457,16 +1443,7 @@ public class LuceneSupport implements OptionalTool
     /** Return true if the directory is empty */
     private static  boolean isEmpty( final StorageFile dir )
     {
-        String[]  contents = AccessController.doPrivileged
-            (
-             new PrivilegedAction<String[]>()
-             {
-                 public String[] run()
-                {
-                    return dir.list();
-                }
-             }
-             );
+        String[]  contents =  dir.list();
 
         if ( contents == null ) { return true; }
         else if ( contents.length == 0 ) { return true; }
@@ -1476,28 +1453,14 @@ public class LuceneSupport implements OptionalTool
     /** Return true if the file exists */
     private static  boolean exists( final StorageFile file )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Boolean>()
-             {
-                 public Boolean run()
-                {
-                    return file.exists();
-                }
-             }
-             ).booleanValue();
+        return file.exists();
     }
 
     /** Really delete a file */
     private static  boolean deleteFile( final StorageFile file )
         throws SQLException
     {
-        boolean result = AccessController.doPrivileged(
-                new PrivilegedAction<Boolean>() {
-            public Boolean run() {
-                return file.isDirectory() ? file.deleteAll() : file.delete();
-            }
-        });
+        boolean result = file.isDirectory() ? file.deleteAll() : file.delete();
 
         if (!result) {
             throw ToolUtilities.newSQLException
@@ -1523,46 +1486,33 @@ public class LuceneSupport implements OptionalTool
     //
     /////////////////////////////////////////////////////////////////////
 
-	/**
-	 * Returns a Lucene IndexWriter, that writes inside the lucene directory inside the database
-	 * directory.
-	 * 
-	 * @param luceneVersion the version of Lucene being used
-	 * @param analyzer      the Analyzer being used
-	 * @param derbyLuceneDir location of the lucene directory
-	 * @return a Lucene IndexWriter
-	 */
-	private static IndexWriter getIndexWriter
-        (
-         final Version  luceneVersion,
-         final  Analyzer    analyzer,
-         final DerbyLuceneDir   derbyLuceneDir
-         )
+    /**
+     * Returns a Lucene IndexWriter, that writes inside the lucene directory inside the database
+     * directory.
+     * 
+     * @param luceneVersion the version of Lucene being used
+     * @param analyzer      the Analyzer being used
+     * @param derbyLuceneDir location of the lucene directory
+     * @return a Lucene IndexWriter
+     */
+    private static IndexWriter getIndexWriter
+    (
+        final Version  luceneVersion,
+        final  Analyzer    analyzer,
+        final DerbyLuceneDir   derbyLuceneDir
+    )
         throws IOException
     {
-        try {
-            return AccessController.doPrivileged
-            (
-             new PrivilegedExceptionAction<IndexWriter>()
-             {
-                 public IndexWriter run() throws IOException
-                 {
-                     // allow this to be overridden in the configuration during load later.
-                     IndexWriterConfig iwc = new IndexWriterConfig( luceneVersion, analyzer );
-                     IndexWriter iw = new IndexWriter( derbyLuceneDir, iwc );
+        // allow this to be overridden in the configuration during load later.
+        IndexWriterConfig iwc = new IndexWriterConfig( luceneVersion, analyzer );
+        IndexWriter iw = new IndexWriter( derbyLuceneDir, iwc );
 		
-                     return iw;
-                 }
-             }
-             );
-        } catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getCause();
-        }
-	}
+        return iw;
+    }
 	
-	/**
-	 * Add a document to a Lucene index wrier.
-	 */
+    /**
+     * Add a document to a Lucene index wrier.
+     */
     private static void addDocument
         (
          final IndexWriter  indexWriter,
@@ -1570,75 +1520,36 @@ public class LuceneSupport implements OptionalTool
          )
         throws IOException
     {
-        try {
-            AccessController.doPrivileged
-            (
-             new PrivilegedExceptionAction<Void>()
-             {
-                 public Void run() throws IOException
-                 {
-                     indexWriter.addDocument( document );
-		
-                     return null;
-                 }
-             }
-             );
-        } catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getCause();
-        }
+        indexWriter.addDocument( document );
     }
 
-	/**
-	 * Close an IndexWriter.
-	 */
+    /**
+     * Close an IndexWriter.
+     */
     private static void close( final IndexWriter  indexWriter )
         throws IOException
     {
-        try {
-            AccessController.doPrivileged
-            (
-             new PrivilegedExceptionAction<Void>()
-             {
-                 public Void run() throws IOException
-                 {
-                     indexWriter.close();
-		
-                     return null;
-                 }
-             }
-             );
-        } catch (PrivilegedActionException pae) {
-            throw (IOException) pae.getCause();
-        }
+        indexWriter.close();
     }
 
-	/**
-	 * Invoke a static method (possibly supplied by the user) to instantiate an index descriptor.
+    /**
+     * Invoke a static method (possibly supplied by the user) to instantiate an index descriptor.
      * The method has no arguments.
-	 */
-	private static LuceneIndexDescriptor getIndexDescriptor( final String indexDescriptorMaker )
-        throws PrivilegedActionException, SQLException
+     */
+    private static LuceneIndexDescriptor getIndexDescriptor( final String indexDescriptorMaker )
+        throws SQLException
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedExceptionAction<LuceneIndexDescriptor>()
-             {
-                 public LuceneIndexDescriptor run()
-                     throws ClassNotFoundException, IllegalAccessException,
-                     InvocationTargetException, NoSuchMethodException,
-                     SQLException
-                 {
-                     return getIndexDescriptorNoPrivs( indexDescriptorMaker );
-                 }
-             }
-             );
-	}
+        try {
+            return getIndexDescriptorNoPrivs( indexDescriptorMaker );
+        }
+        catch (Exception ex) { throw ToolUtilities.wrap(ex); }
+    }
 	
-	/**
-	 * Invoke a static method (possibly supplied by the user) to instantiate an index descriptor.
+    /**
+     * Invoke a static method (possibly supplied by the user) to instantiate an index descriptor.
      * The method has no arguments.
-	 */
-	static LuceneIndexDescriptor getIndexDescriptorNoPrivs( String indexDescriptorMaker )
+     */
+    static LuceneIndexDescriptor getIndexDescriptorNoPrivs( String indexDescriptorMaker )
         throws ClassNotFoundException, IllegalAccessException, InvocationTargetException,
                NoSuchMethodException, SQLException
     {
@@ -1652,32 +1563,16 @@ public class LuceneSupport implements OptionalTool
         return (LuceneIndexDescriptor) method.invoke( null );
 	}
 
-	/**
-	 * Add a document to a Lucene index wrier.
-	 */
+    /**
+     * Add a document to a Lucene index wrier.
+     */
     private static void createLuceneDir( final Connection conn )
         throws SQLException
     {
-        try {
-            AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run() throws SQLException
-                     {
-                         StorageFactory storageFactory = getStorageFactory( conn );
-                         StorageFile    luceneDir = storageFactory.newStorageFile( Database.LUCENE_DIR );
+        StorageFactory storageFactory = getStorageFactory( conn );
+        StorageFile    luceneDir = storageFactory.newStorageFile( Database.LUCENE_DIR );
 
-                         luceneDir.mkdir();
-		
-                         return null;
-                     }
-                 }
-                 );
-        }
-        catch (PrivilegedActionException pae) {
-            throw (SQLException) pae.getCause();
-        }
+        luceneDir.mkdir();
     }
 
     /////////////////////////////////////////////////////////////////////
@@ -1729,28 +1624,13 @@ public class LuceneSupport implements OptionalTool
 	}
 	
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object findServiceModule( final Object serviceModule, final String factoryInterface)
         throws StandardException
     {
-        try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.findServiceModule( serviceModule, factoryInterface );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
-        {
-            throw StandardException.plainWrapException( pae );
-        }
+        return Monitor.findServiceModule( serviceModule, factoryInterface );
     }
 
     /**
@@ -1759,16 +1639,7 @@ public class LuceneSupport implements OptionalTool
      */
     private static  Object findService( final String factoryInterface, final String serviceName )
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<Object>()
-             {
-                 public Object run()
-                 {
-                     return Monitor.findService( factoryInterface, serviceName );
-                 }
-             }
-             );
+        return Monitor.findService( factoryInterface, serviceName );
     }
     
 }

@@ -29,8 +29,6 @@ import java.util.Hashtable;
 import java.util.Enumeration;
 import java.util.Properties;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -67,11 +65,7 @@ class ConnectionEnv {
 		// only load up ij.connection.* properties if there is
 		// only one ConnectionEnv in the system.
 		if (only) {
-            Properties p = AccessController.doPrivileged(new PrivilegedAction<Properties>() {
-            	public Properties run() {
-                	return System.getProperties();
-            	}
-            });
+            Properties p = System.getProperties();
             protocol = p.getProperty(ij.PROTOCOL_PROPERTY);
 
 	        String prefix = CONNECTION_PROPERTY + ".";

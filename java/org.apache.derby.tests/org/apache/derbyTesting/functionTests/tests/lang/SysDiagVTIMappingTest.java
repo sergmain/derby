@@ -33,7 +33,6 @@ import junit.framework.Test;
 import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.JDBC;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.SupportFilesSetup;
 import org.apache.derbyTesting.junit.SystemPropertyTestSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
@@ -81,11 +80,11 @@ public final class SysDiagVTIMappingTest extends BaseJDBCTestCase {
          * using a SupportFilesSetup wrapper, we copy the test log file to
          * the "extin" directory, which has the required permissions.
          */
-        return SecurityManagerSetup.noSecurityManager(
+        return 
             new SupportFilesSetup(suite,
                 new String [] {
                     "functionTests/tests/lang/" + testLogFile
-                }));
+                });
     }
 
     public void setUp() throws Exception

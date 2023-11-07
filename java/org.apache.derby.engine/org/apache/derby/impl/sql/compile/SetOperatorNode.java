@@ -251,8 +251,8 @@ abstract class SetOperatorNode extends TableOperatorNode
 	 * will be evaluated at the level of the caller.  So returning "false"
 	 * means that the left and right result sets for this node will be fully
 	 * returned, and then the predicate will be evaluated against the
-	 * <set-operator> of those result sets (as of DERBY-805, the only set
-	 * operator calling this method is UnionNode).  If we can push the
+	 * set-operator of those result sets (as of DERBY-805, the only set-operator
+	 * calling this method is UnionNode).  If we can push the
 	 * predicate down to both children, though, we can evaluate it closer
 	 * to store, which means that each child result set returns only the
 	 * correctly qualified rows, and thus the calling set operator will
@@ -263,9 +263,9 @@ abstract class SetOperatorNode extends TableOperatorNode
 	 * push it at all.  The reason is that if we push to one side but not
 	 * to the other, we would have to ask the question of whether we should
 	 * return "true" (meaning that the predicate would be removed from the
-	 * caller's list and thus would _not_ be evaluated at the <set-operator>
+	 * caller's list and thus would _not_ be evaluated at the set-operator
 	 * level) or "false" (meaning that the caller would keep the predicate
-	 * and evaluate it at the <set-operator> level).  Depending on the query
+	 * and evaluate it at the set-operator level).  Depending on the query
 	 * in question, both answers could end up returning incorrect results.
 	 *
 	 * For example, if we push it to the right but not to the left, then

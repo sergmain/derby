@@ -27,8 +27,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -737,14 +735,9 @@ public class XplainStatisticsTest extends BaseJDBCTestCase {
     		DocumentBuilderFactory.newInstance();
     	DocumentBuilder builder = factory.newDocumentBuilder();
 
-    	InputSource xml = new InputSource(
-    			AccessController.doPrivileged
-    			(new java.security.PrivilegedExceptionAction<InputStream>(){
-    				public InputStream run()throws Exception{
-    					return new FileInputStream(
-    							SupportFilesSetup.getReadWriteURL(file+".xml").getPath()
-    					);}})
-    	);
+    	InputSource xml = new InputSource
+            (new FileInputStream
+             (SupportFilesSetup.getReadWriteURL(file+".xml").getPath()));
 
     	document = builder.parse(xml);
     	document.getDocumentElement().normalize();
@@ -823,34 +816,6 @@ public class XplainStatisticsTest extends BaseJDBCTestCase {
     		new AccessDatabase(getConnection(), "NoSuchSchema", "nostmt"); 
 	assertTrue( "Unexpectedly thought schema exists",
 		! access.verifySchemaExistance() );
-    }
-
-    public void testPlanExporterIllegalFileAccess()
-	throws Exception
-    {
-        // Make sure there is a statement with recorded statistics.
-        Statement s = createStatement();
-        enableXplainStyle(s);
-        JDBC.assertDrainResults(s.executeQuery("values 1"));
-        disableXplainStyle(s, true);
-
-        // Get the id of the statement.
-        ResultSet rs = s.executeQuery(
-                "select stmt_id from XPLTEST.sysxplain_statements");
-        assertTrue("no statements", rs.next());
-        String stmt_id = rs.getString("stmt_id");
-        JDBC.assertEmpty(rs);
-
-        // Try to write the plan to a file that the tool does not have
-        // permission to write to.
-        String output = invokePlanExporterTool(
-                getConnection().getMetaData().getURL(), "XPLTEST",
-                stmt_id, "-xml", "/illegal.xml");
-
-        // The plan exporter tool should fail with a permission error.
-        if (!output.contains("java.security.AccessControlException")) {
-            fail("Unexpected output from PlanExporter: " + output);
-        }
     }
 
     /**
@@ -972,7 +937,6 @@ public class XplainStatisticsTest extends BaseJDBCTestCase {
      * and verifies that there are some reasonable values captured
      * into the XPLAIN system tables.
      * @throws IOException 
-     * @throws PrivilegedActionException 
      * @throws MalformedURLException 
      */
     public void testSimpleQuery() throws Exception

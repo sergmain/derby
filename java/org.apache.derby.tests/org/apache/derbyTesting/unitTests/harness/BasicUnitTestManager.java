@@ -29,10 +29,6 @@ import org.apache.derby.shared.common.error.StandardException;
 import org.apache.derby.iapi.services.monitor.Monitor;
 import org.apache.derby.shared.common.sanity.SanityManager;
 import org.apache.derby.shared.common.stream.HeaderPrintWriter;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.security.AccessController;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Properties;
@@ -83,10 +79,7 @@ public class BasicUnitTestManager implements UnitTestManager, ModuleControl
 		namesOfTests = new Hashtable<String, String>();
 
 		findTests(startParams, startParams);
-		try {
-			findTests(System.getProperties(), startParams);
-		} catch (SecurityException se) {
-		}
+                findTests(System.getProperties(), startParams);
 		findTests(getMonitor().getApplicationProperties(), startParams);
 
 		if ( !alreadyRun )
@@ -297,39 +290,21 @@ public class BasicUnitTestManager implements UnitTestManager, ModuleControl
      */
     private  static  ContextService    getContextService()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ContextService>()
-             {
-                 public ContextService run()
-                 {
-                     return ContextService.getFactory();
-                 }
-             }
-             );
+        return ContextService.getFactory();
     }
 
     
     /**
-     * Privileged Monitor lookup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  ModuleFactory  getMonitor()
     {
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<ModuleFactory>()
-             {
-                 public ModuleFactory run()
-                 {
-                     return Monitor.getMonitor();
-                 }
-             }
-             );
+        return Monitor.getMonitor();
     }
 
     /**
-     * Privileged startup. Must be private so that user code
+     * Must be private so that user code
      * can't call this entry point.
      */
     private  static  Object bootServiceModule
@@ -340,18 +315,8 @@ public class BasicUnitTestManager implements UnitTestManager, ModuleControl
         throws StandardException
     {
         try {
-            return AccessController.doPrivileged
-                (
-                 new PrivilegedExceptionAction<Object>()
-                 {
-                     public Object run()
-                         throws StandardException
-                     {
-                         return Monitor.bootServiceModule( create, serviceModule, factoryInterface, properties );
-                     }
-                 }
-                 );
-        } catch (PrivilegedActionException pae)
+            return Monitor.bootServiceModule( create, serviceModule, factoryInterface, properties );
+        } catch (Exception pae)
         {
             throw StandardException.plainWrapException( pae );
         }

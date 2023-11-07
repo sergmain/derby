@@ -29,31 +29,29 @@ import java.sql.*;
 public class WwdEmbedded
 {
     public static void main(String[] args)
-   {
-   //   ## DEFINE VARIABLES SECTION ##
-   // define the driver to use 
-      String driver = "org.apache.derby.jdbc.EmbeddedDriver";
-   // the database name  
-      String dbName="jdbcDemoDB";
-   // define the Derby connection URL to use 
-      String connectionURL = "jdbc:derby:" + dbName + ";create=true";
+    {
+        //   ## DEFINE VARIABLES SECTION ##
+        // the database name  
+        String dbName="jdbcDemoDB";
+        // define the Derby connection URL to use 
+        String connectionURL = "jdbc:derby:" + dbName + ";create=true";
 
-      Connection conn = null;
-      Statement s;
-      PreparedStatement psInsert;
-      ResultSet myWishes;
-      String printLine = "  __________________________________________________";
-      String createString = "CREATE TABLE WISH_LIST  "
-        +  "(WISH_ID INT NOT NULL GENERATED ALWAYS AS IDENTITY " 
-        +  "   CONSTRAINT WISH_PK PRIMARY KEY, " 
-        +  " ENTRY_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
-        +  " WISH_ITEM VARCHAR(32) NOT NULL) " ;
-      String answer;
+        Connection conn = null;
+        Statement s;
+        PreparedStatement psInsert;
+        ResultSet myWishes;
+        String printLine = "  __________________________________________________";
+        String createString = "CREATE TABLE WISH_LIST  "
+            +  "(WISH_ID INT NOT NULL GENERATED ALWAYS AS IDENTITY " 
+            +  "   CONSTRAINT WISH_PK PRIMARY KEY, " 
+            +  " ENTRY_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+            +  " WISH_ITEM VARCHAR(32) NOT NULL) " ;
+        String answer;
 
-      //  JDBC code sections   
-      //  Beginning of Primary DB access section
-      //   ## BOOT DATABASE SECTION ##
-     try {
+        //  JDBC code sections   
+        //  Beginning of Primary DB access section
+        //   ## BOOT DATABASE SECTION ##
+        try {
             // Create (if needed) and connect to the database.
             // The driver is loaded automatically.
             conn = DriverManager.getConnection(connectionURL);		 
@@ -62,14 +60,14 @@ public class WwdEmbedded
             //   ## INITIAL SQL SECTION ## 
             //   Create a statement to issue simple commands.  
             s = conn.createStatement();
-             // Call utility method to check if table exists.
-             //      Create the table if needed
-             if (! WwdUtils.wwdChk4Table(conn))
-             {  
-                  System.out.println (" . . . . creating table WISH_LIST");
-                  s.execute(createString);
-              }
-             //  Prepare the insert statement to use 
+            // Call utility method to check if table exists.
+            //      Create the table if needed
+            if (! WwdUtils.wwdChk4Table(conn))
+            {  
+                System.out.println (" . . . . creating table WISH_LIST");
+                s.execute(createString);
+            }
+            //  Prepare the insert statement to use 
             psInsert = conn.prepareStatement("insert into WISH_LIST(WISH_ITEM) values (?)");
 
             //   ## ADD / DISPLAY RECORD SECTION ## 
@@ -90,48 +88,46 @@ public class WwdEmbedded
                     //  Loop through the ResultSet and print the data 
                     System.out.println(printLine);
                     while (myWishes.next())
-                     {
-                           System.out.println("On " + myWishes.getTimestamp(1) + " I wished for " + myWishes.getString(2));
-                      }
-                      System.out.println(printLine);
-                      //  Close the resultSet 
-                      myWishes.close();
-                 }       //  END of IF block   
-             // Check if it is time to EXIT, if so end the loop  
-              } while (! answer.equals("exit")) ;  // End of do-while loop 
+                    {
+                        System.out.println("On " + myWishes.getTimestamp(1) + " I wished for " + myWishes.getString(2));
+                    }
+                    System.out.println(printLine);
+                    //  Close the resultSet 
+                    myWishes.close();
+                }       //  END of IF block   
+                // Check if it is time to EXIT, if so end the loop  
+            } while (! answer.equals("exit")) ;  // End of do-while loop 
 
-             // Release the resources (clean up )
-             psInsert.close();
-             s.close();
+            // Release the resources (clean up )
+            psInsert.close();
+            s.close();
             conn.close();						
             System.out.println("Closed connection");
 
             //   ## DATABASE SHUTDOWN SECTION ## 
             /*** In embedded mode, an application should shut down Derby.
-               Shutdown throws the XJ015 exception to confirm success. ***/			
-            if (driver.equals("org.apache.derby.jdbc.EmbeddedDriver")) {
-               boolean gotSQLExc = false;
-               try {
-                  DriverManager.getConnection("jdbc:derby:;shutdown=true");
-               } catch (SQLException se)  {	
-                  if ( se.getSQLState().equals("XJ015") ) {		
-                     gotSQLExc = true;
-                  }
-               }
-               if (!gotSQLExc) {
-               	  System.out.println("Database did not shut down normally");
-               }  else  {
-                  System.out.println("Database shut down normally");	
-               }  
+                 Shutdown throws the XJ015 exception to confirm success. ***/			
+            boolean gotSQLExc = false;
+            try {
+                DriverManager.getConnection("jdbc:derby:;shutdown=true");
+            } catch (SQLException se)  {	
+                if ( se.getSQLState().equals("XJ015") ) {		
+                    gotSQLExc = true;
+                }
             }
+            if (!gotSQLExc) {
+                System.out.println("Database did not shut down normally");
+            }  else  {
+                System.out.println("Database shut down normally");	
+            }  
             
-         //  Beginning of the primary catch block: prints stack trace
-         }  catch (Throwable e)  {   
+            //  Beginning of the primary catch block: prints stack trace
+        }  catch (Throwable e)  {   
             /*       Catch all exceptions and pass them to 
              *       the Throwable.printStackTrace method  */
             System.out.println(" . . . exception thrown:");
             e.printStackTrace(System.out);
-         }
-         System.out.println("Getting Started With Derby JDBC program ending.");
-      }
+        }
+        System.out.println("Getting Started With Derby JDBC program ending.");
+    }
 }

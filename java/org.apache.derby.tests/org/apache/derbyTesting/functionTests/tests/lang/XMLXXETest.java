@@ -34,7 +34,6 @@ import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.JDBC;
 import org.apache.derbyTesting.junit.LocaleTestSetup;
-import org.apache.derbyTesting.junit.SecurityManagerSetup;
 import org.apache.derbyTesting.junit.SupportFilesSetup;
 import org.apache.derbyTesting.junit.TestConfiguration;
 import org.apache.derbyTesting.junit.XML;
@@ -82,7 +81,7 @@ public final class XMLXXETest extends BaseJDBCTestCase {
         // Need to run in US locale because the test checks error messages
         // which may be different in different locales (DERBY-6869).
         return new LocaleTestSetup(
-                SecurityManagerSetup.noSecurityManager(suite),
+                suite,
                 Locale.US);
     }
  

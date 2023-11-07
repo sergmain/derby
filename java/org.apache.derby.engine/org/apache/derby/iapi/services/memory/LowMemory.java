@@ -75,6 +75,7 @@ public class LowMemory {
      * OutOfMemoryError, not part way through the action.
      * 
      */
+    @SuppressWarnings({"deprecation","removal"})
     public void setLowMemory() {
         
         // Can read lowMemory unsynchronized, worst

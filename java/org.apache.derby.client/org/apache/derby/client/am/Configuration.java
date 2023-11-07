@@ -23,9 +23,6 @@ package org.apache.derby.client.am;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.sql.Connection;
 
 import org.apache.derby.shared.common.info.ProductGenusNames;
@@ -131,28 +128,17 @@ public class Configuration {
     private static void loadProductVersionHolder() throws SqlException {
         try {
             dncProductVersionHolder__ = buildProductVersionHolder();
-        } catch (PrivilegedActionException e) {
-            throw new SqlException(null, 
-                    new ClientMessageId (SQLState.ERROR_PRIVILEGED_ACTION),
-                    e.getException());                    
         } catch (IOException ioe) {
             throw SqlException.javaException(null, ioe);
         }
     }
 
 
-    // Create ProductVersionHolder in security block for Java 2 security.
     private static ProductVersionHolder buildProductVersionHolder() throws
-            PrivilegedActionException, IOException {
-        return AccessController.doPrivileged(
-                new PrivilegedExceptionAction<ProductVersionHolder>() {
+            IOException {
+        InputStream versionStream = Configuration.class.getResourceAsStream("/" + ProductGenusNames.CLIENT_INFO);
 
-                    public ProductVersionHolder run() throws IOException {
-                        InputStream versionStream = getClass().getResourceAsStream("/" + ProductGenusNames.CLIENT_INFO);
-
-                        return ProductVersionHolder.getProductVersionHolderFromMyEnv(versionStream);
-                    }
-                });
+        return ProductVersionHolder.getProductVersionHolderFromMyEnv(versionStream);
     }
     
     /**

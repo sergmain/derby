@@ -29,9 +29,6 @@ import java.io.PrintStream;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
 import java.net.URL;
 import java.sql.*;
 import java.util.ArrayList;
@@ -638,12 +635,10 @@ public abstract class BaseJDBCTestCase
      * setup scripts.
      * @return Number of errors executing the script
      * @throws UnsupportedEncodingException 
-     * @throws PrivilegedActionException
      * @throws SQLException 
      */
     public int runScript(String resource,String encoding)
-        throws UnsupportedEncodingException, SQLException,
-        PrivilegedActionException,IOException
+        throws UnsupportedEncodingException, IOException, SQLException
     {
         
         URL sql = getTestResource(resource);
@@ -1835,28 +1830,19 @@ public abstract class BaseJDBCTestCase
         ps.close();
     }
     
-	/**
-	  * Gets the LanguageConnectionContext for this connection. You might think that
-      * this method could take an EmbedConnection as its argument and return a
-      * LanguageConnectionContext. That, however, makes the compatibility tests blow up.
-      * With those stronger types, the test lookup machinery in junit.framework.TestSuite
-      * can't resolve the signature of this private method. That is because the engine jar is
-      * not on the client-only classpath used by the compatibility tests. Now you know.
-	  */
-	private static Object	getLanguageConnectionContext( Connection conn )
-	{
+    /**
+     * Gets the LanguageConnectionContext for this connection. You might think that
+     * this method could take an EmbedConnection as its argument and return a
+     * LanguageConnectionContext. That, however, makes the compatibility tests blow up.
+     * With those stronger types, the test lookup machinery in junit.framework.TestSuite
+     * can't resolve the signature of this private method. That is because the engine jar is
+     * not on the client-only classpath used by the compatibility tests. Now you know.
+     */
+    private static Object	getLanguageConnectionContext( Connection conn )
+    {
         final EmbedConnection   econn = (EmbedConnection) conn;
-        return AccessController.doPrivileged
-            (
-             new PrivilegedAction<LanguageConnectionContext>()
-             {
-                 public LanguageConnectionContext run()
-                 {
-                     return econn.getLanguageConnection();
-                 }
-             }
-             );
-	}
+        return econn.getLanguageConnection();
+    }
 
 
 } // End class BaseJDBCTestCase

@@ -21,7 +21,6 @@ package org.apache.derbyTesting.system.oe.run;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.security.PrivilegedActionException;
 import java.sql.SQLException;
 import junit.framework.Test;
 import org.apache.derbyTesting.junit.BaseTestSuite;
@@ -82,7 +81,7 @@ public class Schema extends JDBCPerfTestCase {
      * Run a Order Entry script.
      */
     public void testScript() throws UnsupportedEncodingException,
-    SQLException, PrivilegedActionException, IOException {
+    SQLException, IOException {
 
         String script = "org/apache/derbyTesting/system/oe/schema/" + scriptBase;
         int errorCount = runScript(script, "US-ASCII");
