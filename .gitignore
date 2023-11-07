@@ -17,4 +17,5 @@
 
 tools/release/*/target/*
 .idea/*
+*.iml
 *.class
