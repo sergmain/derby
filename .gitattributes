@@ -1,0 +1,39 @@
+* -text
+
+*.css           text
+*.scss          text
+*.sass          text
+*.html          text
+*.java          text
+*.js            text
+*.json          text
+*.properties    text
+*.txt           text
+*.xml           text
+*.py            text
+*.cmd           text
+*.bat           text
+*.yaml          text
+*.yml           text
+*.sql           text
+# *.ts          text
+
+.gitignore      text
+.gitattributes  text
+.slugignore     text
+.editorconfig   text
+
+COPYING         text
+README.md       text
+mvnw            text
+
+
+# These files are binary and should be left untouched
+*.class         binary
+*.jar           binary
+*.gif           binary
+*.jpg           binary
+*.png           binary
+*.ico           binary
+*.mp4           binary
+*.xcf           binary
