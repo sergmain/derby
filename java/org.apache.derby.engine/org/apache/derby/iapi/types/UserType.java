@@ -36,7 +36,9 @@ import org.apache.derby.iapi.services.cache.ClassSize;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
-
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.io.ObjectOutput;
 import java.io.ObjectInput;
 import java.io.IOException;
@@ -65,7 +67,6 @@ public class UserType extends DataType
 	*/
 
     private static final int BASE_MEMORY_USAGE = ClassSize.estimateBaseFromCatalog( UserType.class);
-
     public int estimateMemoryUsage()
     {
         int sz = BASE_MEMORY_USAGE;
@@ -196,6 +197,22 @@ public class UserType extends DataType
 		}
 		return super.getDate(cal);
 	}
+	
+	/**
+
+		@exception StandardException thrown on failure
+	 */
+	public LocalDate	getLocalDate() throws StandardException
+	{
+	    if (! isNull())
+	    {
+	        if (value instanceof LocalDate) 
+	            return ((LocalDate)value);
+	        else if (value instanceof LocalDateTime)
+	            return ((LocalDateTime)value).toLocalDate();
+	    }
+	    return super.getLocalDate();
+	}
 
 	/**
 		@exception StandardException thrown on failure
@@ -210,6 +227,21 @@ public class UserType extends DataType
 				return (new SQLTimestamp((Timestamp)value).getTime(cal));
 		}
 		return super.getTime(cal);
+	}
+	
+	/**
+		@exception StandardException thrown on failure
+	 */
+	public LocalTime	getLocalTime() throws StandardException
+	{
+	    if (! isNull())
+	    {
+	        if (value instanceof LocalTime) 
+	            return ((LocalTime)value);
+	        else if (value instanceof LocalDateTime)
+	            return ((LocalDateTime)value).toLocalTime();
+	    }
+	    return super.getLocalTime();
 	}
 
 	/**
@@ -227,6 +259,23 @@ public class UserType extends DataType
 				return (new SQLTime((Time)value).getTimestamp(cal));
 		}
 		return super.getTimestamp(cal);
+	}
+	
+	/**
+		@exception StandardException thrown on failure
+	 */
+	public LocalDateTime	getLocalDateTime() throws StandardException
+	{
+	    if (! isNull())
+	    {
+	        if (value instanceof LocalDateTime) 
+	            return ((LocalDateTime)value);
+	        else if (value instanceof LocalDate)
+	            return ((LocalDate)value).atStartOfDay();
+	        else if (value instanceof LocalTime)
+	            return ((LocalTime)value).atDate(SQLTime.TIME_EPOCH);
+	    }
+	    return super.getLocalDateTime();
 	}
 
 	void setObject(Object theValue)

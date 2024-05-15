@@ -27,6 +27,9 @@ import java.nio.charset.Charset;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import org.apache.derby.client.net.Typdef;
@@ -109,6 +112,44 @@ public class DateTime {
         cal.set(year, month, day);
         return new Date(cal.getTimeInMillis());
     }
+    
+    /**
+     * Expected character representation is DERBY string representation of a date, 
+     * which is in JIS format: <code> yyyy-mm-dd </code>
+     * 
+     * @param buffer    
+     * @param offset    
+     * @param encoding            encoding of buffer data
+     * @return  LocalDate translated from  buffer with specified encoding
+     */
+    static final LocalDate dateBytesToLocalDate(byte[] buffer,
+            int offset,
+            Charset encoding) {
+
+        int year, month, day;
+
+        String date = new String(buffer, offset, 
+                DateTime.dateRepresentationLength,encoding);
+        int yearIndx, monthIndx, dayIndx;
+        if (date.charAt(4) == '-') {
+            // JIS format: yyyy-mm-dd.
+            yearIndx = 0;
+            monthIndx = 5;
+            dayIndx = 8;
+        } else {
+            throw new IllegalArgumentException(
+                    SqlException.getMessageUtil().getTextMessage(
+                            SQLState.LANG_FORMAT_EXCEPTION));
+        }
+
+        year = Integer.parseInt(date, yearIndx, yearIndx + 4, 10);
+
+        month = Integer.parseInt(date, monthIndx, monthIndx + 2, 10);
+
+        day = Integer.parseInt(date, dayIndx, dayIndx + 2, 10);
+
+        return LocalDate.of(year, month, day);
+    }
 
     
     /**
@@ -148,6 +189,33 @@ public class DateTime {
         cal.set(1970, Calendar.JANUARY, 1, hour, minute, second);
         return new Time(cal.getTimeInMillis());
     }
+    
+    /**
+     * Expected character representation is DERBY string representation of time,
+     * which is in the format: <code> hh.mm.ss </code>
+     * @param buffer
+     * @param offset
+     * @param encoding           encoding of buffer
+     * @return  LocalTime translated from buffer with specified encoding
+     */
+    static final LocalTime timeBytesToLocalTime(byte[] buffer,
+            int offset,
+            Charset encoding)
+    {
+        int hour, minute, second;
+        
+        String time = new String(buffer, offset, 
+                DateTime.timeRepresentationLength, encoding);
+        
+        // compute hour.
+        hour = Integer.parseInt(time, 0, 2, 10);
+        // compute minute.
+        minute = Integer.parseInt(time, 3, 5, 10);
+        // compute second.
+        second = Integer.parseInt(time, 6, 8, 10);
+        
+        return LocalTime.of(hour, minute, second);
+    }
 
     /**
      * See getTimestampLength() for an explanation of how timestamps are formatted.
@@ -176,6 +244,25 @@ public class DateTime {
         Timestamp ts = new Timestamp(cal.getTimeInMillis());
         ts.setNanos( nanos );
         return ts;
+    }
+    
+    /**
+     * See getTimestampLength() for an explanation of how timestamps are formatted.
+     * 
+     * @param buffer
+     * @param offset
+     * @param encoding                encoding of buffer
+     * @param supportsTimestampNanoseconds true if the server supports nanoseconds in timestamps
+     * @return LocalDateTime translated from buffer with specified encoding
+     */
+    static final LocalDateTime timestampBytesToLocalDateTime(
+            byte[] buffer, int offset,
+            Charset encoding, boolean supportsTimestampNanoseconds)
+    {
+        String timestamp = new String
+                ( buffer, offset, getTimestampLength( supportsTimestampNanoseconds ), encoding );
+        
+        return parseLocalDateTimeString(timestamp, supportsTimestampNanoseconds);
     }
 
     /**
@@ -244,6 +331,46 @@ public class DateTime {
         cal.set(Calendar.MILLISECOND, nanos / 1000000);
         
         return nanos;
+    }
+    
+    /**
+     * Parse a String of the form <code>yyyy-mm-dd-hh.mm.ss.ffffff[fff]</code>
+     * and store the various fields into the received Calendar object.
+     *
+     * @param timestamp Timestamp value to parse, as a String.
+     * @param cal Calendar into which to store the parsed fields.  Should not be null.
+     * @param supportsTimestampNanoseconds true if the server supports nanoseconds in timestamps
+     *
+     * @return The nanoseconds field as parsed from the timestamp string.
+     *  This cannot be set in the Calendar object but we still want to
+     *  preserve the value, in case the caller needs it (for example, to
+     *  create a java.sql.Timestamp with nanosecond precision).
+     */
+    private static LocalDateTime parseLocalDateTimeString(String timestamp,
+            boolean supportsTimestampNanoseconds )
+    {
+        int year, month, day, hour, minute, second, nanos;
+
+        year = Integer.parseInt(timestamp, 0, 4, 10);
+
+        month = Integer.parseInt(timestamp, 5, 7, 10);
+
+        day = Integer.parseInt(timestamp, 8, 10, 10);
+
+        hour = Integer.parseInt(timestamp, 11, 13, 10);
+
+        minute = Integer.parseInt(timestamp, 14, 16, 10);
+
+        second = Integer.parseInt(timestamp, 17, 19, 10);
+
+        nanos = 1000 * Integer.parseInt(timestamp, 20, 26, 10);
+
+        if ( supportsTimestampNanoseconds )
+        {
+            nanos += Integer.parseInt(timestamp, 26, 29, 10);
+        }
+
+        return LocalDateTime.of(year, month, day, hour, minute, second, nanos);
     }
 
     // ********************************************************

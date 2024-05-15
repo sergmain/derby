@@ -36,6 +36,9 @@ import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.sql.SQLException;
 import java.util.Calendar;
 
@@ -239,6 +242,15 @@ public interface DataValueDescriptor extends Storable, Orderable
 	 * @exception StandardException   Thrown on error
 	 */
 	Date getDate(java.util.Calendar cal) throws StandardException;
+	
+	/**
+	 * Gets the value in the data value descriptor as a java.time.LocalDate.
+	 * Throws an exception if the data value is not a Date.
+	 * @return	The data value as a java.time.LocalDate.
+	 *
+	 * @exception StandardException   Thrown on error
+	 */
+	LocalDate getLocalDate() throws StandardException;
 
 	/**
 	 * Gets the value in the data value descriptor as a java.sql.Time.
@@ -250,6 +262,16 @@ public interface DataValueDescriptor extends Storable, Orderable
 	 * @exception StandardException   Thrown on error
 	 */
 	Time	getTime(java.util.Calendar cal) throws StandardException;
+	
+	/**
+	 * Gets the value in the data value descriptor as a java.time.LocalTime.
+	 * Throws an exception if the data value is not a Time.
+	 *
+	 * @return	The data value as a java.time.LocalTime.
+	 *
+	 * @exception StandardException   Thrown on error
+	 */
+	LocalTime	getLocalTime() throws StandardException;
 
 	/**
 	 * Gets the value in the data value descriptor as a java.sql.Timestamp.
@@ -260,6 +282,15 @@ public interface DataValueDescriptor extends Storable, Orderable
 	 * @exception StandardException   Thrown on error
 	 */
 	Timestamp	getTimestamp(java.util.Calendar cal) throws StandardException;
+	
+	/**
+	 * Gets the value in the data value descriptor as a java.time.LocalDateTime.
+	 * Throws an exception if the data value is not a Timestamp.
+	 * @return	The data value as a java.time.LocalDateTime.
+	 *
+	 * @exception StandardException   Thrown on error
+	 */
+	LocalDateTime	getLocalDateTime() throws StandardException;
 
 	/**
 	 * Gets the value in the data value descriptor as a Java Object.
@@ -534,6 +565,14 @@ public interface DataValueDescriptor extends Storable, Orderable
 	 *
 	 */
 	public void setValue(Time theValue, Calendar cal) throws StandardException;
+	
+	/**
+	 * Set the value of this DataValueDescriptor.
+	 *
+	 * @param theValue	The LocalTime value to set this DataValueDescriptor to
+	 *
+	 */
+	public void setValue(LocalTime theValue) throws StandardException;
 
 	/**
 	 * Set the value of this DataValueDescriptor.
@@ -551,6 +590,13 @@ public interface DataValueDescriptor extends Storable, Orderable
 	 *
 	 */
 	public void setValue(Timestamp theValue, Calendar cal) throws StandardException;
+	
+	/**
+	 * Set the value of this DataValueDescriptor.
+	 *
+	 * @param theValue	The LocalDateTime value to set this DataValueDescriptor to
+	 */
+	public void setValue(LocalDateTime theValue) throws StandardException;
 
 	/**
 	 * Set the value of this DataValueDescriptor.
@@ -568,6 +614,14 @@ public interface DataValueDescriptor extends Storable, Orderable
 	 *
 	 */
 	public void setValue(Date theValue, Calendar cal) throws StandardException;
+	
+	/**
+	 * Set the value of this DataValueDescriptor.
+	 *
+	 * @param theValue	The LocalDate value to set this DataValueDescriptor to
+	 *
+	 */
+	public void setValue(LocalDate theValue) throws StandardException;
 
 	/**
 	 * Set the value of this DataValueDescriptor from another.

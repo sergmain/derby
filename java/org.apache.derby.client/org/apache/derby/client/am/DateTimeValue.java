@@ -22,6 +22,9 @@ package org.apache.derby.client.am;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Calendar;
 
 /**
@@ -36,6 +39,7 @@ import java.util.Calendar;
  * without being used together with a {@code java.util.Calendar} object.
  */
 public class DateTimeValue {
+    public static final LocalDate TIME_EPOCH = LocalDate.of(1970, 1, 1);
     private final int year;
     private final int month;
     private final int day;
@@ -101,6 +105,16 @@ public class DateTimeValue {
     public DateTimeValue(Date date) {
         this(date, Calendar.getInstance());
     }
+    
+    /**
+     * Create an instance from a {@code java.time.LocalDate} using the default
+     * calendar.
+     *
+     * @param date The wrapped date
+     */
+    public DateTimeValue(LocalDate localDate) {
+        this(localDate.atStartOfDay());
+    }
 
     /**
      * Create an instance from a {@code java.sql.Time} using the default
@@ -111,6 +125,15 @@ public class DateTimeValue {
     public DateTimeValue(Time time) {
         this(time, Calendar.getInstance());
     }
+    
+    /**
+     * Create an instance from a {@code java.time.LocalTime}.
+     *
+     * @param time The wrapped time value
+     */
+    public DateTimeValue(LocalTime localTime) {
+        this(localTime.atDate(TIME_EPOCH));
+    }
 
     /**
      * Create an instance from a {@code java.sql.Timestamp} using the default
@@ -120,6 +143,21 @@ public class DateTimeValue {
      */
     public DateTimeValue(Timestamp ts) {
         this(ts, Calendar.getInstance());
+    }
+    
+    /**
+     * Create an instance from a {@code java.time.LocalDateTime}.
+     *
+     * @param ldt The wrapped local date time value
+     */
+    public DateTimeValue(LocalDateTime ldt) {
+        year = ldt.getYear();
+        month = ldt.getMonthValue() - 1;
+        day = ldt.getDayOfMonth();
+        hours = ldt.getHour();
+        minutes = ldt.getMinute();
+        seconds = ldt.getSecond();
+        nanos = ldt.getNano();
     }
 
     /**
