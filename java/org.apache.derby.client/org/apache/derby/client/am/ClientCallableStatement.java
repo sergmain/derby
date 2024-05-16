@@ -41,6 +41,9 @@ import java.sql.SQLException;
 import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Calendar;
 import java.util.Map;
 
@@ -499,6 +502,26 @@ public class ClientCallableStatement extends ClientPreparedStatement
             throw se.getSQLException();
         }
     }
+    
+    public LocalDate getLocalDate(int parameterIndex) throws SQLException {
+        try
+        {
+            synchronized (connection_) {
+                super.checkForClosedStatement();
+                checkGetterPreconditions(parameterIndex);
+                
+                setWasNull(parameterIndex);
+                LocalDate result = wasNullX() ?
+                        null :
+                            singletonRowData_.getLocalDate(parameterIndex);
+                return result;
+            }
+        }
+        catch ( SqlException se )
+        {
+            throw se.getSQLException();
+        }
+    }
 
     public Date getDate(int parameterIndex) throws SQLException {
         return getDate(parameterIndex, Calendar.getInstance());
@@ -540,6 +563,26 @@ public class ClientCallableStatement extends ClientPreparedStatement
         return getTime(parameterIndex, Calendar.getInstance());
     }
 
+    public LocalTime getLocalTime(int parameterIndex) throws SQLException {
+        try
+        {
+            synchronized (connection_) {
+                super.checkForClosedStatement();
+                checkGetterPreconditions(parameterIndex);
+
+                setWasNull(parameterIndex);
+                LocalTime result = wasNullX() ?
+                        null :
+                        singletonRowData_.getLocalTime(parameterIndex);
+                return result;
+            }
+        }
+        catch ( SqlException se )
+        {
+            throw se.getSQLException();
+        }
+    }
+
     public Timestamp getTimestamp(int parameterIndex, Calendar cal)
             throws SQLException {
         try
@@ -575,6 +618,27 @@ public class ClientCallableStatement extends ClientPreparedStatement
 
     public Timestamp getTimestamp(int parameterIndex) throws SQLException {
         return getTimestamp(parameterIndex, Calendar.getInstance());
+    }
+
+    public LocalDateTime getLocalDateTime(int parameterIndex)
+            throws SQLException {
+        try
+        {
+            synchronized (connection_) {
+                super.checkForClosedStatement();
+                checkGetterPreconditions(parameterIndex);
+
+                setWasNull(parameterIndex);
+                LocalDateTime result = wasNullX() ?
+                        null :
+                        singletonRowData_.getLocalDateTime(parameterIndex);
+                return result;
+            }
+        }
+        catch ( SqlException se )
+        {
+            throw se.getSQLException();
+        }
     }
 
     public String getString(int parameterIndex) throws SQLException {
@@ -1375,8 +1439,11 @@ public class ClientCallableStatement extends ClientPreparedStatement
         else if ( Float.class.equals( type ) ) { retval = Float.valueOf( getFloat( parameterIndex ) ); }
         else if ( Double.class.equals( type ) ) { retval = Double.valueOf( getDouble( parameterIndex ) ); }
         else if ( Date.class.equals( type ) ) { retval = getDate( parameterIndex ); }
+        else if ( LocalDate.class.equals( type ) ) { retval = getLocalDate( parameterIndex ); }
         else if ( Time.class.equals( type ) ) { retval = getTime( parameterIndex ); }
+        else if ( LocalTime.class.equals( type ) ) { retval = getLocalTime( parameterIndex ); }
         else if ( Timestamp.class.equals( type ) ) { retval = getTimestamp( parameterIndex ); }
+        else if ( LocalDateTime.class.equals( type ) ) { retval = getLocalDateTime( parameterIndex ); }
         else if ( Blob.class.equals( type ) ) { retval = getBlob( parameterIndex ); }
         else if ( Clob.class.equals( type ) ) { retval = getClob( parameterIndex ); }
         else if ( type.isArray() && type.getComponentType().equals( byte.class ) ) { retval = getBytes( parameterIndex ); }
