@@ -71,6 +71,7 @@ final class CrossConverters {
      */
     public static final int UNKNOWN_LENGTH = Integer.MIN_VALUE;
 
+    // Formats and parses a LocalDateTime in way compatible to Timestamp
     private static final DateTimeFormatter TIMESTAMP_FORMATTER = new DateTimeFormatterBuilder()
         .appendValue(ChronoField.YEAR, 4)
         .appendLiteral('-')
@@ -608,6 +609,29 @@ final class CrossConverters {
                 "java.sql.Date", ClientTypes.getTypeString(targetType));
         }
     }
+    
+    // Convert from date source to target type
+    // In support of PS.setObject()
+    final Object setObject(int targetType, LocalDate source) throws SqlException {
+        switch (targetType) {
+        
+        case Types.DATE:
+            return Date.valueOf(source);
+            
+        case Types.TIMESTAMP:
+            return Timestamp.valueOf(source.atStartOfDay());
+            
+        case Types.CHAR:
+        case Types.VARCHAR:
+        case Types.LONGVARCHAR:
+            return String.valueOf(source);
+            
+        default:
+            throw new SqlException(agent_.logWriter_, 
+                    new ClientMessageId (SQLState.LANG_DATA_TYPE_SET_MISMATCH),
+                    "java.sql.Date", ClientTypes.getTypeString(targetType));
+        }
+    }
 
     // Convert from time source to target type
     // In support of PS.setTime()
@@ -626,6 +650,26 @@ final class CrossConverters {
             throw new SqlException(agent_.logWriter_, 
                 new ClientMessageId (SQLState.LANG_DATA_TYPE_SET_MISMATCH),
                 "java.sql.Time", ClientTypes.getTypeString(targetType));
+        }
+    }
+    
+    // Convert from time source to target type
+    // In support of PS.setObject()
+    final Object setObject(int targetType, LocalTime source) throws SqlException {
+        switch (targetType) {
+        
+        case Types.TIME:
+            return Time.valueOf(source);
+            
+        case Types.CHAR:
+        case Types.VARCHAR:
+        case Types.LONGVARCHAR:
+            return String.valueOf(source);
+            
+        default:
+            throw new SqlException(agent_.logWriter_, 
+                    new ClientMessageId (SQLState.LANG_DATA_TYPE_SET_MISMATCH),
+                    "java.sql.Time", ClientTypes.getTypeString(targetType));
         }
     }
 
@@ -653,6 +697,33 @@ final class CrossConverters {
             throw new SqlException(agent_.logWriter_, 
                 new ClientMessageId (SQLState.LANG_DATA_TYPE_SET_MISMATCH),
                 "java.sql.Timestamp", ClientTypes.getTypeString(targetType));
+        }
+    }
+    
+    // Convert from date source to target type
+    // In support of PS.setObject()
+    final Object setObject(int targetType, LocalDateTime source)
+            throws SqlException {
+        switch (targetType) {
+        
+        case Types.TIMESTAMP:
+            return Timestamp.valueOf(source);
+            
+        case Types.TIME:
+            return Time.valueOf(source.toLocalTime());
+            
+        case Types.DATE:
+            return Date.valueOf(source.toLocalDate());
+            
+        case Types.CHAR:
+        case Types.VARCHAR:
+        case Types.LONGVARCHAR:
+            return source.format(TIMESTAMP_FORMATTER);
+            
+        default:
+            throw new SqlException(agent_.logWriter_, 
+                    new ClientMessageId (SQLState.LANG_DATA_TYPE_SET_MISMATCH),
+                    "java.sql.Timestamp", ClientTypes.getTypeString(targetType));
         }
     }
 
@@ -981,10 +1052,16 @@ final class CrossConverters {
             return setObject(targetType, (BigDecimal) source);
         } else if (source instanceof Date) {
             return setObject(targetType, (Date) source);
+        } else if (source instanceof LocalDate) {
+            return setObject(targetType, (LocalDate) source);
         } else if (source instanceof Time) {
             return setObject(targetType, (Time) source);
+        } else if (source instanceof LocalTime) {
+            return setObject(targetType, (LocalTime) source);
         } else if (source instanceof Timestamp) {
             return setObject(targetType, (Timestamp) source);
+        } else if (source instanceof LocalDateTime) {
+            return setObject(targetType, (LocalDateTime) source);
         } else if (source instanceof String) {
             return setObject(targetType, (String) source);
         } else if (source instanceof byte[]) {

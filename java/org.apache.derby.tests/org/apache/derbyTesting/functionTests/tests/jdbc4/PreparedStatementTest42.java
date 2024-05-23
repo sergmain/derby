@@ -35,11 +35,11 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import junit.framework.Test;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
-
 import org.apache.derby.iapi.types.HarmonySerialBlob;
 import org.apache.derby.iapi.types.HarmonySerialClob;
 import org.apache.derbyTesting.functionTests.tests.lang.Price;
@@ -47,8 +47,6 @@ import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.BaseTestSuite;
 import org.apache.derbyTesting.junit.JDBC;
 import org.apache.derbyTesting.junit.TestConfiguration;
-
-import junit.framework.Test;
 
 /**
  * Tests for new methods added for PreparedStatement in JDBC 4.2.
@@ -766,7 +764,7 @@ public class PreparedStatementTest42 extends BaseJDBCTestCase
         // There should be no more rows.
         JDBC.assertEmpty(rs);
     }
-    
+
     public void test_05_setObject_LocalDate() throws Exception
     {
         setAutoCommit(false);
@@ -786,9 +784,8 @@ public class PreparedStatementTest42 extends BaseJDBCTestCase
         
         rs.close();
         ps.close();
-
     }
-    
+
     public void test_06_setObject_LocalTime() throws Exception
     {
         setAutoCommit(false);
@@ -810,9 +807,8 @@ public class PreparedStatementTest42 extends BaseJDBCTestCase
         
         rs.close();
         ps.close();
-        
     }
-    
+
     public void test_07_setObject_LocalDateTime() throws Exception
     {
         setAutoCommit(false);
@@ -836,7 +832,7 @@ public class PreparedStatementTest42 extends BaseJDBCTestCase
         ps.close();
         
     }
-    
+
     public void test_08_getObject_LocalDate() throws Exception
     {
         setAutoCommit(false);
@@ -872,9 +868,8 @@ public class PreparedStatementTest42 extends BaseJDBCTestCase
         
         rs.close();
         ps.close();
-
     }
-    
+
     public void test_09_getObject_LocalTime() throws Exception
     {
         setAutoCommit(false);
@@ -910,9 +905,8 @@ public class PreparedStatementTest42 extends BaseJDBCTestCase
         
         rs.close();
         ps.close();
-        
     }
-    
+
     public void test_10_getObject_LocalDateTime() throws Exception
     {
         setAutoCommit(false);
@@ -952,7 +946,119 @@ public class PreparedStatementTest42 extends BaseJDBCTestCase
         
         rs.close();
         ps.close();
+    }
+
+    public void test_11_updateObject_javaTime() throws Exception
+    {
+        setAutoCommit(false);
+
+        String tableName = "temporal_update";
+        Statement stmt = createStatement();
+        String createTableString = "CREATE TABLE " + tableName+ " (" +
+            "F1 DATE," + 
+            "F2 TIME," +
+            "F3 TIMESTAMP )";
+        stmt.execute(createTableString);
+        stmt.close();
+
+        LocalDate originalDate = LocalDate.of(2024, Month.MAY, 15);
+        LocalTime originalTime = LocalTime.of(8, 58, 5);
+        LocalDateTime originalDateTime = LocalDateTime.of(2024, Month.MAY, 15, 13, 33, 22, 123456789);
+        PreparedStatement insert = prepareStatement("INSERT INTO " + tableName+ " (f1, f2, f3) VALUES (?, ?, ?)");
+        insert.setObject(1, originalDate);
+        insert.setObject(2, originalTime);
+        insert.setObject(3, originalDateTime);
+        assertEquals(1, insert.executeUpdate());
+        insert.close();
         
+        PreparedStatement select = prepareStatement("SELECT f1, f2, f3 FROM " + tableName, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
+        ResultSet rs = select.executeQuery();
+        assertTrue(rs.next());
+        assertEquals(originalDate, rs.getObject(1, LocalDate.class));
+        LocalDate updatedDate = originalDate.plusDays(1L);
+        rs.updateObject(1, updatedDate);
+        
+        assertEquals(originalTime, rs.getObject(2, LocalTime.class));
+        LocalTime updatedTime = originalTime.plusHours(1L);
+        rs.updateObject(2, updatedTime);
+        
+        assertEquals(originalDateTime, rs.getObject(3, LocalDateTime.class));
+        LocalDateTime updatedDateTime = originalDateTime.plusDays(1L).plusHours(1L);
+        rs.updateObject(3, updatedDateTime);
+        rs.updateRow();
+        
+        assertFalse(rs.next());
+
+        rs.close();
+        
+        // read back
+        rs = select.executeQuery();
+        assertTrue(rs.next());
+        assertEquals(updatedDate, rs.getObject(1, LocalDate.class));
+        assertEquals(updatedTime, rs.getObject(2, LocalTime.class));
+        
+        assertFalse(rs.next());
+        rs.close();
+
+        select.close();
+        
+        dropTable(tableName);
+    }
+
+    public void test_12_updateObjectBeforeGet_javaTime() throws Exception
+    {
+        setAutoCommit(false);
+        
+        String tableName = "temporal_update";
+        Statement stmt = createStatement();
+        String createTableString = "CREATE TABLE " + tableName+ " (" +
+                "F1 DATE," + 
+                "F2 TIME," +
+                "F3 TIMESTAMP )";
+        stmt.execute(createTableString);
+        stmt.close();
+        
+        LocalDate originalDate = LocalDate.of(2024, Month.MAY, 15);
+        LocalTime originalTime = LocalTime.of(8, 58, 5);
+        LocalDateTime originalDateTime = LocalDateTime.of(2024, Month.MAY, 15, 13, 33, 22, 123456789);
+        PreparedStatement insert = prepareStatement("INSERT INTO " + tableName+ " (f1, f2, f3) VALUES (?, ?, ?)");
+        insert.setObject(1, originalDate);
+        insert.setObject(2, originalTime);
+        insert.setObject(3, originalDateTime);
+        assertEquals(1, insert.executeUpdate());
+        insert.close();
+        
+        PreparedStatement select = prepareStatement("SELECT f1, f2, f3 FROM " + tableName, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
+        ResultSet rs = select.executeQuery();
+        assertTrue(rs.next());
+        LocalDate updatedDate = originalDate.plusDays(1L);
+        rs.updateObject(1, updatedDate);
+        assertEquals(updatedDate, rs.getObject(1, LocalDate.class));
+        
+        LocalTime updatedTime = originalTime.plusHours(1L);
+        rs.updateObject(2, updatedTime);
+        assertEquals(updatedTime, rs.getObject(2, LocalTime.class));
+        
+        LocalDateTime updatedDateTime = originalDateTime.plusDays(1L).plusHours(1L);
+        rs.updateObject(3, updatedDateTime);
+        assertEquals(updatedDateTime, rs.getObject(3, LocalDateTime.class));
+        rs.updateRow();
+        
+        assertFalse(rs.next());
+        rs.close();
+        
+        // read back
+        rs = select.executeQuery();
+        assertTrue(rs.next());
+        assertEquals(updatedDate, rs.getObject(1, LocalDate.class));
+        assertEquals(updatedTime, rs.getObject(2, LocalTime.class));
+        
+        assertFalse(rs.next());
+        rs.close();
+        
+        select.close();
+        
+        dropTable(tableName);
     }
 
     //////////////////////////////////////////////////////////

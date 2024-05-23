@@ -2922,6 +2922,15 @@ public class EmbedResultSet extends ConnectionChild
 		}
 	}
 
+	private void updateLocalDate(int columnIndex, java.time.LocalDate x)
+            throws SQLException {
+        try {
+            getDVDforColumnToBeUpdated(columnIndex, "updateObject").setValue(x);
+        } catch (StandardException t) {
+            throw noStateChangeException(t);
+        }
+    }
+
 	/**
 	 * JDBC 2.0
 	 *
@@ -2947,6 +2956,15 @@ public class EmbedResultSet extends ConnectionChild
 			throw noStateChangeException(t);
 		}
 	}
+	
+	private void updateLocalTime(int columnIndex, java.time.LocalTime x)
+            throws SQLException {
+        try {
+            getDVDforColumnToBeUpdated(columnIndex, "updateObject").setValue(x);
+        } catch (StandardException t) {
+            throw noStateChangeException(t);
+        }
+    }
 
 	/**
 	 * JDBC 2.0
@@ -2973,6 +2991,15 @@ public class EmbedResultSet extends ConnectionChild
 			throw noStateChangeException(t);
 		}
 	}
+	
+	private void updateLocalDateTime(int columnIndex, java.time.LocalDateTime x)
+            throws SQLException {
+        try {
+            getDVDforColumnToBeUpdated(columnIndex, "updateObject").setValue(x);
+        } catch (StandardException t) {
+            throw noStateChangeException(t);
+        }
+    }
 
 	/**
 	 *
@@ -3448,15 +3475,30 @@ public class EmbedResultSet extends ConnectionChild
 			updateDate(columnIndex, (Date) x);
 			return;
 		}
+		
+		if (x instanceof LocalDate) {
+		    updateLocalDate(columnIndex, (LocalDate) x);
+		    return;
+		}
 
 		if (x instanceof Time) {
 			updateTime(columnIndex, (Time) x);
 			return;
 		}
+		
+		if (x instanceof LocalTime) {
+		    updateLocalTime(columnIndex, (LocalTime) x);
+		    return;
+		}
 
 		if (x instanceof Timestamp) {
 			updateTimestamp(columnIndex, (Timestamp) x);
 			return;
+		}
+		
+		if (x instanceof LocalDateTime) {
+		    updateLocalDateTime(columnIndex, (LocalDateTime) x);
+		    return;
 		}
 
 		if (x instanceof Blob) {
