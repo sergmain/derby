@@ -19,3 +19,4 @@ tools/release/*/target/*
 .idea/*
 *.iml
 *.class
+/target
