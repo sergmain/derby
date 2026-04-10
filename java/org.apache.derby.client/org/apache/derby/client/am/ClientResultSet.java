@@ -46,6 +46,9 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Iterator;
@@ -919,6 +922,34 @@ public abstract class ClientResultSet implements ResultSet,
     }
 
     // Live life on the edge and run unsynchronized
+    private LocalDate getLocalDate(int column) throws SQLException {
+        try
+        {
+            closeOpenStreams();
+
+            checkGetterPreconditions(column, "getObject");
+
+            LocalDate result = null;
+            if (wasNonNullSensitiveUpdate(column)) {
+                Date date = (Date)agent_.crossConverters_.setObject(
+                        Types.DATE, updatedColumns_[column - 1]);
+                // updateDate() doesn't take a calendar, so the retrieved
+                // value will be in the default calendar. Convert it to
+                // the requested calendar before returning it.
+                result = convertFromDefaultCalendar(date, Calendar.getInstance()).toLocalDate();
+            } else {
+                result = isNull(column) ? null : cursor_.getLocalDate(column);
+            }
+            setWasNull(column);  // Placed close to the return to minimize risk of thread interference
+            return result;
+        }
+        catch ( SqlException se )
+        {
+            throw se.getSQLException();
+        }
+    }
+
+    // Live life on the edge and run unsynchronized
     public Time getTime(int column, Calendar cal) throws SQLException {
         try
         {
@@ -960,6 +991,34 @@ public abstract class ClientResultSet implements ResultSet,
     // Live life on the edge and run unsynchronized
     public Time getTime(int column) throws SQLException {
         return getTime(column, Calendar.getInstance());
+    }
+
+    // Live life on the edge and run unsynchronized
+    private LocalTime getLocalTime(int column) throws SQLException {
+        try
+        {
+            closeOpenStreams();
+
+            checkGetterPreconditions(column, "getObject");
+
+            LocalTime result = null;
+            if (wasNonNullSensitiveUpdate(column)) {
+                Time time = (Time)agent_.crossConverters_.setObject(
+                    Types.TIME, updatedColumns_[column - 1]);
+                // updateTime() doesn't take a calendar, so the retrieved
+                // value will be in the default calendar. Convert it to
+                // the requested calendar before returning it.
+                result = convertFromDefaultCalendar(time, Calendar.getInstance()).toLocalTime();
+            } else {
+                result = isNull(column) ? null : cursor_.getLocalTime(column);
+            }
+            setWasNull(column);  // Placed close to the return to minimize risk of thread interference
+            return result;
+        }
+        catch ( SqlException se )
+        {
+            throw se.getSQLException();
+        }
     }
 
     // Live life on the edge and run unsynchronized
@@ -1006,6 +1065,35 @@ public abstract class ClientResultSet implements ResultSet,
     // Live life on the edge and run unsynchronized
     public Timestamp getTimestamp(int column) throws SQLException {
         return getTimestamp(column, Calendar.getInstance());
+    }
+
+    // Live life on the edge and run unsynchronized
+    private LocalDateTime getLocalDateTime(int column)
+            throws SQLException {
+        try
+        {
+            closeOpenStreams();
+
+            checkGetterPreconditions(column, "getObject");
+
+            LocalDateTime result = null;
+            if (wasNonNullSensitiveUpdate(column)) {
+                Timestamp timestamp = (Timestamp)agent_.crossConverters_.setObject(
+                    Types.TIMESTAMP, updatedColumns_[column - 1]);
+                // updateTimestamp() doesn't take a calendar, so the retrieved
+                // value will be in the default calendar. Convert it to
+                // the requested calendar before returning it.
+                result = convertFromDefaultCalendar(timestamp, Calendar.getInstance()).toLocalDateTime();
+            } else if (!isNull(column)) {
+                result = cursor_.getLocalDateTime(column);
+            }
+            setWasNull(column);  // Placed close to the return to minimize risk of thread interference
+            return result;
+        }
+        catch ( SqlException se )
+        {
+            throw se.getSQLException();
+        }
     }
 
     /**
@@ -6510,8 +6598,11 @@ public abstract class ClientResultSet implements ResultSet,
         else if ( Float.class.equals( type ) ) { retval = Float.valueOf( getFloat( columnIndex ) ); }
         else if ( Double.class.equals( type ) ) { retval = Double.valueOf( getDouble( columnIndex ) ); }
         else if ( Date.class.equals( type ) ) { retval = getDate( columnIndex ); }
+        else if ( LocalDate.class.equals( type ) ) { retval = getLocalDate( columnIndex ); }
         else if ( Time.class.equals( type ) ) { retval = getTime( columnIndex ); }
+        else if ( LocalTime.class.equals( type ) ) { retval = getLocalTime( columnIndex ); }
         else if ( Timestamp.class.equals( type ) ) { retval = getTimestamp( columnIndex ); }
+        else if ( LocalDateTime.class.equals( type ) ) { retval = getLocalDateTime( columnIndex ); }
 
         else if ( Blob.class.equals( type ) ) {
             retval = getBlob( columnIndex );

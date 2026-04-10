@@ -48,6 +48,9 @@ import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.RuleBasedCollator;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Calendar;
 
 
@@ -338,6 +341,11 @@ public class SQLClob
 	{
 		throw dataTypeConversion("java.sql.Date");
 	}
+	
+	public LocalDate	getLocalDate() throws StandardException
+	{
+	    throw dataTypeConversion("java.time.LocalDate");
+	}
 
     /**
      * @exception StandardException     Thrown on error
@@ -462,10 +470,20 @@ public class SQLClob
 	{
 		throw dataTypeConversion("java.sql.Time");
 	}
+	
+	public LocalTime	getLocalTime() throws StandardException
+	{
+	    throw dataTypeConversion("java.time.LocalTime");
+	}
 
 	public Timestamp	getTimestamp(java.util.Calendar cal) throws StandardException
 	{
 		throw dataTypeConversion("java.sql.Timestamp");
+	}
+	
+	public LocalDateTime	getLocalDateTime() throws StandardException
+	{
+	    throw dataTypeConversion("java.time.LocalDateTime");
 	}
     
     /**
@@ -534,14 +552,29 @@ public class SQLClob
 		throwLangSetMismatch("java.sql.Time");
 	}
 	
+	public void setValue(LocalTime theValue) throws StandardException
+	{
+	    throwLangSetMismatch("java.time.LocalTime");
+	}
+	
 	public void setValue(Timestamp theValue, Calendar cal) throws StandardException
 	{
 		throwLangSetMismatch("java.sql.Timestamp");
 	}
 	
+	public void setValue(LocalDateTime theValue) throws StandardException
+	{
+	    throwLangSetMismatch("java.time.LocalDateTime");
+	}
+	
 	public void setValue(Date theValue, Calendar cal) throws StandardException
 	{
 		throwLangSetMismatch("java.sql.Date");
+	}
+	
+	public void setValue(LocalDate theValue) throws StandardException
+	{
+	    throwLangSetMismatch("java.time.LocalDate");
 	}
 	
 	public void setBigDecimal(BigDecimal bigDecimal) throws StandardException

@@ -40,6 +40,10 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+
 import junit.framework.Test;
 import org.apache.derby.iapi.types.HarmonySerialBlob;
 import org.apache.derby.iapi.types.HarmonySerialClob;
@@ -685,6 +689,119 @@ public class CallableStatementTest  extends Wrapper41Test
         ps.execute();
         ps.close();
     }
+    
+    /**
+     * Test the JDBC 4.2 extensions.
+     */
+    public  void    testJDBC4_2Out() throws Exception
+    {
+        Connection  conn = getConnection();
+        
+        vetDataTypeCount( conn );
+        
+        PreparedStatement   ps = prepareStatement
+                (
+                        conn,
+                        "create procedure temporalOut\n" +
+                                "(\n" +
+                                "    out dateCol date,\n" +
+                                "    out timeCol time,\n" +
+                                "    out timestampCol timestamp\n" +
+                                ")\n" +
+                                "language java\n" +
+                                "parameter style java\n" +
+                                "no sql\n" +
+                                "external name 'org.apache.derbyTesting.functionTests.tests.jdbc4.CallableStatementTest.temporalOut'\n"
+                        );
+        ps.execute();
+        ps.close();
+        
+        CallableStatement cs = prepareCall
+                (
+                        conn,
+                        "call temporalOut(  ?, ?, ? )"
+                        );
+        int param = 1;
+        cs.registerOutParameter( param++, Types.DATE );
+        cs.registerOutParameter( param++, Types.TIME );
+        cs.registerOutParameter( param++, Types.TIMESTAMP );
+        
+        cs.execute();
+        LocalDate localDate = cs.getObject(1, LocalDate.class);
+        assertEquals(LocalDate.parse("2023-05-16"), localDate);
+        LocalTime localTime = cs.getObject(2, LocalTime.class);
+        assertEquals(LocalTime.parse("14:45:13"), localTime);
+        LocalDateTime localDateTime = cs.getObject(3, LocalDateTime.class);
+        assertEquals(LocalDateTime.parse("2023-05-16T14:45:13.123456789"), localDateTime);
+        
+        cs.close();
+        
+        ps = prepareStatement( conn, "drop procedure temporalOut" );
+        ps.execute();
+        ps.close();
+    }
+    
+    /**
+     * Test the JDBC 4.2 extensions.
+     */
+    public  void    testJDBC4_2InOut() throws Exception
+    {
+        Connection  conn = getConnection();
+        
+        vetDataTypeCount( conn );
+        
+        PreparedStatement   ps = prepareStatement
+                (
+                        conn,
+                        "create procedure temporalInOut\n" +
+                                "(\n" +
+                                "    in dateInCol date,\n" +
+                                "    in timeInCol time,\n" +
+                                "    in timestampInCol timestamp,\n" +
+                                "    out dateoutCol date,\n" +
+                                "    out timeoutCol time,\n" +
+                                "    out timestampOutCol timestamp\n" +
+                                ")\n" +
+                                "language java\n" +
+                                "parameter style java\n" +
+                                "no sql\n" +
+                                "external name 'org.apache.derbyTesting.functionTests.tests.jdbc4.CallableStatementTest.temporalInOut'\n"
+                        );
+        ps.execute();
+        ps.close();
+        
+
+        LocalDate expectedLocalDate = LocalDate.parse("2023-05-16");
+        LocalTime expectedLocalTime = LocalTime.parse("14:45:13");
+        LocalDateTime expectedLocalDateTime = LocalDateTime.parse("2023-05-16T14:45:13.123456789");
+        
+        CallableStatement cs = prepareCall
+                (
+                        conn,
+                        "call temporalInOut(  ?, ?, ?, ?, ?, ? )"
+                        );
+        int param = 1;
+        cs.setObject( param++, expectedLocalDate);
+        cs.setObject( param++, expectedLocalTime);
+        cs.setObject( param++, expectedLocalDateTime);
+        cs.registerOutParameter( param++, Types.DATE );
+        cs.registerOutParameter( param++, Types.TIME );
+        cs.registerOutParameter( param++, Types.TIMESTAMP );
+        
+        cs.execute();
+        LocalDate localDate = cs.getObject(4, LocalDate.class);
+        assertEquals(expectedLocalDate, localDate);
+        LocalTime localTime = cs.getObject(5, LocalTime.class);
+        assertEquals(expectedLocalTime, localTime);
+        LocalDateTime localDateTime = cs.getObject(6, LocalDateTime.class);
+        assertEquals(expectedLocalDateTime, localDateTime);
+        
+        cs.close();
+        
+        ps = prepareStatement( conn, "drop procedure temporalInOut" );
+        ps.execute();
+        ps.close();
+    }
     private void    vetDataTypeCount( Connection conn ) throws Exception
     {
         ResultSet rs = conn.getMetaData().getTypeInfo();
@@ -807,7 +924,7 @@ public class CallableStatementTest  extends Wrapper41Test
         chararg[0] = _nullOutArgs ? null : stringValue;
         charforbitdataarg[0] = _nullOutArgs ? null : BINARY_VALUE;
         clobarg[0] = _nullOutArgs ? null : new HarmonySerialClob( lobValue );
-        datearg[0]= _nullOutArgs ? null : new Date( 761990400000L );
+        datearg[0]= _nullOutArgs ? null : new Date( DATE_VALUE );
         doublearg[0] = _nullOutArgs ? null : (double) floatValue;
         floatarg[0] = _nullOutArgs ? null : (double) floatValue;
         intarg[0] = _nullOutArgs ? null : (int) intValue;
@@ -820,6 +937,47 @@ public class CallableStatementTest  extends Wrapper41Test
         timestamparg[0] = _nullOutArgs ? null : new Timestamp(TIMESTAMP_VALUE);
         varchararg[0] = _nullOutArgs ? null : stringValue;
         varcharforbitdataarg[0] = _nullOutArgs ? null : BINARY_VALUE;
+    }
+    
+    /**
+     * <p>
+     * Procedure used by jdbc 4.2 tests.
+     * </p>
+     */
+    public  static  void    temporalOut
+    (
+            Date[] dateOut,
+            Time[] timeOut,
+            Timestamp[] timestampOut
+            )
+                    throws Exception
+    {
+        
+        dateOut[0]= Date.valueOf("2023-05-16");
+        timeOut[0] = Time.valueOf("14:45:13");
+        timestampOut[0] = Timestamp.valueOf("2023-05-16 14:45:13.123456789");
+    }
+    
+    /**
+     * <p>
+     * Procedure used by jdbc 4.2 tests.
+     * </p>
+     */
+    public  static  void    temporalInOut
+    (
+            Date dateIn,
+            Time timeIn,
+            Timestamp timestampIn,
+            Date[] dateOut,
+            Time[] timeOut,
+            Timestamp[] timestampOut
+            )
+                    throws Exception
+    {
+        
+        dateOut[0]= dateIn;
+        timeOut[0] = timeIn;
+        timestampOut[0] = timestampIn;
     }
 
     public  static  void    blobProc

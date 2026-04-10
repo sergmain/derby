@@ -44,6 +44,9 @@ import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -783,6 +786,41 @@ public class ClientPreparedStatement extends ClientStatement
         setDate(parameterIndex, x, Calendar.getInstance());
     }
 
+    private void setLocalDate(int parameterIndex, LocalDate x)
+            throws SQLException {
+        try
+        {
+            synchronized (connection_) {
+                
+                final int paramType = 
+                        getColumnMetaDataX().getColumnType(parameterIndex);
+                
+                if( ! PossibleTypes.POSSIBLE_TYPES_IN_SET_DATE.checkType(paramType) ){
+                    
+                    PossibleTypes.throw22005Exception(agent_.logWriter_ ,
+                            Types.DATE,
+                            paramType);
+                    
+                }
+                
+                checkForClosedStatement();
+                
+                parameterMetaData_.clientParamtertype_[parameterIndex - 1] =
+                        Types.DATE;
+                
+                if (x == null) {
+                    setNull(parameterIndex, Types.DATE);
+                    return;
+                }
+                setInput(parameterIndex, new DateTimeValue(x));
+            }
+        }
+        catch ( SqlException se )
+        {
+            throw se.getSQLException();
+        }
+    }
+
     public void setTime(int parameterIndex, Time x, Calendar calendar)
             throws SQLException {
         try
@@ -827,6 +865,39 @@ public class ClientPreparedStatement extends ClientStatement
 
     public void setTime(int parameterIndex, Time x) throws SQLException {
         setTime(parameterIndex, x, Calendar.getInstance());
+    }
+
+    private void setLocalTime(int parameterIndex, LocalTime x)
+            throws SQLException {
+        try
+        {
+            synchronized (connection_) {
+                
+                final int paramType = 
+                    getColumnMetaDataX().getColumnType(parameterIndex);
+
+                if( ! PossibleTypes.POSSIBLE_TYPES_IN_SET_TIME.checkType( paramType ) ){
+                    
+                    PossibleTypes.throw22005Exception( agent_.logWriter_,
+                                                       Types.TIME,
+                                                       paramType );
+                }
+
+                parameterMetaData_.clientParamtertype_[parameterIndex - 1] =
+                    Types.TIME;
+
+                if (x == null) {
+                    setNull(parameterIndex, Types.TIME);
+                    return;
+                }
+                setInput(parameterIndex, new DateTimeValue(x));
+
+            }
+        }
+        catch ( SqlException se )
+        {
+            throw se.getSQLException();
+        }
     }
 
     public void setTimestamp(int parameterIndex, Timestamp x, Calendar calendar)
@@ -874,6 +945,39 @@ public class ClientPreparedStatement extends ClientStatement
     public void setTimestamp(int parameterIndex, Timestamp x)
             throws SQLException {
         setTimestamp(parameterIndex, x, Calendar.getInstance());
+    }
+
+    public void setLocalDateTime(int parameterIndex, LocalDateTime x)
+            throws SQLException {
+        try
+        {
+            synchronized (connection_) {
+                
+                final int paramType = 
+                    getColumnMetaDataX().getColumnType(parameterIndex);
+
+                if( ! PossibleTypes.POSSIBLE_TYPES_IN_SET_TIMESTAMP.checkType( paramType ) ) {
+                    
+                    PossibleTypes.throw22005Exception(agent_.logWriter_,
+                                                      Types.TIMESTAMP,
+                                                      paramType);
+                    
+                }
+
+                parameterMetaData_.clientParamtertype_[parameterIndex - 1] =
+                    Types.TIMESTAMP;
+
+                if (x == null) {
+                    setNull(parameterIndex, Types.TIMESTAMP);
+                    return;
+                }
+                setInput(parameterIndex, new DateTimeValue(x));
+            }
+        }
+        catch ( SqlException se )
+        {
+            throw se.getSQLException();
+        }
     }
 
     public void setString(int parameterIndex, String x) throws SQLException {
@@ -1408,10 +1512,16 @@ public class ClientPreparedStatement extends ClientStatement
                     setBigDecimal(parameterIndex, (BigDecimal) x);
                 } else if (x instanceof Date) {
                     setDate(parameterIndex, (Date) x);
+                } else if (x instanceof LocalDate) {
+                    setLocalDate(parameterIndex, (LocalDate) x);
                 } else if (x instanceof Time) {
                     setTime(parameterIndex, (Time) x);
+                } else if (x instanceof LocalTime) {
+                    setLocalTime(parameterIndex, (LocalTime) x);
                 } else if (x instanceof Timestamp) {
                     setTimestamp(parameterIndex, (Timestamp) x);
+                } else if (x instanceof LocalDateTime) {
+                    setLocalDateTime(parameterIndex, (LocalDateTime) x);
                 } else if (x instanceof Blob) {
                     setBlob(parameterIndex, (Blob) x);
                 } else if (x instanceof Clob) {

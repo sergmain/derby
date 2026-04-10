@@ -56,6 +56,7 @@ public  class   Wrapper41Test   extends BaseJDBCTestCase
 
     public  static  final   byte[]  BINARY_VALUE = new byte[] { (byte) 0xde };
 
+    static final long DATE_VALUE = 761990400000L;
     static final long TIME_VALUE = 83342000L;
     static final long TIMESTAMP_VALUE = -229527385766L;
 

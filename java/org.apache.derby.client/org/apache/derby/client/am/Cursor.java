@@ -42,6 +42,9 @@ import java.sql.Ref;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -485,11 +488,23 @@ public abstract class Cursor {
             charset_[column - 1]);
     }
 
+    private LocalDate getLocalDateFromDATE(int column) throws SqlException {
+        return DateTime.dateBytesToLocalDate(dataBuffer_,
+                columnDataPosition_[column - 1],
+                charset_[column - 1]);
+    }
+
     // Build a JDBC Time object from the DERBY ISO TIME field.
     private Time getTIME(int column, Calendar cal) throws SqlException {
         return DateTime.timeBytesToTime(dataBuffer_,
                 columnDataPosition_[column - 1],
                 cal,
+                charset_[column - 1]);
+    }
+    
+    private LocalTime getLocalTimeFromTIME(int column) throws SqlException {
+        return DateTime.timeBytesToLocalTime(dataBuffer_,
+                columnDataPosition_[column - 1],
                 charset_[column - 1]);
     }
 
@@ -502,6 +517,15 @@ public abstract class Cursor {
             cal,
             charset_[column - 1],
             agent_.connection_.serverSupportsTimestampNanoseconds());
+    }
+    
+    private final LocalDateTime getLocalDateTimeFromTIMESTAMP(int column)
+            throws SqlException {
+        return DateTime.timestampBytesToLocalDateTime(
+                dataBuffer_,
+                columnDataPosition_[column - 1],
+                charset_[column - 1],
+                agent_.connection_.serverSupportsTimestampNanoseconds());
     }
 
     // Build a JDBC Timestamp object from the DERBY ISO DATE field.
@@ -922,6 +946,24 @@ public abstract class Cursor {
         }
     }
 
+    final LocalDate getLocalDate(int column) throws SqlException {
+        switch (jdbcTypes_[column - 1]) {
+        case Types.DATE:
+            return getLocalDateFromDATE(column);
+        case Types.TIMESTAMP:
+            return getLocalDateTimeFromTIMESTAMP(column).toLocalDate();
+        case Types.CHAR:
+            return agent_.crossConverters_.
+                    getLocalDateFromString(getCHAR(column));
+        case Types.VARCHAR:
+        case Types.LONGVARCHAR:
+            return agent_.crossConverters_.
+                    getLocalDateFromString(getVARCHAR(column));
+        default:
+            throw coercionError( "java.time.LocalDate", column );
+        }
+    }
+
     final Time getTime(int column, Calendar cal) throws SqlException {
         switch (jdbcTypes_[column - 1]) {
         case Types.TIME:
@@ -937,6 +979,24 @@ public abstract class Cursor {
                     getTimeFromString(getVARCHAR(column), cal);
         default:
             throw coercionError( "java.sql.Time", column );
+        }
+    }
+
+    final LocalTime getLocalTime(int column) throws SqlException {
+        switch (jdbcTypes_[column - 1]) {
+        case Types.TIME:
+            return getLocalTimeFromTIME(column);
+        case Types.TIMESTAMP:
+            return getLocalDateTimeFromTIMESTAMP(column).toLocalTime();
+        case Types.CHAR:
+            return agent_.crossConverters_.
+                    getLocalTimeFromString(getCHAR(column));
+        case Types.VARCHAR:
+        case Types.LONGVARCHAR:
+            return agent_.crossConverters_.
+                    getLocalTimeFromString(getVARCHAR(column));
+        default:
+            throw coercionError( "java.time.LocalTime", column );
         }
     }
 
@@ -956,6 +1016,27 @@ public abstract class Cursor {
         case Types.LONGVARCHAR:
             return agent_.crossConverters_.
                     getTimestampFromString(getVARCHAR(column), cal);
+        default:
+            throw coercionError( "java.sql.Timestamp", column );
+        }
+    }
+    
+    final LocalDateTime getLocalDateTime(int column)
+            throws SqlException {
+        switch (jdbcTypes_[column - 1]) {
+        case Types.TIMESTAMP:
+            return getLocalDateTimeFromTIMESTAMP(column);
+        case Types.DATE:
+            return getLocalDateFromDATE(column).atStartOfDay();
+        case Types.TIME:
+            return getLocalTimeFromTIME(column).atDate(DateTimeValue.TIME_EPOCH);
+        case Types.CHAR:
+            return agent_.crossConverters_.
+                    getLocalDateTimeFromString(getCHAR(column));
+        case Types.VARCHAR:
+        case Types.LONGVARCHAR:
+            return agent_.crossConverters_.
+                    getLocalDateTimeFromString(getVARCHAR(column));
         default:
             throw coercionError( "java.sql.Timestamp", column );
         }

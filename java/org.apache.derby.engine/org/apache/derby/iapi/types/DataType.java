@@ -34,6 +34,9 @@ import java.sql.Clob;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.ResultSet;
@@ -186,6 +189,18 @@ public abstract class DataType
 	{
 		throw dataTypeConversion("java.sql.Date");
 	}
+	
+    /**
+     * Gets the value in the data value descriptor as a java.time.LocalDate.
+     * Throws an exception if the data value is not a Date.
+     * @return  The data value as a java.time.LocalDate.
+     *
+     * @exception StandardException   Thrown on error
+     */
+	public LocalDate	getLocalDate() throws StandardException
+	{
+	    throw dataTypeConversion("java.time.LocalDate");
+	}
 
 	/**
 	 * Gets the value in the data value descriptor as a java.sql.Time.
@@ -200,6 +215,18 @@ public abstract class DataType
 		throw dataTypeConversion("java.sql.Time");
 	}
 
+    /**
+     * Gets the value in the data value descriptor as a java.time.LocalDateTime.
+     * Throws an exception if the data value is not a Timestamp.
+     * @return  The data value as a java.time.LocalDateTime.
+     *
+     * @exception StandardException   Thrown on error
+     */
+	public LocalTime	getLocalTime() throws StandardException
+	{
+	    throw dataTypeConversion("java.time.LocalTime");
+	}
+
 	/**
 	 * Gets the value in the data value descriptor as a java.sql.Timestamp.
 	 * Throws an exception if the data value is not receivable as a Timestamp.
@@ -211,6 +238,18 @@ public abstract class DataType
 	public Timestamp	getTimestamp( Calendar cal) throws StandardException
 	{
 		throw dataTypeConversion("java.sql.Timestamp");
+	}
+	
+    /**
+     * Gets the value in the data value descriptor as a java.time.LocalDateTime.
+     * Throws an exception if the data value is not a Timestamp.
+     * @return  The data value as a java.time.LocalDateTime.
+     *
+     * @exception StandardException   Thrown on error
+     */
+	public LocalDateTime	getLocalDateTime() throws StandardException
+	{
+	    throw dataTypeConversion("java.time.LocalDateTime");
 	}
 
 	/**
@@ -335,6 +374,17 @@ public abstract class DataType
 	 * Set the value of this DataValueDescriptor.
 	 * At DataType level just throws an error lower classes will override
 	 *
+	 * @param theValue	The LocalTime value to set this DataValueDescriptor to
+	 */
+	public void setValue(LocalTime theValue) throws StandardException
+	{
+	    throwLangSetMismatch("java.time.LocalTime");
+	}
+	
+	/**
+	 * Set the value of this DataValueDescriptor.
+	 * At DataType level just throws an error lower classes will override
+	 *
 	 * @param theValue	The Timestamp value to set this DataValueDescriptor to
 	 */
 	public void setValue(Timestamp theValue) throws StandardException
@@ -352,6 +402,16 @@ public abstract class DataType
 	public void setValue(Timestamp theValue, Calendar cal) throws StandardException
 	{
 		throwLangSetMismatch("java.sql.Timestamp");
+	}
+	
+    /**
+     * Set the value of this DataValueDescriptor.
+     *
+     * @param theValue  The LocalDateTime value to set this DataValueDescriptor to
+     */
+	public void setValue(LocalDateTime theValue) throws StandardException
+	{
+	    throwLangSetMismatch("java.sql.Timestamp");
 	}
 	
 	/**
@@ -375,6 +435,17 @@ public abstract class DataType
 	public void setValue(Date theValue, Calendar cal) throws StandardException
 	{
 		throwLangSetMismatch("java.sql.Date");
+	}
+	
+    /**
+     * Set the value of this DataValueDescriptor.
+     *
+     * @param theValue  The LocalDate value to set this DataValueDescriptor to
+     *
+     */
+	public void setValue(LocalDate theValue) throws StandardException
+	{
+	    throwLangSetMismatch("java.time.LocalDate");
 	}
 
 	/**

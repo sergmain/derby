@@ -36,6 +36,10 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import junit.framework.Test;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Month;
 import org.apache.derby.iapi.types.HarmonySerialBlob;
 import org.apache.derby.iapi.types.HarmonySerialClob;
 import org.apache.derbyTesting.functionTests.tests.lang.Price;
@@ -759,6 +763,302 @@ public class PreparedStatementTest42 extends BaseJDBCTestCase
 
         // There should be no more rows.
         JDBC.assertEmpty(rs);
+    }
+
+    public void test_05_setObject_LocalDate() throws Exception
+    {
+        setAutoCommit(false);
+        
+        // Test PreparedStatement.setObject() with LocalDate.
+        
+        PreparedStatement ps = prepareStatement("values cast(? as date)");
+        
+        LocalDate expected = LocalDate.of(2024, Month.MAY, 15);
+        ps.setObject(1, expected);
+        ResultSet rs = ps.executeQuery();
+        
+        assertTrue(rs.next());
+        LocalDate actual = rs.getObject(1, LocalDate.class);
+        assertEquals(expected, actual);
+        assertFalse(rs.next());
+        
+        rs.close();
+        ps.close();
+    }
+
+    public void test_06_setObject_LocalTime() throws Exception
+    {
+        setAutoCommit(false);
+        
+        // Test PreparedStatement.setObject() with LocalTime.
+        
+        PreparedStatement ps = prepareStatement("values cast(? as time)");
+        
+        LocalTime expected = LocalTime.of(13, 33, 22);
+        ps.setObject(1, expected);
+        ResultSet rs = ps.executeQuery();
+        
+        assertTrue(rs.next());
+        LocalTime actual = rs.getObject(1, LocalTime.class);
+        assertEquals(expected, actual);
+        actual = rs.getObject("1", LocalTime.class);
+        assertEquals(expected, actual);
+        assertFalse(rs.next());
+        
+        rs.close();
+        ps.close();
+    }
+
+    public void test_07_setObject_LocalDateTime() throws Exception
+    {
+        setAutoCommit(false);
+        
+        // Test PreparedStatement.setObject() with LocalDateTime.
+        
+        PreparedStatement ps = prepareStatement("values cast(? as timestamp)");
+        
+        LocalDateTime expected = LocalDateTime.of(2024, Month.MAY, 15, 13, 33, 22, 123456789);
+        ps.setObject(1, expected);
+        ResultSet rs = ps.executeQuery();
+        
+        assertTrue(rs.next());
+        LocalDateTime actual = rs.getObject(1, LocalDateTime.class);
+        assertEquals(expected, actual);
+        actual = rs.getObject("1", LocalDateTime.class);
+        assertEquals(expected, actual);
+        assertFalse(rs.next());
+        
+        rs.close();
+        ps.close();
+        
+    }
+
+    public void test_08_getObject_LocalDate() throws Exception
+    {
+        setAutoCommit(false);
+        
+        // Test PreparedStatement.getObject() with LocalDate.
+        
+        PreparedStatement ps = prepareStatement("values (date('2024-05-15'), '2024-05-15')");
+        
+        LocalDate expectedDate = LocalDate.of(2024, Month.MAY, 15);
+        LocalDateTime expectedDateTime = expectedDate.atStartOfDay();
+        ResultSet rs = ps.executeQuery();
+        
+        assertTrue(rs.next());
+        
+        LocalDate actualDate = rs.getObject(1, LocalDate.class);
+        assertEquals(expectedDate, actualDate);
+        actualDate = rs.getObject("1", LocalDate.class);
+        assertEquals(expectedDate, actualDate);
+
+        // String -> LocalDate
+        actualDate = rs.getObject(2, LocalDate.class);
+        assertEquals(expectedDate, actualDate);
+        actualDate = rs.getObject("2", LocalDate.class);
+        assertEquals(expectedDate, actualDate);
+        
+        // LocalDate -> LocalDateTime
+        LocalDateTime actualDateTime = rs.getObject(1, LocalDateTime.class);
+        assertEquals(expectedDateTime, actualDateTime);
+        actualDateTime = rs.getObject("1", LocalDateTime.class);
+        assertEquals(expectedDateTime, actualDateTime);
+
+        assertFalse(rs.next());
+        
+        rs.close();
+        ps.close();
+    }
+
+    public void test_09_getObject_LocalTime() throws Exception
+    {
+        setAutoCommit(false);
+        
+        // Test PreparedStatement.getObject() with LocalTime.
+        
+        PreparedStatement ps = prepareStatement("values (time('08:58:05'), '08:58:05')");
+        
+        LocalTime expectedTime = LocalTime.of(8, 58, 5);
+        LocalDateTime expectedDateTime = expectedTime.atDate(LocalDate.of(1970, Month.JANUARY, 1));
+        ResultSet rs = ps.executeQuery();
+        
+        assertTrue(rs.next());
+        
+        LocalTime actualTime = rs.getObject(1, LocalTime.class);
+        assertEquals(expectedTime, actualTime);
+        actualTime = rs.getObject("1", LocalTime.class);
+        assertEquals(expectedTime, actualTime);
+        
+        // String -> LocalTime
+        actualTime = rs.getObject(2, LocalTime.class);
+        assertEquals(expectedTime, actualTime);
+        actualTime = rs.getObject("2", LocalTime.class);
+        assertEquals(expectedTime, actualTime);
+        
+        // LocalDate -> LocalDateTime
+        LocalDateTime actualDateTime = rs.getObject(1, LocalDateTime.class);
+        assertEquals(expectedDateTime, actualDateTime);
+        actualDateTime = rs.getObject("1", LocalDateTime.class);
+        assertEquals(expectedDateTime, actualDateTime);
+        
+        assertFalse(rs.next());
+        
+        rs.close();
+        ps.close();
+    }
+
+    public void test_10_getObject_LocalDateTime() throws Exception
+    {
+        setAutoCommit(false);
+        
+        // Test PreparedStatement.getObject() with LocalDateTime.
+        
+        PreparedStatement ps = prepareStatement("values (timestamp('20240515085805'), '2024-05-15 08:58:05')");
+        
+        LocalDateTime expectedDateTime = LocalDateTime.of(LocalDate.of(2024, Month.MAY, 15), LocalTime.of(8, 58, 5));
+        ResultSet rs = ps.executeQuery();
+        
+        assertTrue(rs.next());
+        
+        LocalDateTime actualDateTime = rs.getObject(1, LocalDateTime.class);
+        assertEquals(expectedDateTime, actualDateTime);
+        actualDateTime = rs.getObject("1", LocalDateTime.class);
+        assertEquals(expectedDateTime, actualDateTime);
+        
+        // String -> LocalDateTime
+        actualDateTime = rs.getObject(2, LocalDateTime.class);
+        assertEquals(expectedDateTime, actualDateTime);
+        actualDateTime = rs.getObject("2", LocalDateTime.class);
+        assertEquals(expectedDateTime, actualDateTime);
+        
+        // LocalDateTime -> LocalTime
+        LocalTime actualTime = rs.getObject(1, LocalTime.class);
+        assertEquals(expectedDateTime.toLocalTime(), actualTime);
+        actualTime = rs.getObject("1", LocalTime.class);
+        assertEquals(expectedDateTime.toLocalTime(), actualTime);
+        // LocalDateTime -> LocalDate
+        LocalDate actualDate = rs.getObject(1, LocalDate.class);
+        assertEquals(expectedDateTime.toLocalDate(), actualDate);
+        actualDate = rs.getObject("1", LocalDate.class);
+        assertEquals(expectedDateTime.toLocalDate(), actualDate);
+        
+        assertFalse(rs.next());
+        
+        rs.close();
+        ps.close();
+    }
+
+    public void test_11_updateObject_javaTime() throws Exception
+    {
+        setAutoCommit(false);
+
+        String tableName = "temporal_update";
+        Statement stmt = createStatement();
+        String createTableString = "CREATE TABLE " + tableName+ " (" +
+            "F1 DATE," + 
+            "F2 TIME," +
+            "F3 TIMESTAMP )";
+        stmt.execute(createTableString);
+        stmt.close();
+
+        LocalDate originalDate = LocalDate.of(2024, Month.MAY, 15);
+        LocalTime originalTime = LocalTime.of(8, 58, 5);
+        LocalDateTime originalDateTime = LocalDateTime.of(2024, Month.MAY, 15, 13, 33, 22, 123456789);
+        PreparedStatement insert = prepareStatement("INSERT INTO " + tableName+ " (f1, f2, f3) VALUES (?, ?, ?)");
+        insert.setObject(1, originalDate);
+        insert.setObject(2, originalTime);
+        insert.setObject(3, originalDateTime);
+        assertEquals(1, insert.executeUpdate());
+        insert.close();
+        
+        PreparedStatement select = prepareStatement("SELECT f1, f2, f3 FROM " + tableName, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
+        ResultSet rs = select.executeQuery();
+        assertTrue(rs.next());
+        assertEquals(originalDate, rs.getObject(1, LocalDate.class));
+        LocalDate updatedDate = originalDate.plusDays(1L);
+        rs.updateObject(1, updatedDate);
+        
+        assertEquals(originalTime, rs.getObject(2, LocalTime.class));
+        LocalTime updatedTime = originalTime.plusHours(1L);
+        rs.updateObject(2, updatedTime);
+        
+        assertEquals(originalDateTime, rs.getObject(3, LocalDateTime.class));
+        LocalDateTime updatedDateTime = originalDateTime.plusDays(1L).plusHours(1L);
+        rs.updateObject(3, updatedDateTime);
+        rs.updateRow();
+        
+        assertFalse(rs.next());
+
+        rs.close();
+        
+        // read back
+        rs = select.executeQuery();
+        assertTrue(rs.next());
+        assertEquals(updatedDate, rs.getObject(1, LocalDate.class));
+        assertEquals(updatedTime, rs.getObject(2, LocalTime.class));
+        
+        assertFalse(rs.next());
+        rs.close();
+
+        select.close();
+        
+        dropTable(tableName);
+    }
+
+    public void test_12_updateObjectBeforeGet_javaTime() throws Exception
+    {
+        setAutoCommit(false);
+        
+        String tableName = "temporal_update";
+        Statement stmt = createStatement();
+        String createTableString = "CREATE TABLE " + tableName+ " (" +
+                "F1 DATE," + 
+                "F2 TIME," +
+                "F3 TIMESTAMP )";
+        stmt.execute(createTableString);
+        stmt.close();
+        
+        LocalDate originalDate = LocalDate.of(2024, Month.MAY, 15);
+        LocalTime originalTime = LocalTime.of(8, 58, 5);
+        LocalDateTime originalDateTime = LocalDateTime.of(2024, Month.MAY, 15, 13, 33, 22, 123456789);
+        PreparedStatement insert = prepareStatement("INSERT INTO " + tableName+ " (f1, f2, f3) VALUES (?, ?, ?)");
+        insert.setObject(1, originalDate);
+        insert.setObject(2, originalTime);
+        insert.setObject(3, originalDateTime);
+        assertEquals(1, insert.executeUpdate());
+        insert.close();
+        
+        PreparedStatement select = prepareStatement("SELECT f1, f2, f3 FROM " + tableName, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
+        ResultSet rs = select.executeQuery();
+        assertTrue(rs.next());
+        LocalDate updatedDate = originalDate.plusDays(1L);
+        rs.updateObject(1, updatedDate);
+        assertEquals(updatedDate, rs.getObject(1, LocalDate.class));
+        
+        LocalTime updatedTime = originalTime.plusHours(1L);
+        rs.updateObject(2, updatedTime);
+        assertEquals(updatedTime, rs.getObject(2, LocalTime.class));
+        
+        LocalDateTime updatedDateTime = originalDateTime.plusDays(1L).plusHours(1L);
+        rs.updateObject(3, updatedDateTime);
+        assertEquals(updatedDateTime, rs.getObject(3, LocalDateTime.class));
+        rs.updateRow();
+        
+        assertFalse(rs.next());
+        rs.close();
+        
+        // read back
+        rs = select.executeQuery();
+        assertTrue(rs.next());
+        assertEquals(updatedDate, rs.getObject(1, LocalDate.class));
+        assertEquals(updatedTime, rs.getObject(2, LocalTime.class));
+        
+        assertFalse(rs.next());
+        rs.close();
+        
+        select.close();
+        
+        dropTable(tableName);
     }
 
     //////////////////////////////////////////////////////////

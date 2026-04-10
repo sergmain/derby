@@ -67,6 +67,9 @@ import java.sql.Ref;
 import java.sql.RowId;
 import java.sql.SQLXML;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 import org.apache.derby.iapi.jdbc.BrokeredConnectionControl;
 import org.apache.derby.iapi.jdbc.EnginePreparedStatement;
@@ -1347,13 +1350,25 @@ public class EmbedPreparedStatement extends EmbedStatement
 			setDate(parameterIndex, (Date) x);
 			return;
 		}
+        if (x instanceof LocalDate) {
+            setLocalDate(parameterIndex, (LocalDate) x );
+            return;
+        }
 		if (x instanceof Time) {
 			setTime(parameterIndex, (Time) x);
 			return;
 		}
+		if (x instanceof LocalTime) {
+		    setLocalTime(parameterIndex, (LocalTime) x);
+		    return;
+		}
 		if (x instanceof Timestamp) {
 			setTimestamp(parameterIndex, (Timestamp) x);
 			return;
+		}
+		if (x instanceof LocalDateTime) {
+		    setLocalDateTime(parameterIndex, (LocalDateTime) x);
+		    return;
 		}
 
 		if (x instanceof Blob) {
@@ -1418,6 +1433,19 @@ public class EmbedPreparedStatement extends EmbedStatement
 		}
 	}
 
+    private void setLocalDate(int parameterIndex, java.time.LocalDate x)
+            throws SQLException 
+    {
+        checkStatus();
+        try {
+            /* JDBC is one-based, DBMS is zero-based */
+            getParms().getParameterForSet(parameterIndex - 1).setValue(x);
+            
+        } catch (Throwable t) {
+            throw EmbedResultSet.noStateChangeException(t);
+        }
+    }
+
     /**
      * Set a parameter to a java.sql.Time value.  The driver converts this
      * to a SQL TIME value when it sends it to the database.
@@ -1438,6 +1466,19 @@ public class EmbedPreparedStatement extends EmbedStatement
 			throw EmbedResultSet.noStateChangeException(t);
 		}
 	}
+
+    private void setLocalTime(int parameterIndex, java.time.LocalTime x)
+            throws SQLException 
+    {
+        checkStatus();
+        try {
+            /* JDBC is one-based, DBMS is zero-based */
+            getParms().getParameterForSet(parameterIndex - 1).setValue(x);
+            
+        } catch (Throwable t) {
+            throw EmbedResultSet.noStateChangeException(t);
+        }
+    }
 
     /**
      * Set a parameter to a java.sql.Timestamp value.  The driver
@@ -1461,6 +1502,18 @@ public class EmbedPreparedStatement extends EmbedStatement
 		}
 	}
 
+    public final void setLocalDateTime(int parameterIndex, java.time.LocalDateTime x)
+            throws SQLException 
+    {
+        checkStatus();
+        try {
+            /* JDBC is one-based, DBMS is zero-based */
+            getParms().getParameterForSet(parameterIndex - 1).setValue(x);
+            
+        } catch (StandardException t) {
+            throw EmbedResultSet.noStateChangeException(t);
+        }
+    }
 
     /**
      * JDBC 2.0
