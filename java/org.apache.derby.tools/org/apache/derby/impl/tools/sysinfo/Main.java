@@ -42,6 +42,7 @@ import java.io.FileInputStream;
 import java.util.Vector;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.security.ProtectionDomain;
@@ -568,7 +569,7 @@ public static void getMainInfo (java.io.PrintWriter aw, boolean pause) {
                           return;
                       }
 
-                      testJarURL = new URL(successString);
+                      testJarURL = (new URI(successString)).toURL();
                   }
 
                   if (testJarURL == null) { return; }

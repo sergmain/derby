@@ -193,7 +193,7 @@ public class LOBStoredProcedure {
      * @param LOCATOR an integer that represents the locator corresponding
      *                to the Clob object requested.
      * @return a Clob object that is mapped to the LOCATOR object passed in.
-     * @throws a SQLException.
+     * @throws SQLException on error
      */
     private static Clob getClobObjectCorrespondingtoLOCATOR(int LOCATOR)
     throws SQLException {

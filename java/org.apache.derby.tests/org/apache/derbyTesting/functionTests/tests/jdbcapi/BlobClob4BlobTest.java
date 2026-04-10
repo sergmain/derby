@@ -3069,9 +3069,7 @@ public class BlobClob4BlobTest extends BaseJDBCTestCase {
      * first place (neither with NPE nor with "proper user error") since none
      * of the BLOBs are accessed after the transaction that created them was
      * completed.
-     * @throws Exception
-     * @throws FileNotFoundException
-     * @throws IOException
+     * @throws Exception on error
      */
     public void testNegativeTestDerby265Blob() throws Exception {
         getConnection().setAutoCommit(false);

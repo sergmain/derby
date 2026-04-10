@@ -47,7 +47,7 @@ Description of the required steps:
       o The Derby release version.
         The version must be specified in all POMs. Compile and execute the
         Java program SetDerbyVersion, found in the 'maven2' directory, i.e.:
-            javac SetDerbyVersion && java -cp .:../jars/insane/derbyshared.jar:../jars/insane/derby.jar SetDerbyVersion
+            javac SetDerbyVersion.java && java -cp .:../jars/insane/derbyshared.jar:../jars/insane/derby.jar SetDerbyVersion
 
         Alternatively, use search and replace (i.e. Perl or sed) - make sure
         you don't replace version tags that aren't supposed to be modified.
@@ -102,6 +102,14 @@ Description of the required steps:
     preferably by using a passphrase agent. Alternatively:
 
         mvn -Dgpg.passphrase="my secret passphrase" deploy
+
+    During the staging of 10.16.1.1, this step kept failing midway
+    with "peer not authenticated" errors. The problem was overcome
+    by re-issuing the command with a resume directive (in this case,
+    resuming at the Korean localizations where the original command
+    had errored out):
+
+        mvn -Dgpg.passphrase="my secret passphrase" deploy -rf :derbyLocale_ko_KR
 
  e) Close the staging repository in Nexus.
     Once you have deployed the artifacts you should close the staging

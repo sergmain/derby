@@ -29,6 +29,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.sql.Blob;
 import java.sql.Clob;
@@ -251,7 +252,7 @@ public abstract class SimpleJsonUtils
         final   String  url_string = urlString;
         
         try {
-            URL url = new URL( url_string );
+            URL url = (new URI(url_string)).toURL();
             inputStream = url.openStream();
         }
         catch (Exception pae) { throw ToolUtilities.wrap( pae ); }

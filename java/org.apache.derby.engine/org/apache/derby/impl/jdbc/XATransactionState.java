@@ -86,7 +86,7 @@ final class XATransactionState extends ContextImpl {
         public synchronized boolean okToCancel() {
             boolean res = false;
             if (null == cancelThreadId && null == cleanupThreadId) {
-                cancelThreadId = Thread.currentThread().getId();
+                cancelThreadId = Thread.currentThread().threadId();
                 res = true;
             }
             return res;
@@ -104,7 +104,7 @@ final class XATransactionState extends ContextImpl {
         private synchronized boolean okToCleanup() {
             boolean res = false;
             if (null == cleanupThreadId && null == cancelThreadId) {
-                cleanupThreadId = Thread.currentThread().getId();
+                cleanupThreadId = Thread.currentThread().threadId();
                 res = true;
             }
             return res;

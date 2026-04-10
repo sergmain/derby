@@ -87,155 +87,153 @@ import org.apache.derby.shared.common.sanity.SanityManager;
  */
 class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements TargetResultSet
 {
-	// RESOLVE. Embarrassingly large public state. If we could move the 
-	// Replication code into the same package, then these variables 
-	// could be protected. 
-	// passed in at construction time
+    // RESOLVE. Embarrassingly large public state. If we could move the 
+    // Replication code into the same package, then these variables 
+    // could be protected. 
+    // passed in at construction time
                                                  
-	NoPutResultSet			savedSource;
-	InsertConstantAction	constants;
+    NoPutResultSet			savedSource;
+    InsertConstantAction	constants;
     private GeneratedMethod         generationClauses;
-	private GeneratedMethod			checkGM;
-	private long					heapConglom;
+    private GeneratedMethod			checkGM;
+    private long					heapConglom;
 
-	// divined at run time
+    // divined at run time
 
-	private RowChanger 				rowChanger;
+    private RowChanger 				rowChanger;
 
-	private	TransactionController 	tc;
-	private	ExecRow					row;
+    private	TransactionController 	tc;
+    private	ExecRow					row;
 	
-	boolean					userSpecifiedBulkInsert;
-	boolean					bulkInsertPerformed;
+    boolean					userSpecifiedBulkInsert;
+    boolean					bulkInsertPerformed;
 
-	// bulkInsert
-	protected boolean				bulkInsert;
-	private boolean					bulkInsertReplace;
-	private boolean					firstRow = true;
-	private	boolean[]				needToDropSort;
+    // bulkInsert
+    protected boolean				bulkInsert;
+    private boolean					bulkInsertReplace;
+    private boolean					firstRow = true;
+    private	boolean[]				needToDropSort;
 
-	/*
-	** This hashtable is used to convert an index conglomerate
-	** from it's old conglom number to the new one.  It is
-	** bulk insert specific.
-	*/
-	private Hashtable<Long,Long>				indexConversionTable;
+    /*
+    ** This hashtable is used to convert an index conglomerate
+    ** from it's old conglom number to the new one.  It is
+    ** bulk insert specific.
+    */
+    private Hashtable<Long,Long>				indexConversionTable;
 
-	// indexedCols is 1-based
-	private FormatableBitSet					indexedCols;
-	private ConglomerateController	bulkHeapCC;
+    // indexedCols is 1-based
+    private FormatableBitSet					indexedCols;
+    private ConglomerateController	bulkHeapCC;
 
-	protected DataDictionary			dd;
-	protected TableDescriptor			td;
+    protected DataDictionary			dd;
+    protected TableDescriptor			td;
 		
-	private ExecIndexRow[]			indexRows;
+    private ExecIndexRow[]			indexRows;
     private final int               fullTemplateId;
     private final String            schemaName;
     private final String            tableName;
-	private	long[]					sortIds;
-	private RowLocationRetRowSource[]
-                                    rowSources;
-	private	ScanController			bulkHeapSC;
-	private ColumnOrdering[][]		ordering;
-	private int[][]		            collation;
-	private SortController[]		sorters;
-	private	TemporaryRowHolderImpl	rowHolder;
-	private RowLocation				rl;
+    private	long[]					sortIds;
+    private RowLocationRetRowSource[]
+    rowSources;
+    private	ScanController			bulkHeapSC;
+    private ColumnOrdering[][]		ordering;
+    private int[][]		            collation;
+    private SortController[]		sorters;
+    private	TemporaryRowHolderImpl	rowHolder;
+    private RowLocation				rl;
 
-	private	boolean					hasBeforeRowTrigger;
-	private	BulkTableScanResultSet	tableScan;
+    private	boolean					hasBeforeRowTrigger;
+    private	BulkTableScanResultSet	tableScan;
 
-	private int						numOpens;
-	private boolean					firstExecute;
+    private int						numOpens;
+    private boolean					firstExecute;
 
-	// cached across open()s
-	private	FKInfo[]				fkInfoArray;
-	private	TriggerInfo				triggerInfo;
-	private RISetChecker 			fkChecker;
-	private TriggerEventActivator	triggerActivator;
+    // cached across open()s
+    private	FKInfo[]				fkInfoArray;
+    private	TriggerInfo				triggerInfo;
+    private RISetChecker 			fkChecker;
+    private TriggerEventActivator	triggerActivator;
     private BulkInsertCounter[]                 bulkInsertCounters;
     private BackingStoreHashtable   deferredChecks; // cached ref.
     private List<UUID>              violatingCheckConstraints;
 	
-	// TargetResultSet interface
+    // TargetResultSet interface
 
-	/**
-	 * @see TargetResultSet#changedRow
-	 *
-	 * @exception StandardException thrown if cursor finish ed.
-	 */
-	public void changedRow(ExecRow execRow, RowLocation rowLocation)
-		throws StandardException
-	{
-		if (SanityManager.DEBUG)
-		{
-			SanityManager.ASSERT(bulkInsert,
-				"bulkInsert exected to be true");
-		}
+    /**
+     * @see TargetResultSet#changedRow
+     *
+     * @exception StandardException thrown if cursor finish ed.
+     */
+    public void changedRow(ExecRow execRow, RowLocation rowLocation)
+        throws StandardException {
+        if (SanityManager.DEBUG)
+        {
+            SanityManager.ASSERT(bulkInsert,
+                                 "bulkInsert exected to be true");
+        }
 
-		/* Set up sorters, etc. if 1st row and there are indexes */
-		if (constants.irgs.length > 0)
-		{
-           RowLocation rlClone = (RowLocation) rowLocation.cloneValue(false);
+        /* Set up sorters, etc. if 1st row and there are indexes */
+        if (constants.irgs.length > 0)
+        {
+            RowLocation rlClone = (RowLocation) rowLocation.cloneValue(false);
 
-			// Objectify any the streaming columns that are indexed.
-			for (int i = 0; i < execRow.getRowArray().length; i++)
-			{
-				if (! constants.indexedCols[i])
-				{
-					continue;
-				}
+            // Objectify any the streaming columns that are indexed.
+            for (int i = 0; i < execRow.getRowArray().length; i++)
+            {
+                if (! constants.indexedCols[i])
+                {
+                    continue;
+                }
 
-				if (execRow.getRowArray()[i] instanceof StreamStorable)
-					((DataValueDescriptor)execRow.getRowArray()[i]).getObject();
-			}
+                if (execRow.getRowArray()[i] instanceof StreamStorable)
+                    ((DataValueDescriptor)execRow.getRowArray()[i]).getObject();
+            }
 
-			// Every index row will share the same row location, etc.
-			if (firstRow)
-			{
-				firstRow = false;
-				indexRows = new ExecIndexRow[constants.irgs.length];
-				setUpAllSorts(execRow.getNewNullRow(), rlClone);
-			}
+            // Every index row will share the same row location, etc.
+            if (firstRow)
+            {
+                firstRow = false;
+                indexRows = new ExecIndexRow[constants.irgs.length];
+                setUpAllSorts(execRow.getNewNullRow(), rlClone);
+            }
 
-			// Put the row into the indexes
-			for (int index = 0; index < constants.irgs.length; index++)
-			{
-				// Get a new object Array for the index
-				indexRows[index].getNewObjectArray();
-				// Associate the index row with the source row
-				constants.irgs[index].getIndexRow(execRow, 
-											   rlClone, 
-											   indexRows[index],
-											   (FormatableBitSet) null);
+            // Put the row into the indexes
+            for (int index = 0; index < constants.irgs.length; index++)
+            {
+                // Get a new object Array for the index
+                indexRows[index].getNewObjectArray();
+                // Associate the index row with the source row
+                constants.irgs[index].getIndexRow(execRow, 
+                                                  rlClone, 
+                                                  indexRows[index],
+                                                  (FormatableBitSet) null);
 
-				// Insert the index row into the matching sorter
-				sorters[index].insert(indexRows[index].getRowArray());
-			}
-		}
-	}
+                // Insert the index row into the matching sorter
+                sorters[index].insert(indexRows[index].getRowArray());
+            }
+        }
+    }
 
-	/**
-	 * Preprocess the source row.  Apply any check constraints here.
-	 * Do an inplace cloning of all key columns.  For triggers, if
-	 * we have a before row trigger, we fire it here if we can.
-	 * This is useful for bulk insert where the store stands between
-	 * the source and us.
-	 *
-	 * @param execRow	The source row.
-	 *
-	 * @return The preprocessed source row.
-	 * @exception StandardException thrown on error
-	 */
-	public ExecRow preprocessSourceRow(ExecRow execRow)
-		throws StandardException
-	{
+    /**
+     * Preprocess the source row.  Apply any check constraints here.
+     * Do an inplace cloning of all key columns.  For triggers, if
+     * we have a before row trigger, we fire it here if we can.
+     * This is useful for bulk insert where the store stands between
+     * the source and us.
+     *
+     * @param execRow	The source row.
+     *
+     * @return The preprocessed source row.
+     * @exception StandardException thrown on error
+     */
+    public ExecRow preprocessSourceRow(ExecRow execRow)
+        throws StandardException {
         if (triggerInfo != null) {
             // We do not use bulk insert if we have triggers
             if (SanityManager.DEBUG) {
                 SanityManager.NOTREACHED();
             }
-		}
+        }
 
         if ( generationClauses != null )
         {
@@ -247,40 +245,40 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
             if (!allOk) {
                 if (SanityManager.DEBUG) {
                     SanityManager.ASSERT(
-                            violatingCheckConstraints != null &&
-                            violatingCheckConstraints.size() > 0) ;
+                        violatingCheckConstraints != null &&
+                        violatingCheckConstraints.size() > 0) ;
                 }
 
                 // We will do a callback to remember this by
                 // offendingRowLocation called from HeapController#load
             }
-		}
-		// RESOLVE - optimize the cloning
-		if (constants.irgs.length > 0)
-		{
-			/* Do in-place cloning of all of the key columns */
-			return execRow.getClone(indexedCols);
-		}
-		else
-		{
-			return execRow;
-		}
-	}
+        }
+        // RESOLVE - optimize the cloning
+        if (constants.irgs.length > 0)
+        {
+            /* Do in-place cloning of all of the key columns */
+            return execRow.getClone(indexedCols);
+        }
+        else
+        {
+            return execRow;
+        }
+    }
 
 
     public void offendingRowLocation(RowLocation rl, long constainerId)
-            throws StandardException {
+        throws StandardException {
         if (violatingCheckConstraints != null) {
             deferredChecks =
-                    DeferredConstraintsMemory.rememberCheckViolations(
-                            lcc,
-                            constants.targetUUID,
-                            schemaName,
-                            tableName,
-                            deferredChecks,
-                            violatingCheckConstraints,
-                            rl,
-                            new CheckInfo[1] /* dummy */);
+                DeferredConstraintsMemory.rememberCheckViolations(
+                    lcc,
+                    constants.targetUUID,
+                    schemaName,
+                    tableName,
+                    deferredChecks,
+                    violatingCheckConstraints,
+                    rl,
+                    new CheckInfo[1] /* dummy */);
             violatingCheckConstraints.clear();
         }
     }
@@ -301,137 +299,135 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
             // immediate, a check error will throw rather than return a false
             // value.
             SQLBoolean allOk =
-                    (SQLBoolean)checkGM.invoke(activation);
+                (SQLBoolean)checkGM.invoke(activation);
             result = allOk.isNull() || allOk.getBoolean();
-		}
+        }
 
         return result;
-	}
+    }
 
     /*
      * class interface
      *
      */
     /**
-	 *
-	 * @exception StandardException		Thrown on error
+     *
+     * @exception StandardException		Thrown on error
      */
     InsertResultSet(NoPutResultSet source, 
-						   GeneratedMethod generationClauses,
-						   GeneratedMethod checkGM,
-                           int fullTemplate,
-                           String schemaName,
-                           String tableName,
-						   Activation activation)
-		throws StandardException
-    {
-		super(activation);
-		sourceResultSet = source;
-		constants = (InsertConstantAction) constantAction;
+                    GeneratedMethod generationClauses,
+                    GeneratedMethod checkGM,
+                    int fullTemplate,
+                    String schemaName,
+                    String tableName,
+                    Activation activation)
+        throws StandardException {
+        super(activation);
+        sourceResultSet = source;
+        constants = (InsertConstantAction) constantAction;
         this.generationClauses = generationClauses;
-		this.checkGM = checkGM;
+        this.checkGM = checkGM;
         this.fullTemplateId = fullTemplate;
         this.schemaName = schemaName;
         this.tableName = tableName;
-		heapConglom = constants.conglomId;
+        heapConglom = constants.conglomId;
         identitySequenceUUIDString = constants.identitySequenceUUIDString;
 
         tc = activation.getTransactionController();
-		fkInfoArray = constants.getFKInfo();
-		triggerInfo = constants.getTriggerInfo();
+        fkInfoArray = constants.getFKInfo();
+        triggerInfo = constants.getTriggerInfo();
 		
-		hasBeforeRowTrigger = (triggerInfo != null) ?
-				triggerInfo.hasTrigger(true, true) :
-				false;
+        hasBeforeRowTrigger = (triggerInfo != null) ?
+            triggerInfo.hasTrigger(true, true) :
+            false;
 
         resultDescription = sourceResultSet.getResultDescription();
         
-		// Is this a bulkInsert or regular insert?
-		String insertMode = constants.getProperty("insertMode");
+        // Is this a bulkInsert or regular insert?
+        String insertMode = constants.getProperty("insertMode");
 
-		initializeAIcache(constants.getAutoincRowLocation());
+        initializeAIcache(constants.getAutoincRowLocation());
 
-		if (insertMode != null)
-		{
-			if (StringUtil.SQLEqualsIgnoreCase(insertMode,"BULKINSERT"))
-			{
-				userSpecifiedBulkInsert = true;
-			}
-			else if (StringUtil.SQLEqualsIgnoreCase(insertMode,"REPLACE"))
-			{
-				userSpecifiedBulkInsert = true;
-				bulkInsertReplace = true;
-				bulkInsert = true;
+        if (insertMode != null)
+        {
+            if (StringUtil.SQLEqualsIgnoreCase(insertMode,"BULKINSERT"))
+            {
+                userSpecifiedBulkInsert = true;
+            }
+            else if (StringUtil.SQLEqualsIgnoreCase(insertMode,"REPLACE"))
+            {
+                userSpecifiedBulkInsert = true;
+                bulkInsertReplace = true;
+                bulkInsert = true;
 
-				/*
-				** For now, we don't allow bulk insert replace when 
-				** there is a trigger. 
-				*/
-				if (triggerInfo != null)
-				{
+                /*
+                ** For now, we don't allow bulk insert replace when 
+                ** there is a trigger. 
+                */
+                if (triggerInfo != null)
+                {
                     TriggerDescriptor trD = triggerInfo.getTriggerArray()[0];
                     throw StandardException.newException(
                         SQLState.LANG_NO_BULK_INSERT_REPLACE_WITH_TRIGGER_DURING_EXECUTION,
                         constants.getTableName(),
                         trD.getName());
-				}
-			}
-		}
-	}
+                }
+            }
+        }
+    }
 	
-	/**
-		@exception StandardException Standard Derby error policy
-	*/
-	public void open() throws StandardException
-	{
-		setup();
-		// Remember if this is the 1st execution
-		firstExecute = (rowChanger == null);
+    /**
+       @exception StandardException Standard Derby error policy
+    */
+    public void open() throws StandardException {
+        setup();
+        // Remember if this is the 1st execution
+        firstExecute = (rowChanger == null);
 
-		autoincrementGenerated = false;
+        autoincrementGenerated = false;
 
-		dd = lcc.getDataDictionary();
+        dd = lcc.getDataDictionary();
 
-		verifyAutoGeneratedRScolumnsList(constants.targetUUID);
+        verifyAutoGeneratedRScolumnsList(constants.targetUUID);
 
-		rowCount = 0L;
+        rowCount = 0L;
 
-		if (numOpens++ == 0)
-		{
-			sourceResultSet.openCore();
-		}
-		else
-		{
-			sourceResultSet.reopenCore();
-		}
+        if (numOpens++ == 0)
+        {
+            sourceResultSet.openCore();
+        }
+        else
+        {
+            sourceResultSet.reopenCore();
+        }
 
-		/* If the user specified bulkInsert (or replace) then we need 
-		 * to get an exclusive table lock on the table.  If it is a
-		 * regular bulk insert then we need to check to see if the
-		 * table is empty.  (If not empty, then we end up doing a row
-		 * at a time insert.)
-		 */
-		if (userSpecifiedBulkInsert)
-		{
-			if (! bulkInsertReplace)
-			{
-				bulkInsert = verifyBulkInsert();
-			}
-			else
-			{
-				getExclusiveTableLock();
-			}
-		}
+        /* If the user specified bulkInsert (or replace) then we need 
+         * to get an exclusive table lock on the table.  If it is a
+         * regular bulk insert then we need to check to see if the
+         * table is empty.  (If not empty, then we end up doing a row
+         * at a time insert.)
+         */
+        if (userSpecifiedBulkInsert)
+        {
+            if (! bulkInsertReplace)
+            {
+                bulkInsert = verifyBulkInsert();
+            }
+            else
+            {
+                getExclusiveTableLock();
+            }
+        }
 
-		if (bulkInsert)
-		{
-			// Notify the source that we are the target
-			sourceResultSet.setTargetResultSet(this);
+        if (bulkInsert)
+        {
+            // Notify the source that we are the target
+            sourceResultSet.setTargetResultSet(this);
 
             ExecRow fullTemplate =
                 ((ExecRowBuilder) activation.getPreparedStatement().
-                    getSavedObject(fullTemplateId)).build(
-                        activation.getExecutionFactory());
+                 getSavedObject(fullTemplateId)).build(
+                     activation.getExecutionFactory());
 
             bulkInsertCore(lcc, fullTemplate, heapConglom);
 
@@ -440,108 +436,106 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
                     // If we have triggers, we do not use bulkInsert
                     SanityManager.NOTREACHED();
                 }
-			}
+            }
 			
             bulkValidateForeignKeys(tc, lcc.getContextManager(), fullTemplate);
 	
-			bulkInsertPerformed = true;
-		}
-		else
-		{
-	        row = getNextRowCore(sourceResultSet);
-			normalInsertCore(lcc, firstExecute);
-		}
+            bulkInsertPerformed = true;
+        }
+        else
+        {
+            row = getNextRowCore(sourceResultSet);
+            normalInsertCore(lcc, firstExecute);
+        }
 
-		/* Cache query plan text for source, before it gets blown away */
-		if (lcc.getRunTimeStatisticsMode())
-		{
-			/* savedSource nulled after run time statistics generation */
-			savedSource = sourceResultSet;
-		}
+        /* Cache query plan text for source, before it gets blown away */
+        if (lcc.getRunTimeStatisticsMode())
+        {
+            /* savedSource nulled after run time statistics generation */
+            savedSource = sourceResultSet;
+        }
 
-		cleanUp();
+        cleanUp();
 
-		saveAIcacheInformation(constants.getSchemaName(), 
-			constants.getTableName(), constants.getColumnNames());
+        saveAIcacheInformation(constants.getSchemaName(), 
+                               constants.getTableName(), constants.getColumnNames());
 
-		endTime = getCurrentTimeMillis();
-	}
+        endTime = getCurrentTimeMillis();
+    }
 
-	/**
-	 * Clean up resources and call close on data members.
-	 */
-	public void close() throws StandardException {
-		close( constants.underMerge() );
-		if (autoGeneratedKeysRowsHolder != null) {
-			autoGeneratedKeysRowsHolder.close();
-		}
-	}
+    /**
+     * Clean up resources and call close on data members.
+     */
+    public void close() throws StandardException {
+        close( constants.underMerge() );
+        if (autoGeneratedKeysRowsHolder != null) {
+            autoGeneratedKeysRowsHolder.close();
+        }
+    }
 
-	/**
-	 * If user didn't provide columns list for auto-generated columns, then only include
-	 * columns with auto-generated values in the resultset. Those columns would be ones
-	 * with default value defined.
-	 */
-	private int[] generatedColumnPositionsArray()
-		throws StandardException
-	{
+    /**
+     * If user didn't provide columns list for auto-generated columns, then only include
+     * columns with auto-generated values in the resultset. Those columns would be ones
+     * with default value defined.
+     */
+    private int[] generatedColumnPositionsArray()
+        throws StandardException {
         TableDescriptor tabDesb = dd.getTableDescriptor(constants.targetUUID);
-		ColumnDescriptor cd;
+        ColumnDescriptor cd;
         int size = tabDesb.getMaxColumnID();
 
-		int[] generatedColumnPositionsArray = new int[size];
+        int[] generatedColumnPositionsArray = new int[size];
         Arrays.fill(generatedColumnPositionsArray, -1);
-		int generatedColumnNumbers = 0;
+        int generatedColumnNumbers = 0;
 
-		for (int i=0; i<size; i++) {
+        for (int i=0; i<size; i++) {
             cd = tabDesb.getColumnDescriptor(i+1);
-			if (cd.isAutoincrement()) { //if the column has auto-increment value
-				generatedColumnNumbers++;
-				generatedColumnPositionsArray[i] = i+1;
-			} else if (cd.getDefaultValue() != null || cd.getDefaultInfo() != null) {//default value
-				generatedColumnNumbers++;
-				generatedColumnPositionsArray[i] = i+1;
-			}
-		}
-		int[] returnGeneratedColumnPositionsArray = new int[generatedColumnNumbers];
+            if (cd.isAutoincrement()) { //if the column has auto-increment value
+                generatedColumnNumbers++;
+                generatedColumnPositionsArray[i] = i+1;
+            } else if (cd.getDefaultValue() != null || cd.getDefaultInfo() != null) {//default value
+                generatedColumnNumbers++;
+                generatedColumnPositionsArray[i] = i+1;
+            }
+        }
+        int[] returnGeneratedColumnPositionsArray = new int[generatedColumnNumbers];
 
-		for (int i=0, j=0; i<size; i++) {
-			if (generatedColumnPositionsArray[i] != -1)
-				returnGeneratedColumnPositionsArray[j++] = generatedColumnPositionsArray[i];
-		}
+        for (int i=0, j=0; i<size; i++) {
+            if (generatedColumnPositionsArray[i] != -1)
+                returnGeneratedColumnPositionsArray[j++] = generatedColumnPositionsArray[i];
+        }
 
-		return returnGeneratedColumnPositionsArray;
-	}
+        return returnGeneratedColumnPositionsArray;
+    }
 
-	/**
-	 * getSetAutoincrementValue will get the autoincrement value of the 
-	 * columnPosition specified for the target table. If increment is 
-	 * non-zero we will also update the autoincrement value. 
-	 *
-	 * @param columnPosition	position of the column in the table (1-based)
-	 * @param increment			amount of increment. 
-	 *
-	 * @exception StandardException if anything goes wrong.
-	 */
-	public NumberDataValue
-		getSetAutoincrementValue(int columnPosition, long increment)
-		throws StandardException
-	{
-		int index = columnPosition - 1;	// all our indices are 0 based.
+    /**
+     * getSetAutoincrementValue will get the autoincrement value of the 
+     * columnPosition specified for the target table. If increment is 
+     * non-zero we will also update the autoincrement value. 
+     *
+     * @param columnPosition	position of the column in the table (1-based)
+     * @param increment			amount of increment. 
+     *
+     * @exception StandardException if anything goes wrong.
+     */
+    public NumberDataValue
+    getSetAutoincrementValue(int columnPosition, long increment)
+        throws StandardException {
+        int index = columnPosition - 1;	// all our indices are 0 based.
 
-		/* As in DB2, only for single row insert: insert into t1(c1) values (..) do
-		 * we return the correct most recently generated identity column value.  For
-		 * multiple row insert, or insert with sub-select, the return value is non-
-		 * deterministic, and is the previous return value of the IDENTITY_VAL_LOCAL
-		 * function, before the insert statement.  Also, DB2 can have at most 1 identity
-		 * column per table.  The return value won't be affected either if Derby
-		 * table has more than one identity columns.
-		 */
-		setIdentity = (! autoincrementGenerated) && isSourceRowResultSet();
-		autoincrementGenerated = true;
+        /* As in DB2, only for single row insert: insert into t1(c1) values (..) do
+         * we return the correct most recently generated identity column value.  For
+         * multiple row insert, or insert with sub-select, the return value is non-
+         * deterministic, and is the previous return value of the IDENTITY_VAL_LOCAL
+         * function, before the insert statement.  Also, DB2 can have at most 1 identity
+         * column per table.  The return value won't be affected either if Derby
+         * table has more than one identity columns.
+         */
+        setIdentity = (! autoincrementGenerated) && isSourceRowResultSet();
+        autoincrementGenerated = true;
 
-  		if (bulkInsert)
-  		{
+        if (bulkInsert)
+        {
             if ( identitySequenceUUIDString == null )
             {
                 getOldStyleBulkInsertValue( index, increment );
@@ -554,10 +548,10 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
                 }
                 bulkInsertCounters[ index ].getCurrentValueAndAdvance( (NumberDataValue) aiCache[ index ] );
             }
-		}	
-		else
-		{
-			NumberDataValue newValue;
+        }	
+        else
+        {
+            NumberDataValue newValue;
 
             //
             // If there is a sequence generator uuid, then the database is at level
@@ -574,308 +568,304 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
                     ( identitySequenceUUIDString, aiCache[ index ].getTypeFormatId() );
             }
             
-			aiCache[index] = newValue;
-			if (setIdentity)
+            aiCache[index] = newValue;
+            if (setIdentity)
             {
-				identityVal = newValue.getLong();
+                identityVal = newValue.getLong();
             }
-		}
+        }
 
-		return (NumberDataValue) aiCache[index];
-	}
+        return (NumberDataValue) aiCache[index];
+    }
 
-     /**
-      * Identity generation logic for bulk-insert used in pre-10.11 databases.
-      *
-      * @param index   0-based index into aiCache
-      */
-     private void    getOldStyleBulkInsertValue( int index, long increment )
-         throws StandardException
-     {
-         NumberDataValue dvd;
-         int columnPosition = index + 1;
-         ColumnDescriptor cd = td.getColumnDescriptor(columnPosition);
-         long ret;
+    /**
+     * Identity generation logic for bulk-insert used in pre-10.11 databases.
+     *
+     * @param index   0-based index into aiCache
+     */
+    private void    getOldStyleBulkInsertValue( int index, long increment )
+        throws StandardException {
+        NumberDataValue dvd;
+        int columnPosition = index + 1;
+        ColumnDescriptor cd = td.getColumnDescriptor(columnPosition);
+        long ret;
  
-         // for bulk insert we have the table descriptor
-         //			System.out.println("in bulk insert");
-         if (aiCache[index].isNull())
-         {
-             long startValue;
+        // for bulk insert we have the table descriptor
+        //			System.out.println("in bulk insert");
+        if (aiCache[index].isNull())
+        {
+            long startValue;
  
-             if (bulkInsertReplace)
-             {
-                 startValue = cd.getAutoincStart();
-             }
-             else
-             {
-                 dvd = dd.getSetAutoincrementValue(
-                                                   constants.autoincRowLocation[index],
-                                                   tc, false, (NumberDataValue) aiCache[index], true);
-                 startValue = dvd.getLong();
-             }
-             lcc.autoincrementCreateCounter(td.getSchemaName(),
-                                            td.getName(),
-                                            cd.getColumnName(),
-                                            Long.valueOf(startValue),
-                                            increment,
-                                            columnPosition);
+            if (bulkInsertReplace)
+            {
+                startValue = cd.getAutoincStart();
+            }
+            else
+            {
+                dvd = dd.getSetAutoincrementValue(
+                    constants.autoincRowLocation[index],
+                    tc, false, (NumberDataValue) aiCache[index], true);
+                startValue = dvd.getLong();
+            }
+            lcc.autoincrementCreateCounter(td.getSchemaName(),
+                                           td.getName(),
+                                           cd.getColumnName(),
+                                           Long.valueOf(startValue),
+                                           increment,
+                                           columnPosition);
  			
-         }  		
-         ret = lcc.nextAutoincrementValue(td.getSchemaName(),
-                                          td.getName(),
-                                          cd.getColumnName());
-         aiCache[columnPosition - 1].setValue(ret);
-     }
+        }  		
+        ret = lcc.nextAutoincrementValue(td.getSchemaName(),
+                                         td.getName(),
+                                         cd.getColumnName());
+        aiCache[columnPosition - 1].setValue(ret);
+    }
  
-     /**
-      * Identity generation logic used in pre-10.11 databases.
-      *
-      * @param index   0-based index into aiCache
-      */
-     private NumberDataValue getOldStyleIdentityValue( int index )
-         throws StandardException
-     {
-         NumberDataValue newValue;
-         TransactionController nestedTC = null;
-         TransactionController tcToUse;
+    /**
+     * Identity generation logic used in pre-10.11 databases.
+     *
+     * @param index   0-based index into aiCache
+     */
+    private NumberDataValue getOldStyleIdentityValue( int index )
+        throws StandardException {
+        NumberDataValue newValue;
+        TransactionController nestedTC = null;
+        TransactionController tcToUse;
  
-         try
-         {
-             // DERBY-5780, defaulting log syncing to false, which improves
-             // performance of identity value generation.  If system 
-             // crashes may reuse an identity value because commit did not
-             // sync, but only if no subsequent user transaction has 
-             // committed or aborted and thus no row can exist that used
-             // the previous value.  Without this identity values pay
-             // a synchronous I/O to the log file for each new value no
-             // matter how many are inserted in a single transaction.
-             nestedTC = tc.startNestedUserTransaction(false, false);
-             tcToUse = nestedTC;
-         }
-         catch (StandardException se)
-         {
-             // If I cannot start a Nested User Transaction use the parent
-             // transaction to do all the work.
-             tcToUse = tc;
-         }
+        try
+        {
+            // DERBY-5780, defaulting log syncing to false, which improves
+            // performance of identity value generation.  If system 
+            // crashes may reuse an identity value because commit did not
+            // sync, but only if no subsequent user transaction has 
+            // committed or aborted and thus no row can exist that used
+            // the previous value.  Without this identity values pay
+            // a synchronous I/O to the log file for each new value no
+            // matter how many are inserted in a single transaction.
+            nestedTC = tc.startNestedUserTransaction(false, false);
+            tcToUse = nestedTC;
+        }
+        catch (StandardException se)
+        {
+            // If I cannot start a Nested User Transaction use the parent
+            // transaction to do all the work.
+            tcToUse = tc;
+        }
  
-         try 
-         {
-             /* If tcToUse == tc, then we are using parent xaction-- this
-                can happen if for some reason we couldn't start a nested
-                transaction
-             */
-             newValue = dd.getSetAutoincrementValue(
-                                                    constants.autoincRowLocation[index],
-                                                    tcToUse, true, (NumberDataValue) aiCache[index], (tcToUse == tc));
-         }
-         catch (StandardException se)
-         {
-             if (tcToUse == tc)
-             {
-                 /* we've using the parent xaction and we've timed out; just
-                    throw an error and exit.
-                 */
-                 throw se;
-             }
+        try 
+        {
+            /* If tcToUse == tc, then we are using parent xaction-- this
+               can happen if for some reason we couldn't start a nested
+               transaction
+            */
+            newValue = dd.getSetAutoincrementValue(
+                constants.autoincRowLocation[index],
+                tcToUse, true, (NumberDataValue) aiCache[index], (tcToUse == tc));
+        }
+        catch (StandardException se)
+        {
+            if (tcToUse == tc)
+            {
+                /* we've using the parent xaction and we've timed out; just
+                   throw an error and exit.
+                */
+                throw se;
+            }
  
-             if ( se.getMessageId().equals(SQLState.LOCK_TIMEOUT) || se.isSelfDeadlock() )
-             {
-                 // if we couldn't do this with a nested xaction, retry with
-                 // parent-- we need to wait this time!
-                 newValue = dd.getSetAutoincrementValue(
-                                                        constants.autoincRowLocation[index],
-                                                        tc, true, (NumberDataValue) aiCache[index], true);
-             }
-             else if (se.getMessageId().equals(SQLState.LANG_OUTSIDE_RANGE_FOR_DATATYPE))
-             {
-                 // if we got an overflow error, throw a more meaningful
-                 // error message
-                 throw StandardException.newException(
-                                                      SQLState.LANG_AI_OVERFLOW,
-                                                      se,
-                                                      constants.getTableName(),
-                                                      constants.getColumnName(index));
-             }
-             else throw se;
-         }
-         finally 
-         {
-             // no matter what, commit the nested transaction; if something
-             // bad happened in the child xaction lets not abort the parent
-             // here.
+            if ( se.getMessageId().equals(SQLState.LOCK_TIMEOUT) || se.isSelfDeadlock() )
+            {
+                // if we couldn't do this with a nested xaction, retry with
+                // parent-- we need to wait this time!
+                newValue = dd.getSetAutoincrementValue(
+                    constants.autoincRowLocation[index],
+                    tc, true, (NumberDataValue) aiCache[index], true);
+            }
+            else if (se.getMessageId().equals(SQLState.LANG_OUTSIDE_RANGE_FOR_DATATYPE))
+            {
+                // if we got an overflow error, throw a more meaningful
+                // error message
+                throw StandardException.newException(
+                    SQLState.LANG_AI_OVERFLOW,
+                    se,
+                    constants.getTableName(),
+                    constants.getColumnName(index));
+            }
+            else throw se;
+        }
+        finally 
+        {
+            // no matter what, commit the nested transaction; if something
+            // bad happened in the child xaction lets not abort the parent
+            // here.
                  
-             if (nestedTC != null)
-             {
-                 // DERBY-5493 - prior to fix all nested user update 
-                 // transactions did a nosync commit when commit() was 
-                 // called, this default has been changed to do synced 
-                 // commit.  Changed this commit to be commitNoSync to
-                 // not introduce performce degredation for autoincrement
-                 // keys.  As before, if server crashes the changes 
-                 // made in the nested transaction may be lost.  If any
-                 // subsequent user transaction is commited, including any
-                 // inserts that would depend on the autoincrement value
-                 // change then the nested tranaction is guaranteed on
-                 // system crash.
-                 nestedTC.commitNoSync(TransactionController.RELEASE_LOCKS);
-                 nestedTC.destroy();
-             }
-         }
+            if (nestedTC != null)
+            {
+                // DERBY-5493 - prior to fix all nested user update 
+                // transactions did a nosync commit when commit() was 
+                // called, this default has been changed to do synced 
+                // commit.  Changed this commit to be commitNoSync to
+                // not introduce performce degredation for autoincrement
+                // keys.  As before, if server crashes the changes 
+                // made in the nested transaction may be lost.  If any
+                // subsequent user transaction is commited, including any
+                // inserts that would depend on the autoincrement value
+                // change then the nested tranaction is guaranteed on
+                // system crash.
+                nestedTC.commitNoSync(TransactionController.RELEASE_LOCKS);
+                nestedTC.destroy();
+            }
+        }
  
-         return newValue;
-     }
+        return newValue;
+    }
      
-	// Is sourceResultSet a RowResultSet (values clause)?
-	private boolean isSourceRowResultSet ()
+    // Is sourceResultSet a RowResultSet (values clause)?
+    private boolean isSourceRowResultSet ()
 	{
-		boolean isRow = false;
-		if (sourceResultSet instanceof NormalizeResultSet)
-			isRow = (((NormalizeResultSet) sourceResultSet).source instanceof RowResultSet);
-		return isRow;
+            boolean isRow = false;
+            if (sourceResultSet instanceof NormalizeResultSet)
+                isRow = (((NormalizeResultSet) sourceResultSet).source instanceof RowResultSet);
+            return isRow;
 	}
 
     // checks if source result set is a RowResultSet type.
-    private boolean isSingleRowResultSet()
-    {
+    private boolean isSingleRowResultSet() {
         boolean isRow = false;
         
         if (sourceResultSet instanceof RowResultSet)
-        	isRow = true;
+            isRow = true;
         else if (sourceResultSet instanceof NormalizeResultSet)
             isRow = (((NormalizeResultSet) sourceResultSet).source instanceof RowResultSet);
         
         return isRow;
     }
 	
-	// Do the work for a "normal" insert
-	private void normalInsertCore(LanguageConnectionContext lcc, boolean firstExecute)
-		throws StandardException
-	{
-		boolean setUserIdentity = constants.hasAutoincrement() && isSingleRowResultSet();
+    // Do the work for a "normal" insert
+    private void normalInsertCore(LanguageConnectionContext lcc, boolean firstExecute)
+        throws StandardException {
+        boolean setUserIdentity = constants.hasAutoincrement() && isSingleRowResultSet();
         ExecRow deferredRowBuffer;
         long user_autoinc=0;
                         
-		/* Get or re-use the row changer.
-		 */
-		if (firstExecute)
-		{
-			rowChanger = lcc.getLanguageConnectionFactory().getExecutionFactory()
-						     .getRowChanger(
-									 heapConglom,
-									 constants.heapSCOCI,
-									 heapDCOCI,
-									 constants.irgs,
-									 constants.indexCIDS,
-									 constants.indexSCOCIs,
-									 indexDCOCIs,
-									 0, // number of columns in partial row meaningless for insert
-									 tc,
-									 null, //Changed column ids
-									 constants.getStreamStorableHeapColIds(),
-									 activation
-							       );
-			rowChanger.setIndexNames(constants.indexNames);
-		}
+        /* Get or re-use the row changer.
+         */
+        if (firstExecute)
+        {
+            rowChanger = lcc.getLanguageConnectionFactory().getExecutionFactory()
+                .getRowChanger(
+                    heapConglom,
+                    constants.heapSCOCI,
+                    heapDCOCI,
+                    constants.irgs,
+                    constants.indexCIDS,
+                    constants.indexSCOCIs,
+                    indexDCOCIs,
+                    0, // number of columns in partial row meaningless for insert
+                    tc,
+                    null, //Changed column ids
+                    constants.getStreamStorableHeapColIds(),
+                    activation
+                    );
+            rowChanger.setIndexNames(constants.indexNames);
+        }
 
-		/* decode lock mode for the execution isolation level */
-		int lockMode = decodeLockMode(constants.lockMode);
+        /* decode lock mode for the execution isolation level */
+        int lockMode = decodeLockMode(constants.lockMode);
 
-		rowChanger.open(lockMode);
+        rowChanger.open(lockMode);
 
-		/* The source does not know whether or not we are doing a
-		 * deferred mode insert.  If we are, then we must clear the
-		 * index scan info from the activation so that the row changer
-		 * does not re-use that information (which won't be valid for
-		 * a deferred mode insert).
-		 */
-		if (constants.deferred)
-		{
-			activation.clearIndexScanInfo();
-		}
+        /* The source does not know whether or not we are doing a
+         * deferred mode insert.  If we are, then we must clear the
+         * index scan info from the activation so that the row changer
+         * does not re-use that information (which won't be valid for
+         * a deferred mode insert).
+         */
+        if (constants.deferred)
+        {
+            activation.clearIndexScanInfo();
+        }
 
-		if (fkInfoArray != null)
-		{
-			if (fkChecker == null)
-			{
+        if (fkInfoArray != null)
+        {
+            if (fkChecker == null)
+            {
                 fkChecker = new RISetChecker(lcc, tc, fkInfoArray);
-			}
-			else
-			{
-				fkChecker.reopen();
-			}
-		}
+            }
+            else
+            {
+                fkChecker.reopen();
+            }
+        }
 
-		if (firstExecute && constants.deferred)
-		{
-			Properties properties = new Properties();
+        if (firstExecute && constants.deferred)
+        {
+            Properties properties = new Properties();
 
-			// Get the properties on the old heap
-			rowChanger.getHeapConglomerateController().getInternalTablePropertySet(properties);
+            // Get the properties on the old heap
+            rowChanger.getHeapConglomerateController().getInternalTablePropertySet(properties);
 
-			/*
-			** If deferred we save a copy of the entire row.
-			*/
-			rowHolder = new TemporaryRowHolderImpl(activation, properties,
-												   resultDescription);
-			rowChanger.setRowHolder(rowHolder);
-		}
+            /*
+            ** If deferred we save a copy of the entire row.
+            */
+            rowHolder = new TemporaryRowHolderImpl(activation, properties,
+                                                   resultDescription);
+            rowChanger.setRowHolder(rowHolder);
+        }
 
-		firstExecuteSpecialHandlingAutoGen(firstExecute, rowChanger, constants.targetUUID);
+        firstExecuteSpecialHandlingAutoGen(firstExecute, rowChanger, constants.targetUUID);
 
-		while ( row != null )
-		{
+        while ( row != null )
+        {
             // Collect auto-generated keys if requested.
             // DERBY-5823: No need to collect them if there are no
             // auto-generated key columns.
             if (activation.getAutoGeneratedKeysResultsetMode() &&
-                    autoGeneratedKeysColumnIndexes.length > 0) {
+                autoGeneratedKeysColumnIndexes.length > 0) {
                 autoGeneratedKeysRowsHolder.insert(
-                        getCompactRow(row, autoGeneratedKeysColumnIndexes));
+                    getCompactRow(row, autoGeneratedKeysColumnIndexes));
             }
 
             // fill in columns that are computed from expressions on other columns
             evaluateGenerationClauses( generationClauses, activation, sourceResultSet, row, false );
                     
-			/*
-			** If we're doing a deferred insert, insert into the temporary
-			** conglomerate.  Otherwise, insert directly into the permanent
-			** conglomerates using the rowChanger.
-			*/
-			if (constants.deferred)
-			{
-					rowHolder.insert(row);
-			}
-			else
-			{
+            /*
+            ** If we're doing a deferred insert, insert into the temporary
+            ** conglomerate.  Otherwise, insert directly into the permanent
+            ** conglomerates using the rowChanger.
+            */
+            if (constants.deferred)
+            {
+                rowHolder.insert(row);
+            }
+            else
+            {
                 // Immediate mode violations will throw, so we only ever
                 // see false here with deferred constraint mode for one or more
                 // of the constraints being checked.
                 boolean allOk = evaluateCheckConstraints();
 
-				if (fkChecker != null)
-				{
+                if (fkChecker != null)
+                {
                     fkChecker.doFKCheck(activation, row);
-				}
+                }
 
-				// Objectify any streaming columns that are indexed.
-				if (constants.irgs.length > 0)
-				{
-					DataValueDescriptor[] rowArray = row.getRowArray();
-					for (int i = 0; i < rowArray.length; i++)
-					{
-						//System.out.println("checking " + i);
-						if (! constants.indexedCols[i])
-						{
-							continue;
-						}
+                // Objectify any streaming columns that are indexed.
+                if (constants.irgs.length > 0)
+                {
+                    DataValueDescriptor[] rowArray = row.getRowArray();
+                    for (int i = 0; i < rowArray.length; i++)
+                    {
+                        //System.out.println("checking " + i);
+                        if (! constants.indexedCols[i])
+                        {
+                            continue;
+                        }
 
 
-						if (rowArray[i] instanceof StreamStorable)
-							rowArray[i].getObject();
-					}
-				}
+                        if (rowArray[i] instanceof StreamStorable)
+                            rowArray[i].getObject();
+                    }
+                }
 
                 if (allOk) {
                     rowChanger.insertRow(row, false);
@@ -892,110 +882,110 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
                             offendingRow,
                             new CheckInfo[1] /* dummy */);
                 }
-			}
+            }
 
             rowCount++;
             
             if(setUserIdentity )
             {
-                        dd = lcc.getDataDictionary();
-                        td = dd.getTableDescriptor(constants.targetUUID);
+                dd = lcc.getDataDictionary();
+                td = dd.getTableDescriptor(constants.targetUUID);
                        
-                        int maxColumns = td.getMaxColumnID();
-                        int col;
+                int maxColumns = td.getMaxColumnID();
+                int col;
                         
-                        for(col=1;col<=maxColumns;col++)
-                        {
-                            ColumnDescriptor cd = td.getColumnDescriptor(col);
-                            if(cd.isAutoincrement())
-                            {
-                                break;
-                            }
-                        }
+                for(col=1;col<=maxColumns;col++)
+                {
+                    ColumnDescriptor cd = td.getColumnDescriptor(col);
+                    if(cd.isAutoincrement())
+                    {
+                        break;
+                    }
+                }
                         
-                        if(col <= maxColumns)
-                        {
-                            DataValueDescriptor dvd = row.cloneColumn(col);
-                            user_autoinc = dvd.getLong();
-                        }
-             } 
+                if(col <= maxColumns)
+                {
+                    DataValueDescriptor dvd = row.cloneColumn(col);
+                    user_autoinc = dvd.getLong();
+                }
+            } 
 
-			// No need to do a next on a single row source
-             if (constants.singleRowSource)
-	     {
-			row = null;
-	     }
-	     else
-	     {
+            // No need to do a next on a single row source
+            if (constants.singleRowSource)
+            {
+                row = null;
+            }
+            else
+            {
 		row = getNextRowCore(sourceResultSet);
-	     }
+            }
         }
 
-		/*
-		** If it's a deferred insert, scan the temporary conglomerate and
-		** insert the rows into the permanent conglomerates using rowChanger.
-		*/
-		if (constants.deferred)
-		{
-			if (triggerInfo != null)
-			{
-				Vector<AutoincrementCounter> v = null;
-				if (aiCache != null)
-				{
-					v = new Vector<AutoincrementCounter>();
-					for (int i = 0; i < aiCache.length; i++)
-					{
-						String s, t, c;
-						if (aiCache[i] == null)
-							continue;
+        /*
+        ** If it's a deferred insert, scan the temporary conglomerate and
+        ** insert the rows into the permanent conglomerates using rowChanger.
+        */
+        if (constants.deferred)
+        {
+            if (triggerInfo != null)
+            {
+                Vector<AutoincrementCounter> v = null;
+                if (aiCache != null)
+                {
+                    v = new Vector<AutoincrementCounter>();
+                    for (int i = 0; i < aiCache.length; i++)
+                    {
+                        String s, t, c;
+                        if (aiCache[i] == null)
+                            continue;
 					
-						Long initialValue = 
-							lcc.lastAutoincrementValue(
-											(s = constants.getSchemaName()),
-											(t = constants.getTableName()),
-											(c = constants.getColumnName(i)));
+                        Long initialValue = 
+                            lcc.lastAutoincrementValue(
+                                (s = constants.getSchemaName()),
+                                (t = constants.getTableName()),
+                                (c = constants.getColumnName(i)));
 
 
-						AutoincrementCounter aic = 
-							new AutoincrementCounter(
-											 initialValue,
-											 constants.getAutoincIncrement(i),
-											 aiCache[i].getLong(),
-											 s, t, c, i + 1);
-						v.addElement(aic);
-					}
-				}
+                        AutoincrementCounter aic = 
+                            new AutoincrementCounter(
+                                initialValue,
+                                constants.getAutoincIncrement(i),
+                                aiCache[i].getLong(),
+                                s, t, c, i + 1);
+                        v.addElement(aic);
+                    }
+                }
 
-				if (triggerActivator == null)
-				{
-					triggerActivator = new TriggerEventActivator(lcc, 
-										constants.targetUUID,
-										triggerInfo,
-										TriggerExecutionContext.INSERT_EVENT,
-										activation, 
-										v);
-				}
-				else
-				{
-					triggerActivator.reopen();
-				}
+                if (triggerActivator == null)
+                {
+                    triggerActivator = new TriggerEventActivator(lcc, 
+                                                                 constants.targetUUID,
+                                                                 triggerInfo,
+                                                                 TriggerExecutionContext.INSERT_EVENT,
+                                                                 activation, 
+                                                                 v);
+                }
+                else
+                {
+                    triggerActivator.reopen();
+                }
 
-				// fire BEFORE trigger, do this before checking constraints
-				triggerActivator.notifyEvent(TriggerEvents.BEFORE_INSERT, 
-												(CursorResultSet)null,
-												rowHolder.getResultSet(), 
-												(int[])null);
-			}
+                // fire BEFORE trigger, do this before checking constraints
+                triggerActivator.notifyEvent(TriggerEvents.BEFORE_INSERT, 
+                                             (CursorResultSet)null,
+                                             rowHolder.getResultSet(), 
+                                             (int[])null);
+            }
 
-			CursorResultSet rs = rowHolder.getResultSet();
-			try
-			{
-				rs.open();
-				while ((deferredRowBuffer = rs.getNextRow()) != null)
-				{
-					// we have to set the source row so the check constraint
-					// sees the correct row.
-					sourceResultSet.setCurrentRow(deferredRowBuffer);
+            CursorResultSet rs = rowHolder.getResultSet();
+            try
+            {
+                rs.open();
+                while ((deferredRowBuffer = rs.getNextRow()) != null)
+                {
+                    // we have to set the source row so the check constraint
+                    // sees the correct row.
+                    sourceResultSet.setCurrentRow(deferredRowBuffer);
                     boolean allOk = evaluateCheckConstraints();
 
                     if (allOk) {
@@ -1014,71 +1004,70 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
                                 offendingRow,
                                 new CheckInfo[1]);
                     }
-				}
-			} finally
-			{
-				sourceResultSet.clearCurrentRow();
-				rs.close();
-			}
+                }
+            } finally
+            {
+                sourceResultSet.clearCurrentRow();
+                rs.close();
+            }
 			
-			if (fkChecker != null)
-			{
-				/*
-				** Second scan to make sure all the foreign key
-				** constraints are ok.  We have to do this after
-				** we have completed the inserts in case of self
-				** referencing constraints.
-				*/
-				rs = rowHolder.getResultSet();
-				try
-				{
-					rs.open();
-					while ((deferredRowBuffer = rs.getNextRow()) != null)
-					{
-                        fkChecker.doFKCheck(activation, deferredRowBuffer);
-					}
-				} finally
-				{
-					rs.close();
-				}
-			}
-
-			// fire AFTER trigger
-			if (triggerActivator != null)
-			{
-				triggerActivator.notifyEvent(TriggerEvents.AFTER_INSERT, 
-										(CursorResultSet)null,
-										rowHolder.getResultSet(), 
-										(int[])null);
-			}
-		}
-
-		if (rowHolder != null)
-		{
-			rowHolder.close();
-			// rowHolder kept across opens
-		}
-		if (fkChecker != null)
-		{
-			fkChecker.close();
-			fkChecker = null;
-		}
-		if (setIdentity)
-			lcc.setIdentityValue(identityVal);
+            if (fkChecker != null)
+            {
                 /*
-                 * find the value of the identity column from the user inserted value
-                 * and do a lcc.setIdentityValue(<user_value>);
-                 */
-                else if(setUserIdentity )
+                ** Second scan to make sure all the foreign key
+                ** constraints are ok.  We have to do this after
+                ** we have completed the inserts in case of self
+                ** referencing constraints.
+                */
+                rs = rowHolder.getResultSet();
+                try
                 {
-                        lcc.setIdentityValue(user_autoinc);
-                } 
- }
+                    rs.open();
+                    while ((deferredRowBuffer = rs.getNextRow()) != null)
+                    {
+                        fkChecker.doFKCheck(activation, deferredRowBuffer);
+                    }
+                } finally
+                {
+                    rs.close();
+                }
+            }
+
+            // fire AFTER trigger
+            if (triggerActivator != null)
+            {
+                triggerActivator.notifyEvent(TriggerEvents.AFTER_INSERT, 
+                                             (CursorResultSet)null,
+                                             rowHolder.getResultSet(), 
+                                             (int[])null);
+            }
+        }
+
+        if (rowHolder != null)
+        {
+            rowHolder.close();
+            // rowHolder kept across opens
+        }
+        if (fkChecker != null)
+        {
+            fkChecker.close();
+            fkChecker = null;
+        }
+        if (setIdentity)
+            lcc.setIdentityValue(identityVal);
+        /*
+         * find the value of the identity column from the user inserted value
+         * and do a lcc.setIdentityValue(<user_value>);
+         */
+        else if(setUserIdentity )
+        {
+            lcc.setIdentityValue(user_autoinc);
+        } 
+    }
 
     @Override
-	protected ExecRow getNextRowCore( NoPutResultSet source )
-		throws StandardException
-	{
+    protected ExecRow getNextRowCore( NoPutResultSet source )
+        throws StandardException {
         ExecRow nextRow = super.getNextRowCore( source );
 
         if ( (nextRow != null) && constants.underMerge() ) {
@@ -1086,16 +1075,15 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
         }
 
         return nextRow;
-	}
+    }
 
     /**
      * <p>
      * Special handling if this is an INSERT action of a MERGE statement.
      * </p>
      */
-	private ExecRow processMergeRow( NoPutResultSet sourceRS, ExecRow row )
-		throws StandardException
-	{
+    private ExecRow processMergeRow( NoPutResultSet sourceRS, ExecRow row )
+        throws StandardException {
         //
         // The normal processing of autogenerated columns happens in
         // the evaluation of the driving ResultSet. That processing assumes
@@ -1116,9 +1104,12 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
             // If the identity column was declared BY DEFAULT, then it could be
             // overridden by the WHEN NOT MATCHED clause. In that case, the
             // row will contain a non-null value which we do not want to clobber.
+            // Commented code preserves previous attempts to solve this situation--
+            // in case this issue needs to be revisited.
             //
             //boolean needToGenerateValue = ( dvd == null ) || ( dvd.isNullOp().getBoolean() );
-            boolean needToGenerateValue = ( dvd == null );
+            //boolean needToGenerateValue = ( dvd == null );
+            boolean needToGenerateValue = ( dvd == null ) || constants.autoincrementColumnSetToDEFAULT();
 
             if ( needToGenerateValue )
             {
@@ -1129,79 +1120,78 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
         }
 
         return normalizeRow( sourceRS, row );
-	}
+    }
 
-	// Do the work for a bulk insert
+    // Do the work for a bulk insert
     private void bulkInsertCore(LanguageConnectionContext lcc,
                                 ExecRow fullTemplate,
-								long oldHeapConglom)
-		throws StandardException
-	{
-		bulkHeapCC = tc.openCompiledConglomerate(
-                                false,
-                                TransactionController.OPENMODE_FORUPDATE,
-                                TransactionController.MODE_TABLE,
-                                TransactionController.ISOLATION_SERIALIZABLE,
-								constants.heapSCOCI,
-								heapDCOCI);
+                                long oldHeapConglom)
+        throws StandardException {
+        bulkHeapCC = tc.openCompiledConglomerate(
+            false,
+            TransactionController.OPENMODE_FORUPDATE,
+            TransactionController.MODE_TABLE,
+            TransactionController.ISOLATION_SERIALIZABLE,
+            constants.heapSCOCI,
+            heapDCOCI);
 
-		long newHeapConglom;
+        long newHeapConglom;
 
-		Properties properties = new Properties();
+        Properties properties = new Properties();
 
-		// Get the properties on the old heap
-		bulkHeapCC.getInternalTablePropertySet(properties);
+        // Get the properties on the old heap
+        bulkHeapCC.getInternalTablePropertySet(properties);
 
         if (triggerInfo != null) {
             // no triggers in bulk insert mode
             if (SanityManager.DEBUG) {
                 SanityManager.NOTREACHED();
             }
-		}
+        }
 
-		/*
-		** If we have a before row trigger, then we
-		** are going to use a row holder pass to our
-		** trigger.
-		*/
-		if (hasBeforeRowTrigger && rowHolder != null)
-		{
-			rowHolder =
-				new TemporaryRowHolderImpl(activation, properties,
-										   resultDescription);
-		}
+        /*
+        ** If we have a before row trigger, then we
+        ** are going to use a row holder pass to our
+        ** trigger.
+        */
+        if (hasBeforeRowTrigger && rowHolder != null)
+        {
+            rowHolder =
+                new TemporaryRowHolderImpl(activation, properties,
+                                           resultDescription);
+        }
 
-		// Add any new properties or change the values of any existing properties
-		Properties targetProperties = constants.getTargetProperties();
-		Enumeration key = targetProperties.keys();
-		while (key.hasMoreElements())
-		{
-			String keyValue = (String) key.nextElement();
-			properties.put(keyValue, targetProperties.getProperty(keyValue));
-		}
+        // Add any new properties or change the values of any existing properties
+        Properties targetProperties = constants.getTargetProperties();
+        Enumeration key = targetProperties.keys();
+        while (key.hasMoreElements())
+        {
+            String keyValue = (String) key.nextElement();
+            properties.put(keyValue, targetProperties.getProperty(keyValue));
+        }
 
-		// Are there indexes to be updated?
-		if (constants.irgs.length > 0)
-		{
-			// Tell source whether or not we need the RIDs back
-			sourceResultSet.setNeedsRowLocation(true);
-		}
+        // Are there indexes to be updated?
+        if (constants.irgs.length > 0)
+        {
+            // Tell source whether or not we need the RIDs back
+            sourceResultSet.setNeedsRowLocation(true);
+        }
 
         if (constants.hasDeferrableChecks) {
             sourceResultSet.setHasDeferrableChecks();
         }
 
 
-		dd = lcc.getDataDictionary();
-		td = dd.getTableDescriptor(constants.targetUUID);
+        dd = lcc.getDataDictionary();
+        td = dd.getTableDescriptor(constants.targetUUID);
 
-		/* Do the bulk insert - only okay to reuse the
-		 * same conglomerate if bulkInsert.
-		 */
-		long[] loadedRowCount = new long[1];
-		if (bulkInsertReplace)
-		{
-			newHeapConglom = 
+        /* Do the bulk insert - only okay to reuse the
+         * same conglomerate if bulkInsert.
+         */
+        long[] loadedRowCount = new long[1];
+        if (bulkInsertReplace)
+        {
+            newHeapConglom = 
                 tc.createAndLoadConglomerate(
                     "heap",
                     fullTemplate.getRowArray(),
@@ -1211,10 +1201,10 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
                     TransactionController.IS_DEFAULT,
                     sourceResultSet,
                     loadedRowCount);
-		}
-		else
-		{
-			newHeapConglom = 
+        }
+        else
+        {
+            newHeapConglom = 
                 tc.recreateAndLoadConglomerate(
                     "heap",
                     false,
@@ -1226,32 +1216,32 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
                     oldHeapConglom,
                     sourceResultSet,
                     loadedRowCount);
-		}
+        }
 
-		/* Nothing else to do if we get back the same conglomerate number.
-		 * (In 2.0 this means that 0 rows were inserted.)
-		 */
-		if (newHeapConglom == oldHeapConglom)
-		{
+        /* Nothing else to do if we get back the same conglomerate number.
+         * (In 2.0 this means that 0 rows were inserted.)
+         */
+        if (newHeapConglom == oldHeapConglom)
+        {
             return;
-		}
+        }
 
-		// Find out how many rows were inserted
-		rowCount = loadedRowCount[0];
+        // Find out how many rows were inserted
+        rowCount = loadedRowCount[0];
 
-		// Set the "estimated" row count
-		setEstimatedRowCount(newHeapConglom);
+        // Set the "estimated" row count
+        setEstimatedRowCount(newHeapConglom);
 
-		/*
-		** Inform the data dictionary that we are about to write to it.
-		** There are several calls to data dictionary "get" methods here
-		** that might be done in "read" mode in the data dictionary, but
-		** it seemed safer to do this whole operation in "write" mode.
-		**
-		** We tell the data dictionary we're done writing at the end of
-		** the transaction.
-		*/
-		dd.startWriting(lcc);
+        /*
+        ** Inform the data dictionary that we are about to write to it.
+        ** There are several calls to data dictionary "get" methods here
+        ** that might be done in "read" mode in the data dictionary, but
+        ** it seemed safer to do this whole operation in "write" mode.
+        **
+        ** We tell the data dictionary we're done writing at the end of
+        ** the transaction.
+        */
+        dd.startWriting(lcc);
 
         //
         // If we were doing bulkInsert, then we need to flush the last
@@ -1272,388 +1262,384 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
             }
         }
 
-		// invalidate any prepared statements that
-		// depended on this table (including this one)
-		DependencyManager dm = dd.getDependencyManager();
+        // invalidate any prepared statements that
+        // depended on this table (including this one)
+        DependencyManager dm = dd.getDependencyManager();
 
-		dm.invalidateFor(td, DependencyManager.BULK_INSERT, lcc);
+        dm.invalidateFor(td, DependencyManager.BULK_INSERT, lcc);
 
 		
-		// Update all indexes
-		if (constants.irgs.length > 0)
-		{
+        // Update all indexes
+        if (constants.irgs.length > 0)
+        {
 //            MEN VI HAR MANGE SORTS, EN PR INDEX: alle blir droppet, hvordan
 //                    assossiere alle med nye indekser som tildeles inni her???
 //                            FIXME!!
-			updateAllIndexes(newHeapConglom, constants, td, dd, fullTemplate);
-		}
+            updateAllIndexes(newHeapConglom, constants, td, dd, fullTemplate);
+        }
 
-		// Drop the old conglomerate
-		bulkHeapCC.close();
-		bulkHeapCC = null;
+        // Drop the old conglomerate
+        bulkHeapCC.close();
+        bulkHeapCC = null;
 
-		/* Update the DataDictionary
-		 * RESOLVE - this will change in 1.4 because we will get
-		 * back the same conglomerate number
-		 */
-		// Get the ConglomerateDescriptor for the heap
-		ConglomerateDescriptor cd = td.getConglomerateDescriptor(oldHeapConglom);
+        /* Update the DataDictionary
+         * RESOLVE - this will change in 1.4 because we will get
+         * back the same conglomerate number
+         */
+        // Get the ConglomerateDescriptor for the heap
+        ConglomerateDescriptor cd = td.getConglomerateDescriptor(oldHeapConglom);
 
-		// Update sys.sysconglomerates with new conglomerate #
-		dd.updateConglomerateDescriptor(cd, newHeapConglom, tc);
-		tc.dropConglomerate(oldHeapConglom);
-		// END RESOLVE
-	}
+        // Update sys.sysconglomerates with new conglomerate #
+        dd.updateConglomerateDescriptor(cd, newHeapConglom, tc);
+        tc.dropConglomerate(oldHeapConglom);
+        // END RESOLVE
+    }
 
-	/**
-	** Bulk Referential Integrity Checker
-	*/
+    /**
+     ** Bulk Referential Integrity Checker
+     */
     private void bulkValidateForeignKeys(
-            TransactionController tc, ContextManager cm, ExecRow fullTemplate)
-		throws StandardException
-	{
-		/*
-		** If there are no foreign keys, then nothing to worry 
-		** about.
-		** With bulk insert replace, we still need to verify 
-		** all non-self referencing foreign keys when
-		** there are no rows inserted into the table.
-		*/
-		if ((indexRows == null && !bulkInsertReplace) || 
-			fkInfoArray == null)
-		{
-			return;
-		}
+        TransactionController tc, ContextManager cm, ExecRow fullTemplate)
+        throws StandardException {
+        /*
+        ** If there are no foreign keys, then nothing to worry 
+        ** about.
+        ** With bulk insert replace, we still need to verify 
+        ** all non-self referencing foreign keys when
+        ** there are no rows inserted into the table.
+        */
+        if ((indexRows == null && !bulkInsertReplace) || 
+            fkInfoArray == null)
+        {
+            return;
+        }
 
         for (FKInfo fkInfo : fkInfoArray)
-		{
+        {
 
-			/* With regular bulk insert, we only need to check the
-			 * foreign keys in the table we inserted into.  We need
-			 * to get the new conglomerate #s for the foreign keys.
-			 *
-			 * With bulk insert replace, we need to check both the
-			 * foreign keys in the table as well as any foreign keys
-			 * on other tables referencing the table we inserted into.
-			 * If the foreign key is self-referencing then we need to
-			 * get the new conglomerate #, otherwise the conglomerate
-			 * # is the same as the compile time conglomerate #.
-			 * If the foreign key is self-referencing then we need to
-			 * get the new conglomerate # for the primary key as it
-			 * has changed.  However, if the foreign key is not self-referencing
-			 * then we only need to get the new conglomerate # for
-			 * the primary key if the primary key is on the table being 
-			 * inserted into.
-			 */
-			if (bulkInsertReplace)
-			{
-				for (int index = 0; index < fkInfo.fkConglomNumbers.length; index++)
-				{
-					/* No need to check foreign key if it is self referencing
-					 * and there were no rows inserted on the replace, as both
-					 * indexes will be empty.
-					 */
-					if (fkInfo.fkIsSelfReferencing[index] && indexRows == null)
-					{
-						continue;
-					}
+            /* With regular bulk insert, we only need to check the
+             * foreign keys in the table we inserted into.  We need
+             * to get the new conglomerate #s for the foreign keys.
+             *
+             * With bulk insert replace, we need to check both the
+             * foreign keys in the table as well as any foreign keys
+             * on other tables referencing the table we inserted into.
+             * If the foreign key is self-referencing then we need to
+             * get the new conglomerate #, otherwise the conglomerate
+             * # is the same as the compile time conglomerate #.
+             * If the foreign key is self-referencing then we need to
+             * get the new conglomerate # for the primary key as it
+             * has changed.  However, if the foreign key is not self-referencing
+             * then we only need to get the new conglomerate # for
+             * the primary key if the primary key is on the table being 
+             * inserted into.
+             */
+            if (bulkInsertReplace)
+            {
+                for (int index = 0; index < fkInfo.fkConglomNumbers.length; index++)
+                {
+                    /* No need to check foreign key if it is self referencing
+                     * and there were no rows inserted on the replace, as both
+                     * indexes will be empty.
+                     */
+                    if (fkInfo.fkIsSelfReferencing[index] && indexRows == null)
+                    {
+                        continue;
+                    }
 
-					long pkConglom;
-					long fkConglom;
+                    long pkConglom;
+                    long fkConglom;
 
-					if (fkInfo.fkIsSelfReferencing[index])
-					{
-						/* Self-referencing foreign key.  Both conglomerate
-						 * #s have changed.
-						 */
-						pkConglom = (indexConversionTable.get(
-                            Long.valueOf(fkInfo.refConglomNumber))).longValue();
-						fkConglom = (indexConversionTable.get(
-                            Long.valueOf(fkInfo.fkConglomNumbers[index]))).
+                    if (fkInfo.fkIsSelfReferencing[index])
+                    {
+                        /* Self-referencing foreign key.  Both conglomerate
+                         * #s have changed.
+                         */
+                        pkConglom = (indexConversionTable.get(
+                                         Long.valueOf(fkInfo.refConglomNumber))).longValue();
+                        fkConglom = (indexConversionTable.get(
+                                         Long.valueOf(fkInfo.fkConglomNumbers[index]))).
                             longValue();
-					}
-					else
-					{
-						/* Non-self referencing foreign key.  At this point we
-						 * don't know if the primary key or the foreign key is
-						 * on this table.  So, for each one, we look to see
-						 * if the old conglomerate # is in the conversion table.
-						 * If so, then we get the new conglomerate #, otherwise
-						 * we use the compile time conglomerate #.  This
-						 * is very simple, though not very elegant.
-						 */
-						Long pkConglomLong = indexConversionTable.get(
+                    }
+                    else
+                    {
+                        /* Non-self referencing foreign key.  At this point we
+                         * don't know if the primary key or the foreign key is
+                         * on this table.  So, for each one, we look to see
+                         * if the old conglomerate # is in the conversion table.
+                         * If so, then we get the new conglomerate #, otherwise
+                         * we use the compile time conglomerate #.  This
+                         * is very simple, though not very elegant.
+                         */
+                        Long pkConglomLong = indexConversionTable.get(
                             Long.valueOf(fkInfo.refConglomNumber));
-						Long fkConglomLong = indexConversionTable.get(
+                        Long fkConglomLong = indexConversionTable.get(
                             Long.valueOf(fkInfo.fkConglomNumbers[index]));
 
-						if (pkConglomLong == null)
-						{
-							pkConglom = fkInfo.refConglomNumber;
-						}
-						else
-						{
-							pkConglom = pkConglomLong.longValue();
-						}
-						if (fkConglomLong == null)
-						{
-							fkConglom = fkInfo.fkConglomNumbers[index];
-						}
-						else
-						{
-							fkConglom = fkConglomLong.longValue();
-						}
-					}
-					bulkValidateForeignKeysCore(
-                            tc, cm, fkInfo, fkConglom, pkConglom,
-							fkInfo.fkConstraintNames[index], fullTemplate);
-				}
-			}
-			else
-			{
-				/*
-				** We have a FKInfo for each foreign key we are
-				** checking.  Note that there are no primary key
-				** checks on insert, so we can always reference
-				** element[0] in the current FKInfo structure.
-				*/ 
-				if (SanityManager.DEBUG)
-				{
-					SanityManager.ASSERT(fkInfo.type == FKInfo.FOREIGN_KEY, 
-						"error, expected to only check foreign keys on insert");
-				}
-				Long fkConglom = indexConversionTable.get(fkInfo.fkConglomNumbers[0]);
-				bulkValidateForeignKeysCore(
-                        tc, cm, fkInfo, fkConglom.longValue(),
-						fkInfo.refConglomNumber, fkInfo.fkConstraintNames[0],
-                        fullTemplate);
-			}
-		}
-	}
+                        if (pkConglomLong == null)
+                        {
+                            pkConglom = fkInfo.refConglomNumber;
+                        }
+                        else
+                        {
+                            pkConglom = pkConglomLong.longValue();
+                        }
+                        if (fkConglomLong == null)
+                        {
+                            fkConglom = fkInfo.fkConglomNumbers[index];
+                        }
+                        else
+                        {
+                            fkConglom = fkConglomLong.longValue();
+                        }
+                    }
+                    bulkValidateForeignKeysCore(
+                        tc, cm, fkInfo, fkConglom, pkConglom,
+                        fkInfo.fkConstraintNames[index], fullTemplate);
+                }
+            }
+            else
+            {
+                /*
+                ** We have a FKInfo for each foreign key we are
+                ** checking.  Note that there are no primary key
+                ** checks on insert, so we can always reference
+                ** element[0] in the current FKInfo structure.
+                */ 
+                if (SanityManager.DEBUG)
+                {
+                    SanityManager.ASSERT(fkInfo.type == FKInfo.FOREIGN_KEY, 
+                                         "error, expected to only check foreign keys on insert");
+                }
+                Long fkConglom = indexConversionTable.get(fkInfo.fkConglomNumbers[0]);
+                bulkValidateForeignKeysCore(
+                    tc, cm, fkInfo, fkConglom.longValue(),
+                    fkInfo.refConglomNumber, fkInfo.fkConstraintNames[0],
+                    fullTemplate);
+            }
+        }
+    }
 
-	private void bulkValidateForeignKeysCore(
-						TransactionController tc, ContextManager cm, 
-						FKInfo fkInfo, long fkConglom, long pkConglom,
-                        String fkConstraintName, ExecRow fullTemplate)
-		throws StandardException
-	{
-		ExecRow 		            template;
-		GroupFetchScanController 	refScan = null;
-		GroupFetchScanController 	fkScan  = null;
+    private void bulkValidateForeignKeysCore(
+        TransactionController tc, ContextManager cm, 
+        FKInfo fkInfo, long fkConglom, long pkConglom,
+        String fkConstraintName, ExecRow fullTemplate)
+        throws StandardException {
+        ExecRow 		            template;
+        GroupFetchScanController 	refScan = null;
+        GroupFetchScanController 	fkScan  = null;
 
-		try
-		{
+        try
+        {
 
-				template = makeIndexTemplate(fkInfo, fullTemplate, cm);
+            template = makeIndexTemplate(fkInfo, fullTemplate, cm);
 
-				/*
-				** The indexes have been dropped and recreated, so
-				** we need to get the new index conglomerate number.
-				*/
-				fkScan = 
-                    tc.openGroupFetchScan(
-                        fkConglom,
-                        false,                       // hold 
-                        0, 							 // read only
-                        // doesn't matter, already locked
-                        TransactionController.MODE_TABLE,
-                        // doesn't matter, already locked
-                        TransactionController.ISOLATION_READ_COMMITTED,
-                        (FormatableBitSet)null, 				 // retrieve all fields
-                        (DataValueDescriptor[])null, // startKeyValue
-                        ScanController.GE,           // startSearchOp
-                        null,                        // qualifier
-                        (DataValueDescriptor[])null, // stopKeyValue
-                        ScanController.GT            // stopSearchOp 
-                        );
+            /*
+            ** The indexes have been dropped and recreated, so
+            ** we need to get the new index conglomerate number.
+            */
+            fkScan = 
+                tc.openGroupFetchScan(
+                    fkConglom,
+                    false,                       // hold 
+                    0, 							 // read only
+                    // doesn't matter, already locked
+                    TransactionController.MODE_TABLE,
+                    // doesn't matter, already locked
+                    TransactionController.ISOLATION_READ_COMMITTED,
+                    (FormatableBitSet)null, 				 // retrieve all fields
+                    (DataValueDescriptor[])null, // startKeyValue
+                    ScanController.GE,           // startSearchOp
+                    null,                        // qualifier
+                    (DataValueDescriptor[])null, // stopKeyValue
+                    ScanController.GT            // stopSearchOp 
+                    );
 
-				if (SanityManager.DEBUG)
-				{	
-					/*
-					** Bulk insert replace calls this method regardless
-					** of whether or not any rows were inserted because
-					** it has to check any referencing foreign keys
-					** after the replace.  Otherwise, we
-					** make sure that we actually have a row in the fk.
-					** If not, we have an error because we thought that
-					** since indexRows != null, we must have gotten some
-					** rows.
-					*/ 
-					if (! bulkInsertReplace)
-					{
-						SanityManager.ASSERT(fkScan.next(),
-							"No rows in fk index, even though indexRows != null");
+            if (SanityManager.DEBUG)
+            {	
+                /*
+                ** Bulk insert replace calls this method regardless
+                ** of whether or not any rows were inserted because
+                ** it has to check any referencing foreign keys
+                ** after the replace.  Otherwise, we
+                ** make sure that we actually have a row in the fk.
+                ** If not, we have an error because we thought that
+                ** since indexRows != null, we must have gotten some
+                ** rows.
+                */ 
+                if (! bulkInsertReplace)
+                {
+                    SanityManager.ASSERT(fkScan.next(),
+                                         "No rows in fk index, even though indexRows != null");
 			
-						/*
-						** Crank up the scan again.
-						*/	
-						fkScan.reopenScan(
-							(DataValueDescriptor[])null,    // startKeyValue
-							ScanController.GE,              // startSearchOp
-							null,                           // qualifier
-							(DataValueDescriptor[])null,    // stopKeyValue
-							ScanController.GT               // stopSearchOp 
-		                      );
-					}
-				}
+                    /*
+                    ** Crank up the scan again.
+                    */	
+                    fkScan.reopenScan(
+                        (DataValueDescriptor[])null,    // startKeyValue
+                        ScanController.GE,              // startSearchOp
+                        null,                           // qualifier
+                        (DataValueDescriptor[])null,    // stopKeyValue
+                        ScanController.GT               // stopSearchOp 
+                        );
+                }
+            }
 
-				/*
-				** Open the referenced key scan.  Use row locking on
-				** the referenced table unless it is self-referencing
-	 			** (in which case we don't need locks)
-				*/	
-				refScan = 
-                    tc.openGroupFetchScan(
-						pkConglom,
-						false,                       	// hold 
-						0, 								// read only
-                        (fkConglom == pkConglom) ?
-                                TransactionController.MODE_TABLE :
-                                TransactionController.MODE_RECORD,
-                        // read committed is good enough
-                        TransactionController.ISOLATION_READ_COMMITTED,
-						(FormatableBitSet)null, 					// retrieve all fields
-						(DataValueDescriptor[])null,    // startKeyValue
-						ScanController.GE,            	// startSearchOp
-						null,                         	// qualifier
-						(DataValueDescriptor[])null,    // stopKeyValue
-						ScanController.GT             	// stopSearchOp 
-						);
+            /*
+            ** Open the referenced key scan.  Use row locking on
+            ** the referenced table unless it is self-referencing
+            ** (in which case we don't need locks)
+            */	
+            refScan = 
+                tc.openGroupFetchScan(
+                    pkConglom,
+                    false,                       	// hold 
+                    0, 								// read only
+                    (fkConglom == pkConglom) ?
+                    TransactionController.MODE_TABLE :
+                    TransactionController.MODE_RECORD,
+                    // read committed is good enough
+                    TransactionController.ISOLATION_READ_COMMITTED,
+                    (FormatableBitSet)null, 					// retrieve all fields
+                    (DataValueDescriptor[])null,    // startKeyValue
+                    ScanController.GE,            	// startSearchOp
+                    null,                         	// qualifier
+                    (DataValueDescriptor[])null,    // stopKeyValue
+                    ScanController.GT             	// stopSearchOp 
+                    );
 
-				/*
-				** Give the scans to the bulk checker to do its
-				** magic.  It will do a merge on the two indexes. 
-				*/	
-				ExecRow firstFailedRow = template.getClone();
-                RIBulkChecker riChecker = new RIBulkChecker(activation,
-                                            refScan,
-											fkScan, 
-											template, 	
-											true, 				// fail on 1st failure
-											(ConglomerateController)null,
-                                            firstFailedRow,
-                                            fkInfo.schemaName,
-                                            fkInfo.tableName,
-                                            fkInfo.fkIds[0],
-                                            fkInfo.deferrable[0],
-                                            fkConglom,
-                                            pkConglom);
+            /*
+            ** Give the scans to the bulk checker to do its
+            ** magic.  It will do a merge on the two indexes. 
+            */	
+            ExecRow firstFailedRow = template.getClone();
+            RIBulkChecker riChecker = new RIBulkChecker(activation,
+                                                        refScan,
+                                                        fkScan, 
+                                                        template, 	
+                                                        true, 				// fail on 1st failure
+                                                        (ConglomerateController)null,
+                                                        firstFailedRow,
+                                                        fkInfo.schemaName,
+                                                        fkInfo.tableName,
+                                                        fkInfo.fkIds[0],
+                                                        fkInfo.deferrable[0],
+                                                        fkConglom,
+                                                        pkConglom);
 	
-				int numFailures = riChecker.doCheck();
-				if (numFailures > 0)
-				{
-					StandardException se = StandardException.newException(SQLState.LANG_FK_VIOLATION, fkConstraintName,
-									fkInfo.tableName,
-									StatementUtil.typeName(fkInfo.stmtType),
-									RowUtil.toString(firstFailedRow, 0, fkInfo.colArray.length - 1));
-					throw se;
-				}
-		}
-		finally
-		{
-			if (fkScan != null)
-			{
-				fkScan.close();
-			}
-			if (refScan != null)
-			{
-				refScan.close();
-			}
-		}
-	}
+            int numFailures = riChecker.doCheck();
+            if (numFailures > 0)
+            {
+                StandardException se = StandardException.newException(SQLState.LANG_FK_VIOLATION, fkConstraintName,
+                                                                      fkInfo.tableName,
+                                                                      StatementUtil.typeName(fkInfo.stmtType),
+                                                                      RowUtil.toString(firstFailedRow, 0, fkInfo.colArray.length - 1));
+                throw se;
+            }
+        }
+        finally
+        {
+            if (fkScan != null)
+            {
+                fkScan.close();
+            }
+            if (refScan != null)
+            {
+                refScan.close();
+            }
+        }
+    }
 
-	/**
-	 * Make a template row with the correct columns.
-	 */
-	private ExecRow makeIndexTemplate(FKInfo fkInfo, ExecRow fullTemplate, ContextManager cm)
-		throws StandardException
-	{
-		ExecRow newRow = RowUtil.getEmptyIndexRow(fkInfo.colArray.length+1, lcc);
+    /**
+     * Make a template row with the correct columns.
+     */
+    private ExecRow makeIndexTemplate(FKInfo fkInfo, ExecRow fullTemplate, ContextManager cm)
+        throws StandardException {
+        ExecRow newRow = RowUtil.getEmptyIndexRow(fkInfo.colArray.length+1, lcc);
 
-		DataValueDescriptor[] templateColArray = fullTemplate.getRowArray();
-		DataValueDescriptor[] newRowColArray   = newRow.getRowArray();
+        DataValueDescriptor[] templateColArray = fullTemplate.getRowArray();
+        DataValueDescriptor[] newRowColArray   = newRow.getRowArray();
 
-		int i;
-		for (i = 0; i < fkInfo.colArray.length; i++)
-		{
-			newRowColArray[i] = 
+        int i;
+        for (i = 0; i < fkInfo.colArray.length; i++)
+        {
+            newRowColArray[i] = 
                 templateColArray[fkInfo.colArray[i] - 1].cloneValue(false);
-		}
+        }
 
-       newRowColArray[i] = fkInfo.rowLocation.cloneValue(false);
+        newRowColArray[i] = fkInfo.rowLocation.cloneValue(false);
 
-		return newRow;
-	}
+        return newRow;
+    }
 
-	/**
-	 * Set up to update all of the indexes on a table when doing a bulk insert
-	 * on an empty table.
-	 *
-	 * @exception StandardException					thrown on error
-	 */
-	private void setUpAllSorts(ExecRow sourceRow,
-							   RowLocation rl)
-		throws StandardException
-    {
-		int					numIndexes = constants.irgs.length;
-		int					numColumns = td.getNumberOfColumns();
+    /**
+     * Set up to update all of the indexes on a table when doing a bulk insert
+     * on an empty table.
+     *
+     * @exception StandardException					thrown on error
+     */
+    private void setUpAllSorts(ExecRow sourceRow,
+                               RowLocation rl)
+        throws StandardException {
+        int					numIndexes = constants.irgs.length;
+        int					numColumns = td.getNumberOfColumns();
 
-		ordering        = new ColumnOrdering[numIndexes][];
+        ordering        = new ColumnOrdering[numIndexes][];
         collation       = new int[numIndexes][];
-		needToDropSort  = new boolean[numIndexes];
-		sortIds         = new long[numIndexes];
-		rowSources      = new RowLocationRetRowSource[numIndexes];
-		// indexedCols is 1-based
-		indexedCols     = new FormatableBitSet(numColumns + 1);
+        needToDropSort  = new boolean[numIndexes];
+        sortIds         = new long[numIndexes];
+        rowSources      = new RowLocationRetRowSource[numIndexes];
+        // indexedCols is 1-based
+        indexedCols     = new FormatableBitSet(numColumns + 1);
 
 
-		/* For each index, build a single index row, collation templage, 
+        /* For each index, build a single index row, collation templage, 
          * and a sorter. 
          */
-		for (int index = 0; index < numIndexes; index++)
-		{
-			// Update the bit map of indexed columns
-			int[] keyColumns = constants.irgs[index].baseColumnPositions();
-			for (int i2 = 0; i2 < keyColumns.length; i2++)
-			{
-				// indexedCols is 1-based
-				indexedCols.set(keyColumns[i2]);
-			}
+        for (int index = 0; index < numIndexes; index++)
+        {
+            // Update the bit map of indexed columns
+            int[] keyColumns = constants.irgs[index].baseColumnPositions();
+            for (int i2 = 0; i2 < keyColumns.length; i2++)
+            {
+                // indexedCols is 1-based
+                indexedCols.set(keyColumns[i2]);
+            }
 
-			// create a single index row template for each index
-			indexRows[index] = constants.irgs[index].getIndexRowTemplate();
+            // create a single index row template for each index
+            indexRows[index] = constants.irgs[index].getIndexRowTemplate();
 
-			// Get an index row based on the base row
-			// (This call is only necessary here because we need to 
+            // Get an index row based on the base row
+            // (This call is only necessary here because we need to 
             // pass a template to the sorter.)
-			constants.irgs[index].getIndexRow(sourceRow, 
-											  rl, 
-											  indexRows[index],
-											  (FormatableBitSet) null);
+            constants.irgs[index].getIndexRow(sourceRow, 
+                                              rl, 
+                                              indexRows[index],
+                                              (FormatableBitSet) null);
 
-			/* For non-unique indexes, we order by all columns + the RID.
-			 * For unique indexes, we just order by the columns.
-			 * We create a unique index observer for unique indexes
-			 * so that we can catch duplicate key
-			 */
+            /* For non-unique indexes, we order by all columns + the RID.
+             * For unique indexes, we just order by the columns.
+             * We create a unique index observer for unique indexes
+             * so that we can catch duplicate key
+             */
 
-			// Get the ConglomerateDescriptor for the index
-			ConglomerateDescriptor cd = 
+            // Get the ConglomerateDescriptor for the index
+            ConglomerateDescriptor cd = 
                 td.getConglomerateDescriptor(constants.indexCIDS[index]);
 
-			int[] baseColumnPositions = 
+            int[] baseColumnPositions = 
                 constants.irgs[index].baseColumnPositions();
-			boolean[] isAscending     = constants.irgs[index].isAscending();
+            boolean[] isAscending     = constants.irgs[index].isAscending();
            
-			int numColumnOrderings;
+            int numColumnOrderings;
             SortObserver sortObserver;
 
-			/* We can only reuse the wrappers when doing an
-			 * external sort if there is only 1 index.  Otherwise,
-			 * we could get in a situation where 1 sort reuses a
-			 * wrapper that is still in use in another sort.
-			 */
-			boolean reuseWrappers = (numIndexes == 1);
+            /* We can only reuse the wrappers when doing an
+             * external sort if there is only 1 index.  Otherwise,
+             * we could get in a situation where 1 sort reuses a
+             * wrapper that is still in use in another sort.
+             */
+            boolean reuseWrappers = (numIndexes == 1);
             final IndexRowGenerator indDes = cd.getIndexDescriptor();
             Properties sortProperties = null;
             String indexOrConstraintName = cd.getConglomerateName();
@@ -1666,12 +1652,12 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
                 // so, the index is backing up a constraint
 
                 ConstraintDescriptor conDesc =
-                        dd.getConstraintDescriptor(td, cd.getUUID());
+                    dd.getConstraintDescriptor(td, cd.getUUID());
 
                 indexOrConstraintName = conDesc.getConstraintName();
                 deferred = lcc.isEffectivelyDeferred(
-                        lcc.getCurrentSQLSessionContext(activation),
-                        conDesc.getUUID());
+                    lcc.getCurrentSQLSessionContext(activation),
+                    conDesc.getUUID());
                 deferrable = conDesc.deferrable();
                 uniqueDeferrableConstraintId = conDesc.getUUID();
             }
@@ -1679,20 +1665,20 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
             if (indDes.isUnique() || indDes.isUniqueDeferrable())
             {
                 numColumnOrderings =
-                        indDes.isUnique() ? baseColumnPositions.length :
-                        baseColumnPositions.length + 1;
+                    indDes.isUnique() ? baseColumnPositions.length :
+                    baseColumnPositions.length + 1;
 
-				sortObserver = 
+                sortObserver = 
                     new UniqueIndexSortObserver(
-                            lcc,
-                            uniqueDeferrableConstraintId,
-                            false, // don't clone rows
-                            deferrable,
-                            deferred,
-                            indexOrConstraintName,
-                            indexRows[index],
-                            reuseWrappers,
-                            td.getName());
+                        lcc,
+                        uniqueDeferrableConstraintId,
+                        false, // don't clone rows
+                        deferrable,
+                        deferred,
+                        indexOrConstraintName,
+                        indexRows[index],
+                        reuseWrappers,
+                        td.getName());
             } else if (indDes.isUniqueWithDuplicateNulls())
             {
                 numColumnOrderings = baseColumnPositions.length + 1;
@@ -1701,11 +1687,11 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
                 // duplicate nulls sorter, when making createSort() call.
                 sortProperties = new Properties();
                 sortProperties.put(
-                   AccessFactoryGlobals.IMPL_TYPE,
-                   AccessFactoryGlobals.SORT_UNIQUEWITHDUPLICATENULLS_EXTERNAL);
+                    AccessFactoryGlobals.IMPL_TYPE,
+                    AccessFactoryGlobals.SORT_UNIQUEWITHDUPLICATENULLS_EXTERNAL);
                 //use sort operator which treats nulls unequal
                 sortObserver =
-                        new UniqueWithDuplicateNullsIndexSortObserver(
+                    new UniqueWithDuplicateNullsIndexSortObserver(
                         lcc,
                         uniqueDeferrableConstraintId,
                         true,
@@ -1717,21 +1703,21 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
                         td.getName());
 
             }
-			else
-			{
-				numColumnOrderings = baseColumnPositions.length + 1;
-				sortObserver       = new BasicSortObserver(false, false, 
-													 indexRows[index],
-													 reuseWrappers);
-			}
-			ordering[index] = new ColumnOrdering[numColumnOrderings];
-			for (int ii =0; ii < isAscending.length; ii++) 
-			{
-				ordering[index][ii] = new IndexColumnOrder(ii, isAscending[ii]);
-			}
-			if (numColumnOrderings > isAscending.length)
+            else
             {
-				ordering[index][isAscending.length] = 
+                numColumnOrderings = baseColumnPositions.length + 1;
+                sortObserver       = new BasicSortObserver(false, false, 
+                                                           indexRows[index],
+                                                           reuseWrappers);
+            }
+            ordering[index] = new ColumnOrdering[numColumnOrderings];
+            for (int ii =0; ii < isAscending.length; ii++) 
+            {
+                ordering[index][ii] = new IndexColumnOrder(ii, isAscending[ii]);
+            }
+            if (numColumnOrderings > isAscending.length)
+            {
+                ordering[index][isAscending.length] = 
                     new IndexColumnOrder(isAscending.length);
             }
 
@@ -1741,8 +1727,8 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
                 constants.irgs[index].getColumnCollationIds(
                     td.getColumnDescriptorList());
 
-			// create the sorters
-			sortIds[index] = 
+            // create the sorters
+            sortIds[index] = 
                 tc.createSort(
                     sortProperties,
                     indexRows[index].getRowArrayClone(),
@@ -1753,112 +1739,111 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
                     -1				// est row size, -1 means no idea	
                     );
 
-			needToDropSort[index] = true;
-		}
+            needToDropSort[index] = true;
+        }
 
-		sorters = new SortController[numIndexes];
+        sorters = new SortController[numIndexes];
 
-		// Open the sorts
-		for (int index = 0; index < numIndexes; index++)
-		{
-			sorters[index]        = tc.openSort(sortIds[index]);
-			needToDropSort[index] = true;
-		}
-	}
+        // Open the sorts
+        for (int index = 0; index < numIndexes; index++)
+        {
+            sorters[index]        = tc.openSort(sortIds[index]);
+            needToDropSort[index] = true;
+        }
+    }
 
-	/**
-	 * Update all of the indexes on a table when doing a bulk insert
-	 * on an empty table.
-	 *
-	 * @exception StandardException					thrown on error
-	 */
-	private void updateAllIndexes(long newHeapConglom, 
-								  InsertConstantAction constants, 
-								  TableDescriptor td,
-								  DataDictionary dd,
-								  ExecRow fullTemplate)
-		throws StandardException
-    {
-		int	numIndexes = constants.irgs.length;
+    /**
+     * Update all of the indexes on a table when doing a bulk insert
+     * on an empty table.
+     *
+     * @exception StandardException					thrown on error
+     */
+    private void updateAllIndexes(long newHeapConglom, 
+                                  InsertConstantAction constants, 
+                                  TableDescriptor td,
+                                  DataDictionary dd,
+                                  ExecRow fullTemplate)
+        throws StandardException {
+        int	numIndexes = constants.irgs.length;
 
-		/*
-		** If we didn't actually read in any rows, then
-		** we don't need to do anything, unless we were
-		** doing a replace.
-		*/
-		if (indexRows == null)
-		{
-			if (bulkInsertReplace)
-			{
-				emptyIndexes(newHeapConglom, constants, td, dd, fullTemplate);
-			}
-			return;
-		}
+        /*
+        ** If we didn't actually read in any rows, then
+        ** we don't need to do anything, unless we were
+        ** doing a replace.
+        */
+        if (indexRows == null)
+        {
+            if (bulkInsertReplace)
+            {
+                emptyIndexes(newHeapConglom, constants, td, dd, fullTemplate);
+            }
+            return;
+        }
 
-		dd.dropStatisticsDescriptors(td.getUUID(), null, tc);
-		long[] newIndexCongloms = new long[numIndexes];
+        dd.dropStatisticsDescriptors(td.getUUID(), null, tc);
+        long[] newIndexCongloms = new long[numIndexes];
 
-		indexConversionTable = new Hashtable<Long,Long>(numIndexes);
-		// Populate each index
-		for (int index = 0; index < numIndexes; index++)
-		{
-			ConglomerateController indexCC;
-			Properties properties = new Properties();
-			ConglomerateDescriptor cd;
-			// Get the ConglomerateDescriptor for the index
-			cd = td.getConglomerateDescriptor(constants.indexCIDS[index]);
+        indexConversionTable = new Hashtable<Long,Long>(numIndexes);
+        // Populate each index
+        for (int index = 0; index < numIndexes; index++)
+        {
+            ConglomerateController indexCC;
+            Properties properties = new Properties();
+            ConglomerateDescriptor cd;
+            // Get the ConglomerateDescriptor for the index
+            cd = td.getConglomerateDescriptor(constants.indexCIDS[index]);
 
 			
-			// Build the properties list for the new conglomerate
-			indexCC = tc.openCompiledConglomerate(
-                                false,
-                                TransactionController.OPENMODE_FORUPDATE,
-                                TransactionController.MODE_TABLE,
-                                TransactionController.ISOLATION_SERIALIZABLE,
-								constants.indexSCOCIs[index],
-								indexDCOCIs[index]);
+            // Build the properties list for the new conglomerate
+            indexCC = tc.openCompiledConglomerate(
+                false,
+                TransactionController.OPENMODE_FORUPDATE,
+                TransactionController.MODE_TABLE,
+                TransactionController.ISOLATION_SERIALIZABLE,
+                constants.indexSCOCIs[index],
+                indexDCOCIs[index]);
 
-			// Get the properties on the old index
-			indexCC.getInternalTablePropertySet(properties);
+            // Get the properties on the old index
+            indexCC.getInternalTablePropertySet(properties);
 
-			/* Create the properties that language supplies when creating the
-			 * the index.  (The store doesn't preserve these.)
-			 */
-			int indexRowLength = indexRows[index].nColumns();
-			properties.put("baseConglomerateId", Long.toString(newHeapConglom));
-			if (cd.getIndexDescriptor().isUnique())
-			{
-				properties.put("nUniqueColumns", 
-							   Integer.toString(indexRowLength - 1));
-			}
-			else
-			{
-				properties.put("nUniqueColumns", 
-							   Integer.toString(indexRowLength));
-			}
+            /* Create the properties that language supplies when creating the
+             * the index.  (The store doesn't preserve these.)
+             */
+            int indexRowLength = indexRows[index].nColumns();
+            properties.put("baseConglomerateId", Long.toString(newHeapConglom));
+            if (cd.getIndexDescriptor().isUnique())
+            {
+                properties.put("nUniqueColumns", 
+                               Integer.toString(indexRowLength - 1));
+            }
+            else
+            {
+                properties.put("nUniqueColumns", 
+                               Integer.toString(indexRowLength));
+            }
 
             if ( cd.getIndexDescriptor().isUniqueWithDuplicateNulls() &&
-                !cd.getIndexDescriptor().hasDeferrableChecking() )
-			{
-				properties.put(
+                 !cd.getIndexDescriptor().hasDeferrableChecking() )
+            {
+                properties.put(
                     "uniqueWithDuplicateNulls", Boolean.toString(true));
-			}
+            }
 
-			properties.put("rowLocationColumn", 
-							Integer.toString(indexRowLength - 1));
-			properties.put("nKeyFields", Integer.toString(indexRowLength));
+            properties.put("rowLocationColumn", 
+                           Integer.toString(indexRowLength - 1));
+            properties.put("nKeyFields", Integer.toString(indexRowLength));
 
-			indexCC.close();
+            indexCC.close();
 
-			// We can finally drain the sorter and rebuild the index
-			// RESOLVE - all indexes are btrees right now
-			// Populate the index.
-			sorters[index].completedInserts();
-			sorters[index] = null;
-			rowSources[index] = 
+            // We can finally drain the sorter and rebuild the index
+            // RESOLVE - all indexes are btrees right now
+            // Populate the index.
+            sorters[index].completedInserts();
+            sorters[index] = null;
+            rowSources[index] = 
                 new CardinalityCounter(tc.openSortRowSource(sortIds[index]));
 
-			newIndexCongloms[index] = 
+            newIndexCongloms[index] = 
                 tc.createAndLoadConglomerate(
                     "BTREE",
                     indexRows[index].getRowArray(),
@@ -1869,403 +1854,398 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
                     rowSources[index],
                     (long[]) null);
 
-			CardinalityCounter cCount = (CardinalityCounter)rowSources[index];
-			long numRows;
-			if ((numRows = cCount.getRowCount()) > 0)
-			{
-				long[] c = cCount.getCardinality();
+            CardinalityCounter cCount = (CardinalityCounter)rowSources[index];
+            long numRows;
+            if ((numRows = cCount.getRowCount()) > 0)
+            {
+                long[] c = cCount.getCardinality();
 
-				for (int i= 0; i < c.length; i++)
-				{
-					StatisticsDescriptor statDesc = 
-						new StatisticsDescriptor(dd, dd.getUUIDFactory().createUUID(),
-													cd.getUUID(), td.getUUID(),
-													"I", new
-														StatisticsImpl(numRows,
-																	   c[i]),
-													i + 1);
-					dd.addDescriptor(statDesc, null, 
-									 DataDictionary.SYSSTATISTICS_CATALOG_NUM,
-									 true, tc);					
-				}	
+                for (int i= 0; i < c.length; i++)
+                {
+                    StatisticsDescriptor statDesc = 
+                        new StatisticsDescriptor(dd, dd.getUUIDFactory().createUUID(),
+                                                 cd.getUUID(), td.getUUID(),
+                                                 "I", new
+                                                 StatisticsImpl(numRows,
+                                                                c[i]),
+                                                 i + 1);
+                    dd.addDescriptor(statDesc, null, 
+                                     DataDictionary.SYSSTATISTICS_CATALOG_NUM,
+                                     true, tc);					
+                }	
 				
-			}
+            }
 
-			/* Update the DataDictionary
-			 * RESOLVE - this will change in 1.4 because we will get
-			 * back the same conglomerate number
-			 *
-			 * Update sys.sysconglomerates with new conglomerate #, if the
-			 * conglomerate is shared by duplicate indexes, all the descriptors
-			 * for those indexes need to be updated with the new number.
-			 */
-			dd.updateConglomerateDescriptor(
-						td.getConglomerateDescriptors(constants.indexCIDS[index]),
-						newIndexCongloms[index], tc);
+            /* Update the DataDictionary
+             * RESOLVE - this will change in 1.4 because we will get
+             * back the same conglomerate number
+             *
+             * Update sys.sysconglomerates with new conglomerate #, if the
+             * conglomerate is shared by duplicate indexes, all the descriptors
+             * for those indexes need to be updated with the new number.
+             */
+            dd.updateConglomerateDescriptor(
+                td.getConglomerateDescriptors(constants.indexCIDS[index]),
+                newIndexCongloms[index], tc);
 
-			// Drop the old conglomerate
-			tc.dropConglomerate(constants.indexCIDS[index]);
+            // Drop the old conglomerate
+            tc.dropConglomerate(constants.indexCIDS[index]);
 
-			indexConversionTable.put(constants.indexCIDS[index], newIndexCongloms[index]);
-		}
-	}
+            indexConversionTable.put(constants.indexCIDS[index], newIndexCongloms[index]);
+        }
+    }
 
-	/**
-	 * @see ResultSet#cleanUp
-	 *
-	 * @exception StandardException		Thrown on error
-	 */
-	public void	cleanUp() throws StandardException
-	{
+    /**
+     * @see ResultSet#cleanUp
+     *
+     * @exception StandardException		Thrown on error
+     */
+    public void	cleanUp() throws StandardException {
 
-		if (tableScan != null)
-		{
-			tableScan.close();
-			tableScan = null;
-		}
+        if (tableScan != null)
+        {
+            tableScan.close();
+            tableScan = null;
+        }
 
-		if (triggerActivator != null)
-		{
-			triggerActivator.cleanup();
-			// triggerActivator is reused across executions
-		}
+        if (triggerActivator != null)
+        {
+            triggerActivator.cleanup();
+            // triggerActivator is reused across executions
+        }
 
-		/* Close down the source ResultSet tree */
-		if (sourceResultSet != null)
-		{
-			sourceResultSet.close();
-			// sourceResultSet is reused across executions
-		}
-		numOpens = 0;
+        /* Close down the source ResultSet tree */
+        if (sourceResultSet != null)
+        {
+            sourceResultSet.close();
+            // sourceResultSet is reused across executions
+        }
+        numOpens = 0;
 
-		if (rowChanger != null)
-		{
-			rowChanger.close();
-		}
+        if (rowChanger != null)
+        {
+            rowChanger.close();
+        }
 
-		if (rowHolder != null)
-		{
-			rowHolder.close();
-		}
+        if (rowHolder != null)
+        {
+            rowHolder.close();
+        }
 
-		if (fkChecker != null)
-		{
-			fkChecker.close();
-			// fkChecker is reused across executions
-		}
+        if (fkChecker != null)
+        {
+            fkChecker.close();
+            // fkChecker is reused across executions
+        }
 
-		if (bulkHeapCC != null)
-		{
-			bulkHeapCC.close();
-			bulkHeapCC = null;
-		}
+        if (bulkHeapCC != null)
+        {
+            bulkHeapCC.close();
+            bulkHeapCC = null;
+        }
 
-		if (bulkHeapSC != null)
-		{
-			bulkHeapSC.close();
-			bulkHeapSC = null;
-		}
+        if (bulkHeapSC != null)
+        {
+            bulkHeapSC.close();
+            bulkHeapSC = null;
+        }
 
-		// Close each sorter
-		if (sorters != null)
-		{
-			for (int index = 0; index < constants.irgs.length; index++)
-			{
-				if (sorters[index] != null)
-				{
-					sorters[index].completedInserts();
-				}
-				sorters[index] = null;
-			}
-		}
+        // Close each sorter
+        if (sorters != null)
+        {
+            for (int index = 0; index < constants.irgs.length; index++)
+            {
+                if (sorters[index] != null)
+                {
+                    sorters[index].completedInserts();
+                }
+                sorters[index] = null;
+            }
+        }
 
-		if (needToDropSort != null)
-		{
-			for (int index = 0; index < needToDropSort.length; index++)
-			{
-				if (needToDropSort[index])
-				{
-				 	tc.dropSort(sortIds[index]);
-					needToDropSort[index] = false;
-				}
-			}
-		}
+        if (needToDropSort != null)
+        {
+            for (int index = 0; index < needToDropSort.length; index++)
+            {
+                if (needToDropSort[index])
+                {
+                    tc.dropSort(sortIds[index]);
+                    needToDropSort[index] = false;
+                }
+            }
+        }
 
-		if (rowSources != null)
-		{
-			for (int index = 0; index < rowSources.length; index++)
-			{
-				if (rowSources[index] != null)
-				{
-					rowSources[index].closeRowSource();
-					rowSources[index] = null;
-				}
-			}
-		}
-		close( constants.underMerge() );
-	}
+        if (rowSources != null)
+        {
+            for (int index = 0; index < rowSources.length; index++)
+            {
+                if (rowSources[index] != null)
+                {
+                    rowSources[index].closeRowSource();
+                    rowSources[index] = null;
+                }
+            }
+        }
+        close( constants.underMerge() );
+    }
 
-	// Class implementation
+    // Class implementation
 	
-	/**
-	 * Verify that bulkInsert is allowed on this table.
-	 * The execution time check to see if bulkInsert is allowed
-	 * simply consists of checking to see if this is not a deferred
-	 * mode insert and that the table is empty if this is not replace.
-	 *
-	 * A side effect of calling this method is to get an exclusive
-	 * table lock on the table.
-	 *
-	 * @return Whether or not bulkInsert is allowed on this table.
-	 *
-	 * @exception StandardException		Thrown on error
-	 */
-	protected boolean verifyBulkInsert()
-		throws StandardException
-	{
-		// bulk insert is disabled for deferred mode inserts
-		if (constants.deferred)
-		{
-			/* bulk insert replace should be disallowed for
-			 * deferred mode inserts.
-			 */
-			if (SanityManager.DEBUG)
-			{
-				SanityManager.ASSERT(! bulkInsertReplace,
-					"bulkInsertReplace expected to be false for deferred mode inserts");
-			}
-			return false;
-		}
+    /**
+     * Verify that bulkInsert is allowed on this table.
+     * The execution time check to see if bulkInsert is allowed
+     * simply consists of checking to see if this is not a deferred
+     * mode insert and that the table is empty if this is not replace.
+     *
+     * A side effect of calling this method is to get an exclusive
+     * table lock on the table.
+     *
+     * @return Whether or not bulkInsert is allowed on this table.
+     *
+     * @exception StandardException		Thrown on error
+     */
+    protected boolean verifyBulkInsert()
+        throws StandardException {
+        // bulk insert is disabled for deferred mode inserts
+        if (constants.deferred)
+        {
+            /* bulk insert replace should be disallowed for
+             * deferred mode inserts.
+             */
+            if (SanityManager.DEBUG)
+            {
+                SanityManager.ASSERT(! bulkInsertReplace,
+                                     "bulkInsertReplace expected to be false for deferred mode inserts");
+            }
+            return false;
+        }
 
-		return getExclusiveTableLock();
-	}
+        return getExclusiveTableLock();
+    }
 
-	/**
-	 * Get an exclusive table lock on the target table
-	 * (and check to see if the table is populated if
-	 * this is not a bulk insert replace).
-	 *
-	 * @return Whether or not bulkInsert is allowed on this table.
-	 *
-	 * @exception StandardException		Thrown on error
-	 */
-	private boolean getExclusiveTableLock()
-		throws StandardException
-	{
-		boolean rowFound = false;
+    /**
+     * Get an exclusive table lock on the target table
+     * (and check to see if the table is populated if
+     * this is not a bulk insert replace).
+     *
+     * @return Whether or not bulkInsert is allowed on this table.
+     *
+     * @exception StandardException		Thrown on error
+     */
+    private boolean getExclusiveTableLock()
+        throws StandardException {
+        boolean rowFound = false;
 
-		bulkHeapSC = tc.openCompiledScan(
-							false,
-							TransactionController.OPENMODE_FORUPDATE,
-							TransactionController.MODE_TABLE,
-                            TransactionController.ISOLATION_SERIALIZABLE,
-							(FormatableBitSet) null,
-							(DataValueDescriptor[]) null,
-							0,
-							(Qualifier[][]) null,
-							(DataValueDescriptor[]) null,
-							0,
-							constants.heapSCOCI,
-							heapDCOCI);
+        bulkHeapSC = tc.openCompiledScan(
+            false,
+            TransactionController.OPENMODE_FORUPDATE,
+            TransactionController.MODE_TABLE,
+            TransactionController.ISOLATION_SERIALIZABLE,
+            (FormatableBitSet) null,
+            (DataValueDescriptor[]) null,
+            0,
+            (Qualifier[][]) null,
+            (DataValueDescriptor[]) null,
+            0,
+            constants.heapSCOCI,
+            heapDCOCI);
 
-		/* No need to do next if bulk insert replace
-		 * but we do need to get a row location for the
-		 * case where the replace leaves an empty table.
-		 */
-		if (! bulkInsertReplace)
-		{
-			rowFound = bulkHeapSC.next();
-		}
-		else
-		{
-			rl = bulkHeapSC.newRowLocationTemplate();
-		}
+        /* No need to do next if bulk insert replace
+         * but we do need to get a row location for the
+         * case where the replace leaves an empty table.
+         */
+        if (! bulkInsertReplace)
+        {
+            rowFound = bulkHeapSC.next();
+        }
+        else
+        {
+            rl = bulkHeapSC.newRowLocationTemplate();
+        }
 
-		bulkHeapSC.close();
-		bulkHeapSC = null;
+        bulkHeapSC.close();
+        bulkHeapSC = null;
 
-		return ! rowFound;
-	}
+        return ! rowFound;
+    }
 
-	/**
-	 * Set the estimated row count for this table.
-	 *
-	 * @param heapConglom	Conglomerate number for the heap
-	 *
-	 * @exception StandardException		Thrown on failure
-	 */
-	private void setEstimatedRowCount(long heapConglom)
-		throws StandardException
-	{
-		bulkHeapSC = tc.openCompiledScan(
-							false,
-							TransactionController.OPENMODE_FORUPDATE,
-							TransactionController.MODE_TABLE,
-                            TransactionController.ISOLATION_SERIALIZABLE,
-							(FormatableBitSet) null,
-							(DataValueDescriptor[]) null,
-							0,
-							(Qualifier[][]) null,
-							(DataValueDescriptor[]) null,
-							0,
-							constants.heapSCOCI,
-							heapDCOCI);
+    /**
+     * Set the estimated row count for this table.
+     *
+     * @param heapConglom	Conglomerate number for the heap
+     *
+     * @exception StandardException		Thrown on failure
+     */
+    private void setEstimatedRowCount(long heapConglom)
+        throws StandardException {
+        bulkHeapSC = tc.openCompiledScan(
+            false,
+            TransactionController.OPENMODE_FORUPDATE,
+            TransactionController.MODE_TABLE,
+            TransactionController.ISOLATION_SERIALIZABLE,
+            (FormatableBitSet) null,
+            (DataValueDescriptor[]) null,
+            0,
+            (Qualifier[][]) null,
+            (DataValueDescriptor[]) null,
+            0,
+            constants.heapSCOCI,
+            heapDCOCI);
 		
-		bulkHeapSC.setEstimatedRowCount(rowCount);
+        bulkHeapSC.setEstimatedRowCount(rowCount);
 
-		bulkHeapSC.close();
-		bulkHeapSC = null;
-	}
+        bulkHeapSC.close();
+        bulkHeapSC = null;
+    }
 
-	/**
-	 * Empty the indexes after doing a bulk insert replace
-	 * where the table has 0 rows after the replace.
-	 * RESOLVE: This method is ugly!  Prior to 2.0, we simply
-	 * scanned back across the table to build the indexes.  We
-	 * changed this in 2.0 to populate the sorters via a call back
-	 * as we populated the table.  Doing a 0 row replace into a
-	 * table with indexes is a degenerate case, hence we allow
-	 * ugly and unoptimized code.
-	 *
-	 * @exception StandardException		Thrown on failure
-	 */
-	private void emptyIndexes(long newHeapConglom, 
-							  InsertConstantAction constants, 
-							  TableDescriptor td,
-							  DataDictionary dd,
-							  ExecRow fullTemplate)
-		throws StandardException
-	{
-		int					numIndexes = constants.irgs.length;
+    /**
+     * Empty the indexes after doing a bulk insert replace
+     * where the table has 0 rows after the replace.
+     * RESOLVE: This method is ugly!  Prior to 2.0, we simply
+     * scanned back across the table to build the indexes.  We
+     * changed this in 2.0 to populate the sorters via a call back
+     * as we populated the table.  Doing a 0 row replace into a
+     * table with indexes is a degenerate case, hence we allow
+     * ugly and unoptimized code.
+     *
+     * @exception StandardException		Thrown on failure
+     */
+    private void emptyIndexes(long newHeapConglom, 
+                              InsertConstantAction constants, 
+                              TableDescriptor td,
+                              DataDictionary dd,
+                              ExecRow fullTemplate)
+        throws StandardException {
+        int					numIndexes = constants.irgs.length;
         ExecIndexRow[]      idxRows = new ExecIndexRow[numIndexes];
         ExecRow             baseRows;
         ColumnOrdering[][]  order = new ColumnOrdering[numIndexes][];
-		int					numColumns = td.getNumberOfColumns();
+        int					numColumns = td.getNumberOfColumns();
         collation       = new int[numIndexes][];
 
-		// Create the BitSet for mapping the partial row to the full row
-		FormatableBitSet bitSet = new FormatableBitSet(numColumns + 1);
-		// Need to check each index for referenced columns
-		int numReferencedColumns = 0;
-		for (int index = 0; index < numIndexes; index++)
-		{
-			int[] baseColumnPositions = constants.irgs[index].baseColumnPositions();
-			for (int bcp = 0; bcp < baseColumnPositions.length; bcp++)
-			{
-				if (! bitSet.get(baseColumnPositions[bcp]))
-				{
-					bitSet.set(baseColumnPositions[bcp] );
-					numReferencedColumns++;
-				}
-			}
-		}
+        // Create the BitSet for mapping the partial row to the full row
+        FormatableBitSet bitSet = new FormatableBitSet(numColumns + 1);
+        // Need to check each index for referenced columns
+        int numReferencedColumns = 0;
+        for (int index = 0; index < numIndexes; index++)
+        {
+            int[] baseColumnPositions = constants.irgs[index].baseColumnPositions();
+            for (int bcp = 0; bcp < baseColumnPositions.length; bcp++)
+            {
+                if (! bitSet.get(baseColumnPositions[bcp]))
+                {
+                    bitSet.set(baseColumnPositions[bcp] );
+                    numReferencedColumns++;
+                }
+            }
+        }
 
-		// We can finally create the partial base row
-		baseRows = 
+        // We can finally create the partial base row
+        baseRows = 
             activation.getExecutionFactory().getValueRow(numReferencedColumns);
 
-		// Fill in each base row with nulls of the correct data type
-		int colNumber = 0;
-		for (int index = 0; index < numColumns; index++)
-		{
-			if (bitSet.get(index + 1))
-			{
-				colNumber++;
-				// NOTE: 1-based column numbers
-				baseRows.setColumn(
-						colNumber,
-						fullTemplate.getColumn(index + 1).cloneValue(false));
-			}
-		}
+        // Fill in each base row with nulls of the correct data type
+        int colNumber = 0;
+        for (int index = 0; index < numColumns; index++)
+        {
+            if (bitSet.get(index + 1))
+            {
+                colNumber++;
+                // NOTE: 1-based column numbers
+                baseRows.setColumn(
+                    colNumber,
+                    fullTemplate.getColumn(index + 1).cloneValue(false));
+            }
+        }
 
-		needToDropSort = new boolean[numIndexes];
-		sortIds = new long[numIndexes];
+        needToDropSort = new boolean[numIndexes];
+        sortIds = new long[numIndexes];
 
-		/* Do the initial set up before scanning the heap.
-		 * For each index, build a single index row and a sorter.
-		 */
-		for (int index = 0; index < numIndexes; index++)
-		{
-			// create a single index row template for each index
+        /* Do the initial set up before scanning the heap.
+         * For each index, build a single index row and a sorter.
+         */
+        for (int index = 0; index < numIndexes; index++)
+        {
+            // create a single index row template for each index
             idxRows[index] = constants.irgs[index].getIndexRowTemplate();
 
-			// Get an index row based on the base row
-			// (This call is only necessary here because we need to pass a 
+            // Get an index row based on the base row
+            // (This call is only necessary here because we need to pass a 
             // template to the sorter.)
-			constants.irgs[index].getIndexRow(baseRows, 
-											  rl, 
+            constants.irgs[index].getIndexRow(baseRows, 
+                                              rl, 
                                               idxRows[index],
-											  bitSet);
+                                              bitSet);
 
-			/* For non-unique indexes, we order by all columns + the RID.
-			 * For unique indexes, we just order by the columns.
-			 * We create a unique index observer for unique indexes
-			 * so that we can catch duplicate key
-			 */
-			ConglomerateDescriptor cd;
-			// Get the ConglomerateDescriptor for the index
-			cd = td.getConglomerateDescriptor(constants.indexCIDS[index]);
-			int[] baseColumnPositions = constants.irgs[index].baseColumnPositions();
-			boolean[] isAscending = constants.irgs[index].isAscending();
-			int numColumnOrderings;
+            /* For non-unique indexes, we order by all columns + the RID.
+             * For unique indexes, we just order by the columns.
+             * We create a unique index observer for unique indexes
+             * so that we can catch duplicate key
+             */
+            ConglomerateDescriptor cd;
+            // Get the ConglomerateDescriptor for the index
+            cd = td.getConglomerateDescriptor(constants.indexCIDS[index]);
+            int[] baseColumnPositions = constants.irgs[index].baseColumnPositions();
+            boolean[] isAscending = constants.irgs[index].isAscending();
+            int numColumnOrderings;
             SortObserver sortObserver;
             final IndexRowGenerator indDes = cd.getIndexDescriptor();
 
             if (indDes.isUnique() || indDes.isUniqueDeferrable())
-			{
+            {
                 numColumnOrderings =
-                        indDes.isUnique() ? baseColumnPositions.length :
-                        baseColumnPositions.length + 1;
+                    indDes.isUnique() ? baseColumnPositions.length :
+                    baseColumnPositions.length + 1;
 
-				String indexOrConstraintName = cd.getConglomerateName();
+                String indexOrConstraintName = cd.getConglomerateName();
                 boolean deferred = false;
                 boolean uniqueDeferrable = false;
 
                 UUID uniqueDeferrableConstraintId = null;
-				if (cd.isConstraint()) 
-				{
+                if (cd.isConstraint()) 
+                {
                     // so, the index is backing up a constraint
-					ConstraintDescriptor conDesc = 
+                    ConstraintDescriptor conDesc = 
                         dd.getConstraintDescriptor(td, cd.getUUID());
-					indexOrConstraintName = conDesc.getConstraintName();
+                    indexOrConstraintName = conDesc.getConstraintName();
                     deferred = lcc.isEffectivelyDeferred(
-                            lcc.getCurrentSQLSessionContext(activation),
-                            conDesc.getUUID());
+                        lcc.getCurrentSQLSessionContext(activation),
+                        conDesc.getUUID());
                     uniqueDeferrable = conDesc.deferrable();
                     uniqueDeferrableConstraintId = conDesc.getUUID();
-				}
-				sortObserver = 
+                }
+                sortObserver = 
                     new UniqueIndexSortObserver(
-                            lcc,
-                            uniqueDeferrableConstraintId,
-                            false, // don't clone rows
-                            uniqueDeferrable,
-                            deferred,
-                            indexOrConstraintName,
-                            idxRows[index],
-                            true,
-                            td.getName());
-			}
-			else
-			{
-				numColumnOrderings = baseColumnPositions.length + 1;
-				sortObserver       = new BasicSortObserver(false, false, 
-                                                     idxRows[index],
-													 true);
-			}
+                        lcc,
+                        uniqueDeferrableConstraintId,
+                        false, // don't clone rows
+                        uniqueDeferrable,
+                        deferred,
+                        indexOrConstraintName,
+                        idxRows[index],
+                        true,
+                        td.getName());
+            }
+            else
+            {
+                numColumnOrderings = baseColumnPositions.length + 1;
+                sortObserver       = new BasicSortObserver(false, false, 
+                                                           idxRows[index],
+                                                           true);
+            }
             order[index] = new ColumnOrdering[numColumnOrderings];
-			for (int ii =0; ii < isAscending.length; ii++) 
-			{
+            for (int ii =0; ii < isAscending.length; ii++) 
+            {
                 order[index][ii] = new IndexColumnOrder(ii, isAscending[ii]);
-			}
-			if (numColumnOrderings > isAscending.length)
+            }
+            if (numColumnOrderings > isAscending.length)
             {
                 order[index][isAscending.length] =
                     new IndexColumnOrder(isAscending.length);
             }
 
-			// create the sorters
-			sortIds[index] = 
+            // create the sorters
+            sortIds[index] = 
                 tc.createSort(
                     (Properties)null, 
                     idxRows[index].getRowArrayClone(),
@@ -2276,81 +2256,81 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
                     -1				// est row size, -1 means no idea	
                     );
 
-			needToDropSort[index] = true;
-		}
+            needToDropSort[index] = true;
+        }
 
-		// Populate sorters and get the output of each sorter into a row
-		// source.  The sorters have the indexed columns only and the columns
-		// are in the correct order. 
-		rowSources = new RowLocationRetRowSource[numIndexes];
-		// Fill in the RowSources
+        // Populate sorters and get the output of each sorter into a row
+        // source.  The sorters have the indexed columns only and the columns
+        // are in the correct order. 
+        rowSources = new RowLocationRetRowSource[numIndexes];
+        // Fill in the RowSources
         SortController[]    sorter = new SortController[numIndexes];
-		for (int index = 0; index < numIndexes; index++)
-		{
+        for (int index = 0; index < numIndexes; index++)
+        {
             sorter[index] = tc.openSort(sortIds[index]);
             sorter[index].completedInserts();
-			rowSources[index] = tc.openSortRowSource(sortIds[index]);
-		}
+            rowSources[index] = tc.openSortRowSource(sortIds[index]);
+        }
 
-		long[] newIndexCongloms = new long[numIndexes];
+        long[] newIndexCongloms = new long[numIndexes];
 
-		// Populate each index
-		for (int index = 0; index < numIndexes; index++)
-		{
-			ConglomerateController indexCC;
-			Properties properties = new Properties();
-			ConglomerateDescriptor cd;
-			// Get the ConglomerateDescriptor for the index
-			cd = td.getConglomerateDescriptor(constants.indexCIDS[index]);
+        // Populate each index
+        for (int index = 0; index < numIndexes; index++)
+        {
+            ConglomerateController indexCC;
+            Properties properties = new Properties();
+            ConglomerateDescriptor cd;
+            // Get the ConglomerateDescriptor for the index
+            cd = td.getConglomerateDescriptor(constants.indexCIDS[index]);
 
 			
-			// Build the properties list for the new conglomerate
-			indexCC = tc.openCompiledConglomerate(
-                                false,
-                                TransactionController.OPENMODE_FORUPDATE,
-                                TransactionController.MODE_TABLE,
-                                TransactionController.ISOLATION_SERIALIZABLE,
-								constants.indexSCOCIs[index],
-								indexDCOCIs[index]);
+            // Build the properties list for the new conglomerate
+            indexCC = tc.openCompiledConglomerate(
+                false,
+                TransactionController.OPENMODE_FORUPDATE,
+                TransactionController.MODE_TABLE,
+                TransactionController.ISOLATION_SERIALIZABLE,
+                constants.indexSCOCIs[index],
+                indexDCOCIs[index]);
 
-			// Get the properties on the old index
-			indexCC.getInternalTablePropertySet(properties);
+            // Get the properties on the old index
+            indexCC.getInternalTablePropertySet(properties);
 
-			/* Create the properties that language supplies when creating the
-			 * the index.  (The store doesn't preserve these.)
-			 */
+            /* Create the properties that language supplies when creating the
+             * the index.  (The store doesn't preserve these.)
+             */
             int indexRowLength = idxRows[index].nColumns();
-			properties.put("baseConglomerateId", Long.toString(newHeapConglom));
-			if (cd.getIndexDescriptor().isUnique())
-			{
-				properties.put("nUniqueColumns", 
-							   Integer.toString(indexRowLength - 1));
-			}
-			else
-			{
-				properties.put("nUniqueColumns", 
-							   Integer.toString(indexRowLength));
-			}
+            properties.put("baseConglomerateId", Long.toString(newHeapConglom));
+            if (cd.getIndexDescriptor().isUnique())
+            {
+                properties.put("nUniqueColumns", 
+                               Integer.toString(indexRowLength - 1));
+            }
+            else
+            {
+                properties.put("nUniqueColumns", 
+                               Integer.toString(indexRowLength));
+            }
             if( cd.getIndexDescriptor().isUniqueWithDuplicateNulls() &&
-               !cd.getIndexDescriptor().hasDeferrableChecking() )
-			{
-				properties.put(
+                !cd.getIndexDescriptor().hasDeferrableChecking() )
+            {
+                properties.put(
                     "uniqueWithDuplicateNulls", Boolean.toString(true));
-			}
+            }
 
             properties.put("rowLocationColumn",
-							Integer.toString(indexRowLength - 1));
-			properties.put("nKeyFields", Integer.toString(indexRowLength));
+                           Integer.toString(indexRowLength - 1));
+            properties.put("nKeyFields", Integer.toString(indexRowLength));
 
-			indexCC.close();
+            indexCC.close();
 			
             collation[index] = 
                 constants.irgs[index].getColumnCollationIds(
                     td.getColumnDescriptorList());
 
-			// We can finally drain the sorter and rebuild the index
-			// Populate the index.
-			newIndexCongloms[index] = 
+            // We can finally drain the sorter and rebuild the index
+            // Populate the index.
+            newIndexCongloms[index] = 
                 tc.createAndLoadConglomerate(
                     "BTREE",
                     idxRows[index].getRowArray(),
@@ -2361,33 +2341,32 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
                     rowSources[index],
                     (long[]) null);
 
-			/* Update the DataDictionary
-			 *
-			 * Update sys.sysconglomerates with new conglomerate #, if the
-			 * conglomerate is shared by duplicate indexes, all the descriptors
-			 * for those indexes need to be updated with the new number.
-			 */
-			dd.updateConglomerateDescriptor(
+            /* Update the DataDictionary
+             *
+             * Update sys.sysconglomerates with new conglomerate #, if the
+             * conglomerate is shared by duplicate indexes, all the descriptors
+             * for those indexes need to be updated with the new number.
+             */
+            dd.updateConglomerateDescriptor(
                 td.getConglomerateDescriptors(constants.indexCIDS[index]),
                 newIndexCongloms[index], tc);
 
-			// Drop the old conglomerate
-			tc.dropConglomerate(constants.indexCIDS[index]);
-		}
-	}
+            // Drop the old conglomerate
+            tc.dropConglomerate(constants.indexCIDS[index]);
+        }
+    }
 
-	/**
-	 * Get me a table scan result set, preferably a bulk
-	 * table scan, thank you.  If we already have one, reopen it.
-	 */
-	private BulkTableScanResultSet getTableScanResultSet
-	(
-		long	conglomId
-	) throws StandardException
-	{
-		if (tableScan == null)
-		{
-			tableScan = 
+    /**
+     * Get me a table scan result set, preferably a bulk
+     * table scan, thank you.  If we already have one, reopen it.
+     */
+    private BulkTableScanResultSet getTableScanResultSet
+    (
+        long	conglomId
+	) throws StandardException {
+        if (tableScan == null)
+        {
+            tableScan = 
                 new BulkTableScanResultSet(
                     conglomId,
                     tc.getStaticCompiledConglomInfo(conglomId),
@@ -2416,31 +2395,31 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
                     0d,						// estimated rows
                     0d 					// estimated cost
                     );
-			tableScan.openCore();
-		}
-		else
-		{	
-			tableScan.reopenCore();
-		}
-		return tableScan;
-	}
+            tableScan.openCore();
+        }
+        else
+        {	
+            tableScan.reopenCore();
+        }
+        return tableScan;
+    }
 
-	private String[] getColumnNames(int[] baseColumnPositions)
+    private String[] getColumnNames(int[] baseColumnPositions)
 	{
-		int length = baseColumnPositions.length;
-		String[] columnNames = new String[length];
-		for(int i = 0; i < length; i++)
-		{
-			columnNames[i] = constants.getColumnName(i);
-		}
-		return columnNames;
+            int length = baseColumnPositions.length;
+            String[] columnNames = new String[length];
+            for(int i = 0; i < length; i++)
+            {
+                columnNames[i] = constants.getColumnName(i);
+            }
+            return columnNames;
 	}
 
     @Override
-	public void finish() throws StandardException {
-		sourceResultSet.finish();
-		super.finish();
-	}
+    public void finish() throws StandardException {
+        sourceResultSet.finish();
+        super.finish();
+    }
 
     @Override
     public void rememberConstraint(UUID cid) throws StandardException {
@@ -2477,19 +2456,19 @@ class InsertResultSet extends DMLWriteGeneratedColumnsResultSet implements Targe
      *  method for insert and update.
      */
     protected void  initializeAIcache(RowLocation[] rla) 
-    		throws StandardException{
+        throws StandardException {
     	if ((rla = constants.getAutoincRowLocation()) != null)
     	{
-    		aiCache = new DataValueDescriptor[ rla.length ];
-    		bulkInsertCounters = new BulkInsertCounter[ rla.length ];
-    		for (int i = 0; i < resultDescription.getColumnCount(); i++)
-    		{
-    			if (rla[i] == null)
-    				continue;
-    			ResultColumnDescriptor rcd = 
-    				resultDescription.getColumnDescriptor(i + 1);
-    			aiCache[i] = rcd.getType().getNull();
-    		}
+            aiCache = new DataValueDescriptor[ rla.length ];
+            bulkInsertCounters = new BulkInsertCounter[ rla.length ];
+            for (int i = 0; i < resultDescription.getColumnCount(); i++)
+            {
+                if (rla[i] == null)
+                    continue;
+                ResultColumnDescriptor rcd = 
+                    resultDescription.getColumnDescriptor(i + 1);
+                aiCache[i] = rcd.getType().getNull();
+            }
     	}
     }
 }

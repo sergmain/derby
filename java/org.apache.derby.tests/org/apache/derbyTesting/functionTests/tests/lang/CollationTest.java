@@ -2141,7 +2141,7 @@ public void testMissingCollatorSupport() throws SQLException {
      * @return true if the bug is present, false otherwise
      */
     private static boolean hasBuggySwedishLocale() {
-        Collator c = Collator.getInstance(new Locale("sv"));
+        Collator c = Collator.getInstance(Locale.of("sv"));
         if (c.compare("aa", "ab") < 0) {
             // OK, aa should be less than ab with Swedish collation
             return false;

@@ -1686,6 +1686,7 @@ nextModule:
 	/**
 		Boot (start or create) a service (persistent or non-persistent).
 	*/
+        @SuppressWarnings("removal")
 	protected Object bootService(PersistentService provider,
 		String factoryInterface, String serviceName, Properties properties,
 		boolean create) throws StandardException {
@@ -2019,12 +2020,12 @@ nextModule:
 		String country = len == 2 ? "" : localeDescription.substring(3, 5);
 
 		if (len < 6) {
-			return new Locale(language, country);
+			return Locale.of(language, country);
 		}
 
 		String variant = (len > 6) ? localeDescription.substring(6, len) : null;
 
-		return new Locale(language, country, variant);
+		return Locale.of(language, country, variant);
 	}
 
 	private static Locale setLocale(Properties properties)

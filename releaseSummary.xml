@@ -33,7 +33,7 @@ with real information.
     E.g.: 10.2.1.7
 
 -->
-<previousReleaseID>10.15.2.0</previousReleaseID>
+<previousReleaseID>10.16.1.1</previousReleaseID>
 
 <!--
     Identifier(s) of previously released versions. Any issue that was fixed in
@@ -50,7 +50,7 @@ with real information.
   <machine>Mac OSX 11.2.3.</machine>
 
   <!-- Ant version. E.g.:  Apache Ant version 1.6.5 compiled on June 2 2005. -->
-  <antVersion>Apache Ant(TM) version 1.10.6 compiled on May 2 2019.</antVersion>
+  <antVersion>Apache Ant(TM) version 1.10.14 compiled on August 16 2023.</antVersion>
 
   <!--
          Say which compilers you used.
@@ -59,7 +59,7 @@ with real information.
            The 1.4.2_12-b03 javac was used to compile all classes
            except for the JDBC4 drivers. The JDBC4 driver classes were compiled using the 1.6.0-b105 javac.
   -->
-  <compilers>All classes were compiled by the javac from OpenJDK 64-Bit Server VM (build 17+35-2724, mixed mode, sharing).</compilers>
+  <compilers>All classes were compiled by the javac from OpenJDK 64-Bit Server VM (build 21+35-2513, mixed mode, sharing).</compilers>
 
 </buildInfo>
 
@@ -85,39 +85,24 @@ Derby functionality includes:
 </ul>
 
 <p>
-The 10.16 release family supports the following Java and JDBC versions:
+The 10.17 release family supports the following Java and JDBC versions:
 </p>
 <ul>
-  <li>Java SE 17 and higher with JDBC 4.2.</li>
+  <li>Java SE 21 and higher with JDBC 4.2.</li>
 </ul>
 </overview>
 
 <newFeatures>
 
 <p>
-This is a feature release. The following significant change has been made:
+The major feature of this release is support for Java SE 21.
 </p>
-
-<ul>
-
-<li><b>SecurityManager deprecated</b> - Derby no longer supports the Java SecurityManager. This is because the Open JDK team deprecated the SecurityManager and marked it for removal. This deprecation happened under the aegis of
-<a href="https://openjdk.java.net/jeps/411">JEP 411</a>.
-</li>
-
-</ul>
 
 <p>
 New users should consult the
-<a href="https://db.apache.org/derby/manuals/index.html#docs_10.16">10.16 documentation</a>,
+<a href="https://db.apache.org/derby/manuals/index.html#docs_10.17">10.17 documentation</a>,
 especially the
-<a href="https://db.apache.org/derby/docs/10.16/getstart/index.html">Getting Started With Derby</a> guide.
-</p>
-
-<p>
-Existing users who want to run Derby with a SecurityManager must NOT upgrade to version 10.16.
-Instead, those users must continue to use older versions of Derby. Please see the
-<a href="https://db.apache.org/derby/derby_downloads.html">Derby download page</a>
-in order to understand how Derby and Java versions correspond.
+<a href="https://db.apache.org/derby/docs/10.17/getstart/index.html">Getting Started With Derby</a> guide.
 </p>
 
 </newFeatures>

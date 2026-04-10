@@ -311,7 +311,7 @@ public class UrlLocaleTest extends BaseJDBCTestCase {
         suite.addTestSuite(UrlLocaleTest.class);
         suite.addTest(new LocaleTestSetup(
                 new UrlLocaleTest("messageLocale_unknown"),
-                new Locale("rr", "TT")));
+                Locale.of("rr", "TT")));
         suite.addTest(new LocaleTestSetup(
                 new UrlLocaleTest("messageLocale_Germany"),
                 Locale.GERMANY));

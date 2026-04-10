@@ -406,7 +406,6 @@ public class InternalDriver implements ModuleControl, Driver {
      *
      * @param user The user to be checked for having the permission
      * @param perm The permission to be checked
-     * @throws AccessControlException if permissions are missing
      */
     public void checkSystemPrivileges(String user, Permission perm) {
         SecurityUtil.checkUserHasPermission(user, perm);

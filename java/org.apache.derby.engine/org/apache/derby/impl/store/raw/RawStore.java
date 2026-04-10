@@ -74,6 +74,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 import java.security.SecureRandom;
@@ -636,9 +638,12 @@ public final class RawStore implements RawStoreFactory, ModuleControl, ModuleSup
 		// in case this is an URL form
 		String backupDirURL = null;
 		try {
-			URL url = new URL(backupDir);
-			backupDirURL = url.getFile();
-		} catch (MalformedURLException ex) {}
+                    URL url = new URI(backupDir).toURL();
+                    backupDirURL = url.getFile();
+		}
+                catch (MalformedURLException ex) {}
+                catch (URISyntaxException ex) {}
+                catch (IllegalArgumentException ex) {}
 
 		if (backupDirURL != null)
 			backupDir = backupDirURL;

@@ -61,7 +61,7 @@ public class ClobStoredProcedureTest extends BaseJDBCTestCase {
 
     /**
      * Setup the test.
-     * @throws a SQLException.
+     * @throws SQLException on error
      */
     public void setUp() throws Exception {
         int locator = 0;
@@ -92,7 +92,7 @@ public class ClobStoredProcedureTest extends BaseJDBCTestCase {
     /**
      * Test the stored procedure SYSIBM.CLOBGETSUBSTRING
      *
-     * @throws an SQLException.
+     * @throws SQLException on error
      */
     public void testGetSubStringSP() throws SQLException {
         CallableStatement cs  = prepareCall("? = CALL " +

@@ -271,7 +271,7 @@ public final class LocalizedResource
 					r=st.nextToken();
 				if(st.hasMoreTokens()==true)
 					v=st.nextToken();
-				return new Locale(l,r,v);
+				return Locale.of(l,r,v);
 			} catch (Exception e) {
 				return null;
 			}

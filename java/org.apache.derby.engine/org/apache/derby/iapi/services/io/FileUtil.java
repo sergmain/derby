@@ -32,6 +32,8 @@ import org.apache.derby.io.WritableStorageFactory;
 import org.apache.derby.io.StorageFile;
 
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -464,9 +466,12 @@ public abstract class FileUtil {
     {
         String result = originalName;
         try {
-            URL url = new URL(originalName);
+            URL url = (new URI(originalName)).toURL();
             result = url.getFile();
-        } catch (MalformedURLException ex) {}
+        }
+        catch (MalformedURLException ex) {}
+        catch (URISyntaxException u) {}
+        catch (IllegalArgumentException u) {}
 
         return result;
     }

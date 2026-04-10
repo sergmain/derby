@@ -156,6 +156,7 @@ public class BasicUnitTestManager implements UnitTestManager, ModuleControl
 	   currentOutput.printlnWithHeader(message);
 	}
 
+        @SuppressWarnings("removal")
 	private boolean runATest(UnitTest aTest){
 
 		boolean result;

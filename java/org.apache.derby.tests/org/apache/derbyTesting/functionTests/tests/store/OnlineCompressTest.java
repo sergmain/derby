@@ -87,7 +87,7 @@ public class OnlineCompressTest extends BaseTest
      * @param tblname       table to use.
      * @param num_rows      number of rows to add to the table.
      *
-	 * @exception  StandardException  Standard exception policy.
+     * @throws  SQLException  on error
      **/
     protected void createAndLoadTable(
     Connection  conn,
@@ -181,7 +181,7 @@ public class OnlineCompressTest extends BaseTest
      * @param tblname       table to use.
      * @param num_rows      number of rows to add to the table.
      * @param start_value   Starting number from which num_rows are inserted
-     * @exception  StandardException  Standard exception policy.
+     * @throws  SQLException  on error
      **/
     protected void createAndLoadLargeTable(
     Connection  conn,
@@ -339,7 +339,7 @@ public class OnlineCompressTest extends BaseTest
      * @param tblname       table to use.
      * @param num_rows      number of rows to add to the table.
      *
-	 * @exception  StandardException  Standard exception policy.
+     * @throws  SQLException  on error
      **/
     private void createAndLoadLongTable(
     Connection  conn,
@@ -634,7 +634,7 @@ public class OnlineCompressTest extends BaseTest
      * the table in it.
      * <p>
      *
-	 * @exception  StandardException  Standard exception policy.
+     * @throws  SQLException  on error
      **/
     private void checkPurgePhase(
     Connection  conn,
@@ -1075,7 +1075,7 @@ public class OnlineCompressTest extends BaseTest
      * @param table_name the table to use.
      * @param num_rows      number of rows to add to the table.
      *
-	 * @exception  StandardException  Standard exception policy.
+     * @throws  SQLException  on error
      **/
     private void test5_load(
     Connection  conn,

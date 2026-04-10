@@ -27,6 +27,8 @@ import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URI;
 import java.net.URL;
 import java.sql.BatchUpdateException;
 import java.sql.CallableStatement;
@@ -1152,11 +1154,11 @@ public class CallableTest extends BaseJDBCTestCase {
       
 //jdbc 3.0 test methods
     
-    public void testsetURL() throws SQLException, MalformedURLException
+    public void testsetURL() throws SQLException, MalformedURLException, URISyntaxException
     {
     	CallableStatement cs = prepareCall("call TWO_IN_ONE_OUT_PROC (?, ?, ?)");
     	try {
-    		URL domain = new URL("http://www.apache.org");
+    		URL domain = (new URI("http://www.apache.org")).toURL();
     	    cs.setURL("URL",domain);
     	    fail("should have failed");
     	} catch (SQLFeatureNotSupportedException e) {

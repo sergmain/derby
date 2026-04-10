@@ -66,7 +66,6 @@ public class JDBCMBeanTest extends MBeanTest {
      *   <li>type=JDBC</li>
      * </ul>
      * @return the object name representing Derby's JDBCMBean
-     * @throws MalformedObjectNameException if the object name is not valid
      */
     private ObjectName getJdbcMBeanObjectName() 
             throws Exception {

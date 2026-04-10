@@ -74,7 +74,7 @@ public class LuceneSupportTest extends BaseJDBCTestCase {
 
             Test    baseTest = TestConfiguration.embeddedSuite(LuceneSupportTest.class);
             Test        singleUseTest = TestConfiguration.singleUseDatabaseDecorator( baseTest );
-            Test        localizedTest = new LocaleTestSetup( singleUseTest, new Locale( "en", "US" ) );
+            Test        localizedTest = new LocaleTestSetup( singleUseTest, Locale.of( "en", "US" ) );
 		
             suite.addTest(localizedTest);
  

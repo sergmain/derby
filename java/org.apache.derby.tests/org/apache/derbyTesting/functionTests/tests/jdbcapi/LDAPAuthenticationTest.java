@@ -41,7 +41,8 @@ import org.apache.derbyTesting.junit.TestConfiguration;
 // an LDAPServer when property authenticationProvider is set to 'LDAP'.
 // This test assumes at least one valid user (to be passed in) and one
 // additional user (kathy / kathyS) to be setup in ou=People on the
-// LDAPServer.
+// LDAPServer. For pointers on how to install and boot an LDAP server
+// and configure it to run this test, see https://issues.apache.org/jira/browse/DERBY-7147
 public class LDAPAuthenticationTest extends BaseJDBCTestCase {
 
     private static String ldapServer;

@@ -29,6 +29,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.File;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URI;
 import java.net.URL;
 import org.apache.derby.shared.common.sanity.SanityManager;
 import java.sql.SQLException;
@@ -243,16 +245,16 @@ final class ImportReadData {
 	  InputStream inputStream;
     try {
       try {
-        URL url = new URL(inputFileName);
+        URL url = (new URI(inputFileName)).toURL();
         if (url.getProtocol().equals("file")) { //this means it's a file url
            inputFileName = url.getFile(); //seems like you can't do openstream on file
            throw new MalformedURLException(); //so, get the filename from url and do it ususal way
         }
         inputStream =  url.openStream();
-      } catch (MalformedURLException ex) {
-        inputStream = new FileInputStream(inputFileName);
-        
       }
+      catch (MalformedURLException ex) { inputStream = new FileInputStream(inputFileName); }
+      catch (URISyntaxException u) {  inputStream = new FileInputStream(inputFileName); }
+      catch (IllegalArgumentException u) {  inputStream = new FileInputStream(inputFileName); }
     } catch (FileNotFoundException ex) {
         throw LoadError.dataFileNotFound(inputFileName, ex);
     }

@@ -122,7 +122,7 @@ class GroupByNode extends SingleChildResultSetNode
      * @param nestingLevel  NestingLevel of this group by node. This is used for
 	 *     error checking of group by queries with having clause.
      * @param cm            The context manager
-	 * @exception StandardException		Thrown on error
+	 * @throws StandardException		Thrown on error
 	 */
     GroupByNode(ResultSetNode  bottomPR,
                 GroupByList    groupingList,
@@ -232,7 +232,7 @@ class GroupByNode extends SingleChildResultSetNode
 	 * Add the extra result columns required by the aggregates
 	 * to the result list.
 	 * 
-	 * @exception standard exception
+	 * @throws StandardException standard exception policy
 	 */
 	private void addAggregates()
 		throws StandardException
@@ -282,7 +282,7 @@ class GroupByNode extends SingleChildResultSetNode
 	 * Add a new PR node for aggregation.  Put the
 	 * new PR under the sort.
 	 *		
-	 * @exception standard exception
+	 * @throws StandardException standard exception policy
 	 */
 	private void addNewPRNode()
 		throws StandardException
@@ -525,7 +525,8 @@ class GroupByNode extends SingleChildResultSetNode
 	 * Note that that addition of the GroupByNode is done after the
 	 * query is optimized (in SelectNode#modifyAccessPaths) which means a 
 	 * fair amount of patching up is needed to account for generated group by columns.
-	 * @exception standard exception
+         *
+	 * @throws StandardException standard exception policy
 	 */
 	private void addNewColumnsForAggregation()
 		throws StandardException
@@ -765,7 +766,7 @@ class GroupByNode extends SingleChildResultSetNode
 	/**
 	 * @see Optimizable#optimizeIt
 	 *
-	 * @exception StandardException		Thrown on error
+	 * @throws StandardException		Thrown on error
 	 */
     @Override
 	public CostEstimate optimizeIt(
@@ -793,7 +794,7 @@ class GroupByNode extends SingleChildResultSetNode
 	/**
 	 * @see Optimizable#estimateCost
 	 *
-	 * @exception StandardException		Thrown on error
+	 * @throws StandardException		Thrown on error
 	 */
     @Override
 	public CostEstimate estimateCost(OptimizablePredicateList predList,
@@ -824,7 +825,7 @@ class GroupByNode extends SingleChildResultSetNode
 	/**
 	 * @see org.apache.derby.iapi.sql.compile.Optimizable#pushOptPredicate
 	 *
-	 * @exception StandardException		Thrown on error
+	 * @throws StandardException		Thrown on error
 	 */
 
     @Override
@@ -922,7 +923,7 @@ class GroupByNode extends SingleChildResultSetNode
 	 *
 	 * @return	ResultSetNode	The top of the optimized subtree
 	 *
-	 * @exception StandardException		Thrown on error
+	 * @throws StandardException		Thrown on error
 	 */
     @Override
     ResultSetNode optimize(DataDictionary dataDictionary,
@@ -961,7 +962,7 @@ class GroupByNode extends SingleChildResultSetNode
 	 * on the right side if we know that it will return at most 1 row.
 	 *
 	 * @return Whether or not the underlying ResultSet tree will return a single row.
-	 * @exception StandardException		Thrown on error
+	 * @throws StandardException		Thrown on error
 	 */
     @Override
     boolean isOneRowResultSet() throws StandardException
@@ -973,9 +974,9 @@ class GroupByNode extends SingleChildResultSetNode
     /**
      * generate the sort result set operating over the source
      * result set.  Adds distinct aggregates to the sort if
-	 * necessary.
+     * necessary.
      *
-	 * @exception StandardException		Thrown on error
+     * @throws StandardException		Thrown on error
      */
     @Override
     void generate(ActivationClassBuilder acb, MethodBuilder mb)
@@ -1140,7 +1141,7 @@ class GroupByNode extends SingleChildResultSetNode
 	 *
 	 * @return the new result column
 	 *
-	 * @exception StandardException	on error
+	 * @throws StandardException	on error
 	 */
 	private ResultColumn getColumnReference(ResultColumn targetRC, 
 								DataDictionary		dd)
@@ -1173,7 +1174,7 @@ class GroupByNode extends SingleChildResultSetNode
 	 * @param selectHasPredicates true if SELECT containing this
 	 *		vector/scalar aggregate has a restriction
 	 *
-	 * @exception StandardException	on error
+	 * @throws StandardException	on error
 	 */
 	void considerPostOptimizeOptimizations(boolean selectHasPredicates)
 		throws StandardException

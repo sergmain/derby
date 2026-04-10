@@ -32,7 +32,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -107,14 +108,23 @@ public class JiraConnector {
 			in.close();
 			fw.close();
 			System.out.println("A new Jira XML File created: "+file);
-		}catch(IOException e){
+		}
+                catch(IOException e){
 			//e.printStackTrace();
 			throw e;
 		}
+                catch(URISyntaxException u){
+			//e.printStackTrace();
+                        throw new IOException(u.getMessage(), u);
+		}
+                catch(IllegalArgumentException u){
+			//e.printStackTrace();
+                        throw new IOException(u.getMessage(), u);
+		}
 	}
 
-	public static InputStream getXMLStream(String XMLurl) throws MalformedURLException, IOException {
-		URL url= new URL(XMLurl);
+	public static InputStream getXMLStream(String XMLurl) throws URISyntaxException, IOException {
+                URL url= (new URI(XMLurl)).toURL();
 		System.out.println("Accessing url: " + XMLurl);
 		URLConnection jiraSite = url.openConnection();
 		return jiraSite.getInputStream();

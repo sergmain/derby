@@ -25,6 +25,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URI;
 import java.net.URL;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -295,9 +297,11 @@ public  class   XmlVTI  extends StringColumnVTI
     {
         InputStream is = null;
         try {
-            is = (new URL( urlString )).openStream();
+            is = (new URI(urlString)).toURL().openStream();
         }
         catch (IOException ioe) { throw new IllegalArgumentException( ioe.getMessage(), ioe ); }
+        catch (URISyntaxException u) { throw new IllegalArgumentException( u.getMessage(), u ); }
+        catch (IllegalArgumentException u) { throw new IllegalArgumentException( u.getMessage(), u ); }
         return xmlVTI( is, rowTag, parentTags, childTags );
     }
 

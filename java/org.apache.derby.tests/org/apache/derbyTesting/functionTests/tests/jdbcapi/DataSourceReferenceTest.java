@@ -400,7 +400,6 @@ public class DataSourceReferenceTest
      *      should be verified, <code>false</code> if the set values should be
      *      used for verification
      * @throws Exception on a wide variety of error conditions...
-     * @throws AssertionFailedError if the data sources are not equal
      */
     private void compareDataSources(DataSourceDescriptor dsDesc,
                                        Object ds, Object rds,
@@ -623,8 +622,6 @@ public class DataSourceReferenceTest
          *
          * @throws NullPointerException if <code>name</code> is
          *      <code>null</code>
-         * @throws AssertionFailedError if the property name is not defined by
-         *      this descriptor
          */
         String getPropertyValue(String name) {
             if (!this.propertyValues.containsKey(name)) {
@@ -636,6 +633,8 @@ public class DataSourceReferenceTest
 
         /**
          * Returns the default value for the specified property.
+         * Throws AssertionFailedError if the property name is not defined by
+         * this descriptor.
          *
          * @param name property name
          * @return The default value if specified, <code>null<code> if a default
@@ -643,8 +642,6 @@ public class DataSourceReferenceTest
          *
          * @throws NullPointerException if <code>name</code> is
          *      <code>null</code>
-         * @throws AssertionFailedError if the property name is not defined by
-         *      this descriptor
          */
         String getPropertyDefault(String name) {
             if (!this.propertyValues.containsKey(name)) {

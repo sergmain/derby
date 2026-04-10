@@ -839,6 +839,50 @@ public class MatchingClauseNode extends QueryTreeNode
         _dml.bindStatement();
 
         buildThenColumnsForInsert( fullFromList, targetTable, _dml.resultSet.getResultColumns(), _insertColumns, _insertValues );
+
+        boolean autoincrementColumnSetToDEFAULT = autoincrementColumnSetToDEFAULT(targetTable.getTableDescriptor(), selectList);
+        ((InsertNode) _dml).autoincrementColumnSetToDEFAULT = autoincrementColumnSetToDEFAULT;
+    }
+
+    /**
+     * Return true if the VALUES clause of the INSERT branch contains an autoincrement column
+     * which is set to DEFAULT or if the VALUES clause doesn't explicitly mention the autoincrement column.
+     *
+     * @param targetTableDescriptor Target table catalog info
+     * @param valuesList Columns explicitly mentioned in the VALUES clause
+     */
+    private boolean autoincrementColumnSetToDEFAULT(TableDescriptor targetTableDescriptor, ResultColumnList valuesList) {
+
+        for (int idx = 0; idx < valuesList.size(); idx++)
+        {
+            ResultColumn rc = valuesList.getResultColumn(idx+1);
+
+            if (rc.isAutoincrementGenerated() && rc.wasDefaultColumn()) { return true; }
+        }
+
+        boolean tableHasAutoincrementColumn = targetTableDescriptor.tableHasAutoincrement();
+        boolean autoincrementInValuesList = false;        
+        for (int idx = 0; idx < _insertColumns.size(); idx++)
+        {
+            ResultColumn insertColumn = _insertColumns.getResultColumn(idx+1);
+
+            if (insertColumn != null)
+            {
+                ColumnDescriptor colDesc = targetTableDescriptor.getColumnDescriptor(insertColumn.getName());
+
+                if ((colDesc != null) && colDesc.isAutoincrement())
+                {
+                    autoincrementInValuesList = true;
+                    break;
+                }
+            }
+        }
+
+        // If the table has an autoincrement column but it wasn't mentioned in the VALUES clause,
+        // then it will be implicitly set to DEFAULT.
+        if (tableHasAutoincrementColumn && !autoincrementInValuesList) { return true; }
+
+        return false;
     }
 
     /**  Bind the values in the INSERT list */
@@ -1166,8 +1210,7 @@ public class MatchingClauseNode extends QueryTreeNode
     ///////////////////////////////////////////////////////////////////////////////////
 
     ConstantAction makeConstantAction( ActivationClassBuilder acb )
-        throws StandardException
-	{
+        throws StandardException {
         // generate the clause-specific refinement
         String  refinementName = null;
         if ( _matchingRefinement != null )
@@ -1185,15 +1228,15 @@ public class MatchingClauseNode extends QueryTreeNode
         
         return	getGenericConstantActionFactory().getMatchingClauseConstantAction
             (
-             getClauseType(),
-             refinementName,
-             buildThenColumnSignature(),
-             _rowMakingMethodName,
-             _resultSetFieldName,
-             _actionMethodName,
-             _dml.makeConstantAction()
-             );
-	}
+                getClauseType(),
+                refinementName,
+                buildThenColumnSignature(),
+                _rowMakingMethodName,
+                _resultSetFieldName,
+                _actionMethodName,
+                _dml.makeConstantAction()
+                );
+    }
     private int getClauseType()
     {
         if ( isUpdateClause() ) { return ConstantAction.WHEN_MATCHED_THEN_UPDATE; }
@@ -1508,18 +1551,17 @@ public class MatchingClauseNode extends QueryTreeNode
     //
     ///////////////////////////////////////////////////////////////////////////////////
 
-	/**
-	 * Accept the visitor for all visitable children of this node.
-	 * 
-	 * @param v the visitor
-	 *
-	 * @exception StandardException on error
-	 */
+    /**
+     * Accept the visitor for all visitable children of this node.
+     * 
+     * @param v the visitor
+     *
+     * @exception StandardException on error
+     */
     @Override
-	void acceptChildren(Visitor v)
-		throws StandardException
-	{
-		super.acceptChildren( v );
+    void acceptChildren(Visitor v)
+        throws StandardException {
+        super.acceptChildren( v );
 
         if ( _matchingRefinement != null ) { _matchingRefinement.accept( v ); }
         if ( _updateColumns != null ) { _updateColumns.accept( v ); }
@@ -1527,20 +1569,19 @@ public class MatchingClauseNode extends QueryTreeNode
         if ( _insertValues != null ) { _insertValues.accept( v ); }
 
         if ( _dml != null ) { _dml.accept( v ); }
-	}
+    }
 
-	/**
-	 * Prints the sub-nodes of this object.  See QueryTreeNode.java for
-	 * how tree printing is supposed to work.
-	 *
-	 * @param depth		The depth of this node in the tree
-	 */
+    /**
+     * Prints the sub-nodes of this object.  See QueryTreeNode.java for
+     * how tree printing is supposed to work.
+     *
+     * @param depth		The depth of this node in the tree
+     */
     @Override
-    void printSubNodes( int depth )
-	{
-		if (SanityManager.DEBUG)
-		{
-			super.printSubNodes( depth );
+    void printSubNodes( int depth ) {
+        if (SanityManager.DEBUG)
+        {
+            super.printSubNodes( depth );
 
             if ( _matchingRefinement != null )
             {
@@ -1565,22 +1606,21 @@ public class MatchingClauseNode extends QueryTreeNode
                 printLabel( depth, "insertValues: " );
                 _insertValues.treePrint( depth + 1 );
             }
-		}
-	}
+        }
+    }
 
-	/**
-	 * Convert this object to a String.  See comments in QueryTreeNode.java
-	 * for how this should be done for tree printing.
-	 *
-	 * @return	This object as a String
-	 */
+    /**
+     * Convert this object to a String.  See comments in QueryTreeNode.java
+     * for how this should be done for tree printing.
+     *
+     * @return	This object as a String
+     */
     @Override
-	public String toString()
-	{
+    public String toString() {
         if ( isUpdateClause() ) { return "UPDATE"; }
         else if ( isInsertClause() ) { return "INSERT"; }
         else { return "DELETE"; }
-	}
+    }
 
     ///////////////////////////////////////////////////////////////////////////////////
     //

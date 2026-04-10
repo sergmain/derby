@@ -62,13 +62,13 @@
                 <execution>
                     <phase>package</phase>
                     <configuration>
-                        <tasks>
+                        <target>
 
                 <copy file="${basedir}/../../jars/${sanity}/derbynet.jar"
                       tofile="${basedir}/target/${project.build.finalName}.jar"
                       overwrite="true"/>
 
-                        </tasks>
+                        </target>
                     </configuration>
                     <goals>
                         <goal>run</goal>

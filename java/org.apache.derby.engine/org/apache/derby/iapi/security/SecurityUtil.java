@@ -63,7 +63,7 @@ public class SecurityUtil {
      * @param user the user name
      * @return a Subject representing the user by its exact and normalized name
      *
-     * @see <a href="http://wiki.apache.org/db-derby/UserIdentifiers">User Names & Authorization Identifiers in Derby</a>
+     * @see <a href="http://wiki.apache.org/db-derby/UserIdentifiers">User Names and Authorization Identifiers in Derby</a>
      */
     static public Subject createSystemPrincipalSubject(String user) {
         final Set<SystemPrincipal> principals = new HashSet<SystemPrincipal>();

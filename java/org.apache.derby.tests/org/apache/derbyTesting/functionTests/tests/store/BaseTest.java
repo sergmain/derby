@@ -366,7 +366,7 @@ public abstract class BaseTest
      * Takes care of dropping the table if it exists already.
      * <p>
      *
-	 * @exception  StandardException  Standard exception policy.
+     * @exception  SQLException unexpected error
      **/
     public void createTable(
     Connection  conn,

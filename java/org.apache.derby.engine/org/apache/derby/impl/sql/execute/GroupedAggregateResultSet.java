@@ -718,7 +718,7 @@ class GroupedAggregateResultSet extends GenericAggregateResultSet
 	 *
 	 * @param	row	the row to initialize
 	 *
-	 * @exception	standard Derby exception
+	 * @throws StandardException	standard Derby exception
 	 */
 	private void initializeVectorAggregation(ExecRow row)
 		throws StandardException
@@ -750,7 +750,7 @@ class GroupedAggregateResultSet extends GenericAggregateResultSet
 	 * @param	newRow	the row to merge
 	 * @param	currRow the row to merge into
 	 *
-	 * @exception	standard Derby exception
+	 * @throws StandardException	standard Derby exception
 	 */
 	private void mergeVectorAggregates(ExecRow newRow, ExecRow currRow,
 		int level)

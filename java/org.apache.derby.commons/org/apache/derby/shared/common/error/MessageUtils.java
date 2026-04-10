@@ -46,7 +46,7 @@ import org.apache.derby.shared.common.reference.SQLState;
 
 public class MessageUtils 
 {
-    private static final Locale EN = new Locale("en", "US");
+    private static final Locale EN = Locale.of("en", "US");
 	public static final String SQLERRMC_MESSAGE_DELIMITER = new String(new char[] {(char)20,(char)20,(char)20});
 	/** 
 	 * Pointer to the application requester
@@ -323,13 +323,13 @@ public class MessageUtils
             if (_pos2 == _pos1)
             {
                 String country = localeStr.substring(_pos1 + 1);
-                locale = new Locale(language, country);
+                locale = Locale.of(language, country);
             }
             else
             {
                 String country = localeStr.substring(_pos1 + 1, _pos2);
                 String variant = localeStr.substring(_pos2 + 1);
-                locale = new Locale(language, country, variant);
+                locale = Locale.of(language, country, variant);
             }
         }
 

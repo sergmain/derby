@@ -1,5 +1,5 @@
 APACHE DERBY STATUS:
-Last modified at [$Date: 2020-03-01 13:46:10 -0800 (Sun, 01 Mar 2020) $] by $Author: rhillegas $.
+Last modified at [$Date: 2023-10-18 09:10:24 -0700 (Wed, 18 Oct 2023) $] by $Author: rhillegas $.
 
 Web site: http://db.apache.org/derby/
 
@@ -21,6 +21,7 @@ Project info
     period of time can earn a contributor commit access to the codebase.
 
 Official releases:
+ * 10.16.1.1 : Released 2022-06-16
  * 10.15.2.0 : Released 2020-03-01
  * 10.15.1.3 : Released 2019-03-11
  * 10.14.2.0 : Released 2018-05-03
@@ -65,6 +66,7 @@ None.
 RECENT VOTES
 =================================
 
+Release 10.16.1.1 was approved as a release on 2022-06-03, published on 2022-06-06, and announced on 2022-06-15.
 Release 10.15.1.3 was approved as a release on 2019-02-26, published on 2019-03-05, and announced on 2019-03-11.
 The community voted to sunset support for Java SE 8. The vote closed on 2017-07-09.
 The community voted to sunset support for Java SE 7. The vote closed on 2015-09-12.
@@ -105,7 +107,7 @@ Mailing list    users     derby-user@db.apache.org
 Source code     SVN       /repos/asf/db/derby/code/trunk/
 Committers      jta                  Jean Anderson (CLA on file)
 Committers      kahatlen             Knut Anders Hatlen (CLA on file)
-Committers      oyvind               Øyvind Bakksjø (CLA on file)
+Committers      oyvind               Ã˜yvind BakksjÃ¸ (CLA on file)
 Committers      satheesh             Satheesh Bandaram (CLA on file)
 Committers      jboynes              Jeremy Boynes (CLA on file)
 Committers      abrown               Army Brown (CLA on file)
@@ -127,11 +129,11 @@ Committers      mamta                Mamta Satoor (CLA on file)
 Committers      scotsmatrix          Laura Stewart (CLA on file)
 Committers      kristwaa             Kristian Waagan (CLA on file)
 Committers      dag                  Dag H. Wanvik (CLA on file)
-Committers      oysteing             Øystein Grøvlen (CLA on file)
+Committers      oysteing             Ã˜ystein GrÃ¸vlen (CLA on file)
 Committers      dyre                 Dyre Tjeldvoll (CLA on file)
 Committers      chaase3              Camilla Haase (CLA on file)
 Committers      vnarayanan           V Narayanan (CLA on file)
-Committers      jorgenlo             Jørgen Løland (CLA on file)
+Committers      jorgenlo             JÃ¸rgen LÃ¸land (CLA on file)
 Committers      thomanie             Thomas Nielsen (CLA on file)
 Committers      johnemb              John Embretsen (CLA on file)
 Committers      ole                  Ole Solberg (CLA on file)

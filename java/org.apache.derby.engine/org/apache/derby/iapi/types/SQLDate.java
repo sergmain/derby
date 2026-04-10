@@ -53,8 +53,6 @@ import java.sql.SQLException;
 
 import java.text.DateFormat;
 import java.text.ParseException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 /**
  * This contains an instance of a SQL Date.
@@ -118,16 +116,6 @@ public final class SQLDate extends DataType
         
         return new Timestamp(getTimeInMillis(cal));
     }
-	
-	public LocalDateTime getLocalDateTime() 
-	{
-	    if (isNull())
-	    {
-	        return null;
-	    }
-	    
-	    return SQLDate.getLocalDate(encodedDate).atStartOfDay();
-	}
 
     /**
      * Convert the date into a milli-seconds since the epoch
@@ -156,13 +144,6 @@ public final class SQLDate extends DataType
         // Note Calendar uses 0 for January, Derby uses 1.
         cal.set(getYear(encodedDate),
                 getMonth(encodedDate)-1, getDay(encodedDate));     
-    }
-    
-    static LocalDate getLocalDate(int encodedDate)
-    {
-        // Note LocalDate uses 1 for January, Derby uses 1.
-        return LocalDate.of(getYear(encodedDate),
-                getMonth(encodedDate), getDay(encodedDate));
     }
     
 	/**
@@ -555,12 +536,6 @@ public final class SQLDate extends DataType
 		encodedDate = computeEncodedDate((java.util.Date) value, cal);
 	}
 
-	public void setValue(LocalDate value) throws StandardException
-	{
-	    restoreToNull();
-	    encodedDate = computeEncodedDate(value);
-	}
-
 	/**
 		@see DateTimeDataValue#setValue
 
@@ -569,16 +544,6 @@ public final class SQLDate extends DataType
 	{
 		restoreToNull();
 		encodedDate = computeEncodedDate((java.util.Date) value, cal);
-	}
-	
-	/**
-		@see DateTimeDataValue#setValue
-
-	 */
-	public void setValue(LocalDateTime value) throws StandardException
-	{
-	    restoreToNull();
-	    encodedDate = computeEncodedDate(value != null ? value.toLocalDate() : null);
 	}
 
 
@@ -741,20 +706,6 @@ public final class SQLDate extends DataType
         
         return new Date(getTimeInMillis(cal));
 	}
-	
-	/**
-	 * Get the value field.  We instantiate the field
-	 * on demand.
-	 *
-	 * @return	The value field.
-	 */
-	public LocalDate getLocalDate()
-	{
-	    if (isNull())
-	        return null;
-	    
-	    return SQLDate.getLocalDate(encodedDate);
-	}
 
 	/**
 	 * Get the year from the encodedDate.
@@ -912,11 +863,6 @@ public final class SQLDate extends DataType
 		currentCal.setTime(value);
 		return SQLDate.computeEncodedDate(currentCal);
 	}
-    
-    static int computeEncodedDate(LocalDate value) throws StandardException
-    {
-        return SQLDate.computeEncodedDate(value.getYear(), value.getMonthValue(), value.getDayOfMonth());
-    }
 
 
         /**

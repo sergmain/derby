@@ -37,12 +37,6 @@ import java.sql.Ref;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.temporal.ChronoField;
 import java.util.Calendar;
 import java.util.Locale;
 import org.apache.derby.shared.common.reference.SQLState;
@@ -70,25 +64,6 @@ final class CrossConverters {
      * Value used to signal unknown length of data.
      */
     public static final int UNKNOWN_LENGTH = Integer.MIN_VALUE;
-
-    // Formats and parses a LocalDateTime in way compatible to Timestamp
-    private static final DateTimeFormatter TIMESTAMP_FORMATTER = new DateTimeFormatterBuilder()
-        .appendValue(ChronoField.YEAR, 4)
-        .appendLiteral('-')
-        .appendValue(ChronoField.MONTH_OF_YEAR)
-        .appendLiteral('-')
-        .appendValue(ChronoField.DAY_OF_MONTH)
-        .appendLiteral(' ')
-        .appendValue(ChronoField.HOUR_OF_DAY)
-        .appendLiteral(':')
-        .appendValue(ChronoField.MINUTE_OF_HOUR)
-        .appendLiteral(':')
-        .appendValue(ChronoField.SECOND_OF_MINUTE)
-        .optionalStart()
-        .appendLiteral('.')
-        .appendFraction(ChronoField.NANO_OF_SECOND, 1, 9, false)
-        .optionalEnd()
-        .toFormatter();
 
     private final static BigDecimal bdMaxByteValue__ =
             BigDecimal.valueOf(Byte.MAX_VALUE);
@@ -609,29 +584,6 @@ final class CrossConverters {
                 "java.sql.Date", ClientTypes.getTypeString(targetType));
         }
     }
-    
-    // Convert from date source to target type
-    // In support of PS.setObject()
-    final Object setObject(int targetType, LocalDate source) throws SqlException {
-        switch (targetType) {
-        
-        case Types.DATE:
-            return Date.valueOf(source);
-            
-        case Types.TIMESTAMP:
-            return Timestamp.valueOf(source.atStartOfDay());
-            
-        case Types.CHAR:
-        case Types.VARCHAR:
-        case Types.LONGVARCHAR:
-            return String.valueOf(source);
-            
-        default:
-            throw new SqlException(agent_.logWriter_, 
-                    new ClientMessageId (SQLState.LANG_DATA_TYPE_SET_MISMATCH),
-                    "java.sql.Date", ClientTypes.getTypeString(targetType));
-        }
-    }
 
     // Convert from time source to target type
     // In support of PS.setTime()
@@ -650,26 +602,6 @@ final class CrossConverters {
             throw new SqlException(agent_.logWriter_, 
                 new ClientMessageId (SQLState.LANG_DATA_TYPE_SET_MISMATCH),
                 "java.sql.Time", ClientTypes.getTypeString(targetType));
-        }
-    }
-    
-    // Convert from time source to target type
-    // In support of PS.setObject()
-    final Object setObject(int targetType, LocalTime source) throws SqlException {
-        switch (targetType) {
-        
-        case Types.TIME:
-            return Time.valueOf(source);
-            
-        case Types.CHAR:
-        case Types.VARCHAR:
-        case Types.LONGVARCHAR:
-            return String.valueOf(source);
-            
-        default:
-            throw new SqlException(agent_.logWriter_, 
-                    new ClientMessageId (SQLState.LANG_DATA_TYPE_SET_MISMATCH),
-                    "java.sql.Time", ClientTypes.getTypeString(targetType));
         }
     }
 
@@ -697,33 +629,6 @@ final class CrossConverters {
             throw new SqlException(agent_.logWriter_, 
                 new ClientMessageId (SQLState.LANG_DATA_TYPE_SET_MISMATCH),
                 "java.sql.Timestamp", ClientTypes.getTypeString(targetType));
-        }
-    }
-    
-    // Convert from date source to target type
-    // In support of PS.setObject()
-    final Object setObject(int targetType, LocalDateTime source)
-            throws SqlException {
-        switch (targetType) {
-        
-        case Types.TIMESTAMP:
-            return Timestamp.valueOf(source);
-            
-        case Types.TIME:
-            return Time.valueOf(source.toLocalTime());
-            
-        case Types.DATE:
-            return Date.valueOf(source.toLocalDate());
-            
-        case Types.CHAR:
-        case Types.VARCHAR:
-        case Types.LONGVARCHAR:
-            return source.format(TIMESTAMP_FORMATTER);
-            
-        default:
-            throw new SqlException(agent_.logWriter_, 
-                    new ClientMessageId (SQLState.LANG_DATA_TYPE_SET_MISMATCH),
-                    "java.sql.Timestamp", ClientTypes.getTypeString(targetType));
         }
     }
 
@@ -1052,16 +957,10 @@ final class CrossConverters {
             return setObject(targetType, (BigDecimal) source);
         } else if (source instanceof Date) {
             return setObject(targetType, (Date) source);
-        } else if (source instanceof LocalDate) {
-            return setObject(targetType, (LocalDate) source);
         } else if (source instanceof Time) {
             return setObject(targetType, (Time) source);
-        } else if (source instanceof LocalTime) {
-            return setObject(targetType, (LocalTime) source);
         } else if (source instanceof Timestamp) {
             return setObject(targetType, (Timestamp) source);
-        } else if (source instanceof LocalDateTime) {
-            return setObject(targetType, (LocalDateTime) source);
         } else if (source instanceof String) {
             return setObject(targetType, (String) source);
         } else if (source instanceof byte[]) {
@@ -1439,16 +1338,6 @@ final class CrossConverters {
                     new ClientMessageId (SQLState.LANG_DATE_SYNTAX_EXCEPTION), e);
         }
     }
-    
-    final LocalDate getLocalDateFromString(String source)
-            throws SqlException {
-        try {
-            return localDate_parse(source);
-        } catch (IllegalArgumentException e) { // subsumes NumberFormatException
-            throw new SqlException(agent_.logWriter_, 
-                    new ClientMessageId (SQLState.LANG_DATE_SYNTAX_EXCEPTION), e);
-        }
-    }
 
     //---------------------------- getTime*() methods ----------------------------
 
@@ -1461,16 +1350,6 @@ final class CrossConverters {
                     new ClientMessageId (SQLState.LANG_DATE_SYNTAX_EXCEPTION), e);
         }
     }
-    
-    final LocalTime getLocalTimeFromString(String source)
-            throws SqlException {
-        try {
-            return localTime_valueOf(source);
-        } catch (IllegalArgumentException e) { // subsumes NumberFormatException
-            throw new SqlException(agent_.logWriter_, 
-                    new ClientMessageId (SQLState.LANG_DATE_SYNTAX_EXCEPTION), e);
-        }
-    }
 
     //---------------------------- getTimestamp*() methods -----------------------
 
@@ -1478,16 +1357,6 @@ final class CrossConverters {
             throws SqlException {
         try {
             return timestamp_valueOf(source, cal);
-        } catch (IllegalArgumentException e) { // subsumes NumberFormatException
-            throw new SqlException(agent_.logWriter_, 
-                    new ClientMessageId (SQLState.LANG_DATE_SYNTAX_EXCEPTION), e);
-        }
-    }
-    
-    final LocalDateTime getLocalDateTimeFromString(String source)
-            throws SqlException {
-        try {
-            return localDateTime_parse(source);
         } catch (IllegalArgumentException e) { // subsumes NumberFormatException
             throw new SqlException(agent_.logWriter_, 
                     new ClientMessageId (SQLState.LANG_DATE_SYNTAX_EXCEPTION), e);
@@ -1578,16 +1447,6 @@ final class CrossConverters {
         return result;
     }
 
-    private static LocalDate localDate_parse(String s) {
-        String formatError = "JDBC Date format must be yyyy-mm-dd";
-        if (s == null) {
-            throw new IllegalArgumentException(formatError);
-        }
-        s = s.trim();
-
-        return LocalDate.parse(s);
-    }
-
     /**
      * Convert a string to a time in the specified calendar. Accept the same
      * format as {@code java.sql.Time.valueOf()}.
@@ -1640,20 +1499,6 @@ final class CrossConverters {
         cal.set(Calendar.HOUR_OF_DAY, hour);
         cal.set(Calendar.MINUTE, minute);
         cal.set(Calendar.SECOND, second);
-    }
-
-    private static LocalTime localTime_valueOf(String s) {
-        if (s == null) {
-            throw new IllegalArgumentException();
-        }
-        s = s.trim();
-        // Expect string on format HH:MM:SS
-        if (s.length() != 8 ||
-                s.charAt(2) != ':' || s.charAt(5) != ':') {
-            throw new IllegalArgumentException();
-        }
-
-        return LocalTime.parse(s);
     }
 
     /**
@@ -1875,15 +1720,5 @@ final class CrossConverters {
                 throw new NumberFormatException(s);
             }
         }
-    }
-
-    private static LocalDateTime localDateTime_parse(String s) {
-        if (s == null) {
-            throw new IllegalArgumentException();
-        }
-
-        s = s.trim();
-
-        return LocalDateTime.parse(s, TIMESTAMP_FORMATTER);
     }
 }

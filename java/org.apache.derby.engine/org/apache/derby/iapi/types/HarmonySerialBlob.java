@@ -248,7 +248,7 @@ public class HarmonySerialBlob implements Blob, Serializable, Cloneable {
         {
             throw makeSQLException( SQLState.BLOB_NONPOSITIVE_LENGTH, new Object[] {length} );
         }
-        if (pos < 1 || pos + length > len)
+        if (pos < 1 || (pos + length - 1) > len)
         {
             throw makeSQLException( SQLState.POS_AND_LENGTH_GREATER_THAN_LOB, new Object[] {pos, length} );
         }

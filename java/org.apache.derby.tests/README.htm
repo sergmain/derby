@@ -6,7 +6,7 @@
   (the "License"); you may not use this file except in compliance with
   the License.  You may obtain a copy of the License at
 
-      http://www.apache.org/licenses/LICENSE-2.0
+      https://www.apache.org/licenses/LICENSE-2.0
 
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,10 +30,6 @@
 <p><font size="2"><br>
 </font></p>
 <ul>
-  <li>
-    <p style="margin-bottom: 0in;"><a href="#migrate">0. Migration to JUnit</a>
-    </p>
-  </li>
   <li>
     <p style="margin-bottom: 0in;"><a href="#intro">1. Introduction</a>
     </p>
@@ -114,18 +110,10 @@ test</a> </p>
   <li>
     <p><a href="#props">4.12 Some test harness properties</a> </p>
   </li>
-  <li>
-    <p><a href="#security">4.13 SecurityManager testing by default</a></p>
-  </li>
   <li><a href="#hostName">4.14 Testing with Network Server on a remote
 host</a></li>
   <li>
     <p><a href="#4.15_Encoding_issues">4.15 Encoding Issues</a></p>
-  </li>
-  <li>
-    <p><a
- href="./org/apache/derbyTesting/functionTests/tests/junitTests/compatibility/README.html">5.
-Compatibility Tests</a></p>
   </li>
   <li>
     <p><a
@@ -136,27 +124,6 @@ JDBC4 Tests</a></p>
 <p><br>
 <br>
 </p>
-<h2><a name="migrate">0. Migration to JUnit</h2>
-In the trunk codeline (10.3 and later) Derby is migrating testing using JUnit.
-All new tests are being written using JUnit and a number of the older
-harness based tests have been converted.
-<P>
-Since the conversion is ongoing the current JUnit state is not represented
-in this file, sections 1 onwards apply to running tests using the
-old harness which still applies to a significant number of tests.
-Currently to run the complete set of tests two runs are required,
-run the harness based tests decribed in this document and then
-running all the JUnit bases tests.
-<P>
-How to run the JUnit based tests is currently being maintained
-on Derby's wiki at:
-<BR>
- <a href="http://wiki.apache.org/db-derby/DerbyJUnitTesting">http://wiki.apache.org/db-derby/DerbyJUnitTesting</a>
-<BR>
-The wiki also includes information about writing new JUnit tests
-and conversion of existing tests.
-<P>
-Please also consult <a href="http://wiki.apache.org/db-derby/DerbyTesting">http://wiki.apache.org/db-derby/DerbyTesting</a> for more information on Derby testing.
 <h2><a name="intro"></a>1. Introduction</h2>
 <p>This document describes functionality of the derby functional
 testing package org.apache.derbyTesting. This package is based on the
@@ -169,7 +136,7 @@ this would be %ANT_HOME%.</p>
 <p>In the following the top directory under which the subversion tree
 is placed is referred to as ${derby.source} - see also the derby
 <a
- href="http://svn.apache.org/repos/asf/db/derby/code/trunk/BUILDING.html">BUILDING.html</a>.</p>
+ href="https://svn.apache.org/repos/asf/db/derby/code/trunk/BUILDING.html">BUILDING.html</a>.</p>
 <p>The version of the classes and supporting files of the
 derbyTesting package have to match the version of the classes of the
 derby package. Thus you either need to build all jars yourself, or
@@ -232,7 +199,7 @@ and derbyLocale_*.jar - into your classpath) </font></p>
         <p style="margin-bottom: 0in;"><font size="2"> db2jcc.jar and
 db2jcc_license_c.jar <br>
         <font size="2">IBM Universal JDBC Driver classes. (See IBM <a
- href="http://www-106.ibm.com/developerworks/db2/downloads/jcc/">developerworks</a>
+ href="https://www-106.ibm.com/developerworks/db2/downloads/jcc/">developerworks</a>
 for download)</font> <br>
         <b>These jars are optional. The tests using the IBM Universal
 JDBC driver are not run if these jar files are not present in your
@@ -715,7 +682,7 @@ derbyTesting package</h3>
 <ul>
   <li>
     <p>follow all the steps in the derby <a
- href="http://svn.apache.org/repos/asf/db/derby/code/trunk/BUILDING.html">BUILDING.html</a>.
+ href="https://svn.apache.org/repos/asf/db/derby/code/trunk/BUILDING.html">BUILDING.html</a>.
     </p>
   </li>
 </ul>
@@ -1576,15 +1543,6 @@ Network Server from the test itself. Default is true - i.e. the
 &nbsp;&nbsp;&nbsp;&nbsp; test harness will start Network Server.<br>
           <br>
         </li>
-        <li>noSecurityManager – disable the client JVM from installing
-a
-SecurityManager. See section <a href="#security">4.13</a></li>
-        <li>
-          <p>derbyTesting.replacePolicyFile - replace or append the
-contents of the default policy file derby_tests.policy. default is
-false, i.e. append. See section <a href="README.htm#security">4.13</a>
-          </p>
-        </li>
         <li>
           <p>hostName - allows for running Network Server on a remote
 host. See
@@ -1647,69 +1605,6 @@ the property to be written into that generated file.<br>
     </tr>
   </tbody>
 </table>
-<h3><a name="security"></a><br>
-4.13 SecurityManager testing by
-default</h3>
-<p>By default the tests install the standard Java SecurityManager
-using the system property java.security.manager and use a policy file
-derby_tests.policy. The default file is sourced
-at<br>
-${derby.source}/java/testing/org/apache/derbyTesting/functionTests/util/derby_tests.policy</p>
-<p>During a test run this policy file is copied into ${user.dir} and
-used from there.<br>
-Optionally a test-specific or suite-specific policy file may be
-appended or used instead. The name of the policy file remains
-derby_tests.policy. <br>
-</p>
-<p>A test_specific policy file has the same name as the test, has
-extension .policy, and is located in the same location as the test. For
-instance,
-${derby.source}/java/testing/org/apache/derbyTesting/functionTests/tests/lang/errorStream.policy
-is the test-specific policy file for the test errorStream.java. A
-suite-specific policy file has the same name as the suite, has
-extension .policy, and is located in the
-${derby.source}/java/testing/org/apache/derbyTesting/functionTests/suites
-directory.<br>
-</p>
-<p>By default, a test-specific and/or suite-specific policy file is
-appended to the default policy file (derby_tests.policy). However, if a
-test's _app.properties or suite's .properties file contains the
-property derbyTesting.replacePolicyFile=true, then the file
-derby_tests.policy will be overwritten with the contents of the test-
-or suite-specific policy file.<br>
-</p>
-<p>There are two environments for the installation of the
-SecurityManager.</p>
-<ul>
-  <li>
-    <p>Server JVM for the network client tests. Always uses a
-SecurityManager.</p>
-  </li>
-  <li>
-    <p>Client side JVM, this is the JVM executing the JDBC calls
-against any Derby driver.
-Installs a SecurityManager unless:</p>
-  </li>
-  <ul>
-    <li>
-      <p><font face="Courier New"><font size="2"><font color="#000000">noSecurityManager=</font><font
- color="#2a00ff">true </font><font size="3"><font
- face="Times New Roman, serif"><font color="#000000">in the test's
-_app.properties file.Used to disable individual tests that cannot run
-under the security manager, or if the test has a functional requirement
-not to run with the SecurityManager. Ideally, few tests will have this
-property set. Any disabling of the SecurityManager for a test requires
-a comment in the test's _app.properties file indicating why the test
-cannot run under the SecurityManager. </font></font></font></font></font></p>
-    </li>
-    <li>
-      <p><font color="#000000"><font face="Times New Roman, serif"><font
- size="3">Client JDBC driver is DB2's Universal driver for JDBC.
-Currently does not install a SecurityManager, no technical reasons,
-just has not been done.</font></font></font></p>
-    </li>
-  </ul>
-</ul>
 <h3><a name="hostName"></a><br>
 4.14 Testing with Network Server on a remote host</h3>
 To enable testing against a Network
@@ -1755,8 +1650,7 @@ classpath.<br>
  border="1" cellpadding="2" cellspacing="2">
   <tbody>
     <tr>
-      <td style="vertical-align: top;">java -Djava.security.manager
--Djava.security.policy=copied_derby_tests.policy
+      <td style="vertical-align: top;">java
 -DderbyTesting.codeclasses=file:/derby/classes/
 -DderbyTesting.codedir=/derby/classes
 -DderbyTesting.serverhost=localhost
@@ -1781,8 +1675,7 @@ or like so when using jars:<br>
   <tbody>
     <tr>
       <td style="vertical-align: top;">java
--Dderby.system.home=/home/derbytst/ns -Djava.security.manager
--Djava.security.policy=/home/derbytst/ns/copied_derby_tests.policy
+-Dderby.system.home=/home/derbytst/ns
 -DderbyTesting.clienthost=clientIPaddress
 -DderbyTesting.codejar=file:/derby/tstbld/
 -DderbyTesting.codedir=/derby/tstbld
@@ -1823,10 +1716,7 @@ address.</small><br>
 <br>
 RunTest can pick up the property in a similar way. You can set
 -Dframework as usual. You can also run derbynetmats with jcc using
--DhostName flag; in that case you do not need to worry about running
-with a policy
-file - at the moment, tests run with DerbyNet framework do not run with
-SecurityManager. Tests in
+-DhostName flag. Tests in
 the derbynet(client)mats suite have been modified to run against a
 remote server as much as possible. <br>
 <br>

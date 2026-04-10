@@ -51,6 +51,8 @@ org.apache.derbyTesting.functionTests.harness.jdk116.class
 org.apache.derbyTesting.functionTests.harness.jdk117.class
 org.apache.derbyTesting.functionTests.harness.jdk118.class
 org.apache.derbyTesting.functionTests.harness.jdk119.class
+org.apache.derbyTesting.functionTests.harness.jdk120.class
+org.apache.derbyTesting.functionTests.harness.jdk121.class
 org.apache.derbyTesting.functionTests.harness.jdk13.class
 org.apache.derbyTesting.functionTests.harness.jdk14.class
 org.apache.derbyTesting.functionTests.harness.jdk15.class
@@ -99,7 +101,6 @@ org.apache.derbyTesting.functionTests.tests.derbynet.PrepareStatementTest.class
 org.apache.derbyTesting.functionTests.tests.derbynet.ProtocolTest.class
 org.apache.derbyTesting.functionTests.tests.derbynet.RuntimeInfoTest.class
 org.apache.derbyTesting.functionTests.tests.derbynet.SSLTest.class
-org.apache.derbyTesting.functionTests.tests.derbynet.SecureServerTest.class
 org.apache.derbyTesting.functionTests.tests.derbynet.ServerPropertiesTest.class
 org.apache.derbyTesting.functionTests.tests.derbynet.ShutDownDBWhenNSShutsDownTest.class
 org.apache.derbyTesting.functionTests.tests.derbynet.SqlExceptionTest.class
@@ -119,7 +120,6 @@ org.apache.derbyTesting.functionTests.tests.engine.LockInterruptTest.class
 org.apache.derbyTesting.functionTests.tests.engine.ModuleLoadingTest.class
 org.apache.derbyTesting.functionTests.tests.engine.ReadMeFilesTest.class
 org.apache.derbyTesting.functionTests.tests.engine.RestrictiveFilePermissionsTest.class
-org.apache.derbyTesting.functionTests.tests.engine.ShutdownWithoutDeregisterPermissionTest.class
 org.apache.derbyTesting.functionTests.tests.engine._Suite.class
 org.apache.derbyTesting.functionTests.tests.i18n.CaseI_tr_TRTest.class
 org.apache.derbyTesting.functionTests.tests.i18n.DefaultLocale.class
@@ -382,7 +382,6 @@ org.apache.derbyTesting.functionTests.tests.lang.LuceneCollationTest.class
 org.apache.derbyTesting.functionTests.tests.lang.LuceneInMemoryTest.class
 org.apache.derbyTesting.functionTests.tests.lang.LuceneJarLoadingTest.class
 org.apache.derbyTesting.functionTests.tests.lang.LuceneSuite.class
-org.apache.derbyTesting.functionTests.tests.lang.LuceneSupportPermsTest.class
 org.apache.derbyTesting.functionTests.tests.lang.LuceneSupportTest.class
 org.apache.derbyTesting.functionTests.tests.lang.MathTrigFunctionsTest.class
 org.apache.derbyTesting.functionTests.tests.lang.MergeStatementTest.class
@@ -393,7 +392,6 @@ org.apache.derbyTesting.functionTests.tests.lang.NativeAuthenticationServiceTest
 org.apache.derbyTesting.functionTests.tests.lang.NestedCommitTest.class
 org.apache.derbyTesting.functionTests.tests.lang.NestedWhereSubqueryTest.class
 org.apache.derbyTesting.functionTests.tests.lang.NewOptimizerOverridesTest.class
-org.apache.derbyTesting.functionTests.tests.lang.NoDBInternalsPermissionTest.class
 org.apache.derbyTesting.functionTests.tests.lang.NullIfTest.class
 org.apache.derbyTesting.functionTests.tests.lang.NullableUniqueConstraintTest.class
 org.apache.derbyTesting.functionTests.tests.lang.NullsTest.class
@@ -425,7 +423,6 @@ org.apache.derbyTesting.functionTests.tests.lang.RestrictedVTITest.class
 org.apache.derbyTesting.functionTests.tests.lang.ResultSetsFromPreparedStatementTest.class
 org.apache.derbyTesting.functionTests.tests.lang.RolesConferredPrivilegesTest.class
 org.apache.derbyTesting.functionTests.tests.lang.RolesTest.class
-org.apache.derbyTesting.functionTests.tests.lang.RoutineSecurityTest.class
 org.apache.derbyTesting.functionTests.tests.lang.RoutineTest.class
 org.apache.derbyTesting.functionTests.tests.lang.RoutinesDefinersRightsTest.class
 org.apache.derbyTesting.functionTests.tests.lang.SGVetter.class
@@ -434,7 +431,6 @@ org.apache.derbyTesting.functionTests.tests.lang.SQLSessionContextTest.class
 org.apache.derbyTesting.functionTests.tests.lang.SampleSQLData.class
 org.apache.derbyTesting.functionTests.tests.lang.ScrollCursors1Test.class
 org.apache.derbyTesting.functionTests.tests.lang.ScrollCursors2Test.class
-org.apache.derbyTesting.functionTests.tests.lang.SecurityPolicyReloadingTest.class
 org.apache.derbyTesting.functionTests.tests.lang.SelectivityTest.class
 org.apache.derbyTesting.functionTests.tests.lang.SequenceGeneratorTest.class
 org.apache.derbyTesting.functionTests.tests.lang.SequencePermsTest.class
@@ -838,7 +834,6 @@ org.apache.derbyTesting.junit.OsName.class
 org.apache.derbyTesting.junit.ReleaseRepository.class
 org.apache.derbyTesting.junit.RuntimeStatisticsParser.class
 org.apache.derbyTesting.junit.SQLUtilities.class
-org.apache.derbyTesting.junit.SecurityManagerSetup.class
 org.apache.derbyTesting.junit.ServerSetup.class
 org.apache.derbyTesting.junit.SpawnedProcess.class
 org.apache.derbyTesting.junit.SupportFilesSetup.class
@@ -969,7 +964,6 @@ org.apache.derbyTesting.unitTests.harness.UnitTestConstants.class
 org.apache.derbyTesting.unitTests.harness.UnitTestMain.class
 org.apache.derbyTesting.unitTests.harness.UnitTestManager.class
 org.apache.derbyTesting.unitTests.junit.ArrayInputStreamTest.class
-org.apache.derbyTesting.unitTests.junit.AssertFailureTest.class
 org.apache.derbyTesting.unitTests.junit.BlockedByteArrayTest.class
 org.apache.derbyTesting.unitTests.junit.CharacterStreamDescriptorTest.class
 org.apache.derbyTesting.unitTests.junit.CompressedNumberTest.class
@@ -978,11 +972,9 @@ org.apache.derbyTesting.unitTests.junit.DerbyVersionTest.class
 org.apache.derbyTesting.unitTests.junit.FormatableBitSetTest.class
 org.apache.derbyTesting.unitTests.junit.InputStreamUtilTest.class
 org.apache.derbyTesting.unitTests.junit.JDBCStatementCacheTest.class
-org.apache.derbyTesting.unitTests.junit.MissingPermissionsTest.class
 org.apache.derbyTesting.unitTests.junit.PathUtilTest.class
 org.apache.derbyTesting.unitTests.junit.ReaderToUTF8StreamTest.class
 org.apache.derbyTesting.unitTests.junit.StatementKeyFactoryTest.class
-org.apache.derbyTesting.unitTests.junit.SystemPrivilegesPermissionTest.class
 org.apache.derbyTesting.unitTests.junit.UTF8UtilTest.class
 org.apache.derbyTesting.unitTests.junit.VirtualFileTest.class
 org.apache.derbyTesting.unitTests.junit._Suite.class

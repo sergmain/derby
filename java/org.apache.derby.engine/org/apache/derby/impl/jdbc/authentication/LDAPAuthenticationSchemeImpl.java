@@ -61,131 +61,176 @@ import org.apache.derby.iapi.util.StringUtil;
  */
 
 public final class LDAPAuthenticationSchemeImpl
-extends JNDIAuthenticationSchemeBase
+    extends JNDIAuthenticationSchemeBase
 {
-	private static final String dfltLDAPURL = "ldap://";
+    private static final String dfltLDAPURL = "ldap://";
 
-	private String searchBaseDN;
+    private String searchBaseDN;
 
-	private String leftSearchFilter; // stick in uid in between
-	private String rightSearchFilter;
-	private boolean useUserPropertyAsDN;
+    private String leftSearchFilter; // stick in uid in between
+    private String rightSearchFilter;
+    private boolean useUserPropertyAsDN;
 
-	// Search Auth DN & Password if anonymous search not allowed
-	private String searchAuthDN;
-	private String searchAuthPW;
-	// we only want the user's full DN in return
-	private static final String[] attrDN = {"dn"};								;
+    // Search Auth DN & Password if anonymous search not allowed
+    private String searchAuthDN;
+    private String searchAuthPW;
+    // we only want the user's full DN in return
+    private static final String[] attrDN = {"dn"};								;
 
-	//
-	// Derby LDAP Configuration properties
-	//
-	private static final String LDAP_SEARCH_BASE =
-								"derby.authentication.ldap.searchBase";
-	private static final String LDAP_SEARCH_FILTER =
-								"derby.authentication.ldap.searchFilter";
-	private static final String LDAP_SEARCH_AUTH_DN =
-								"derby.authentication.ldap.searchAuthDN";
-	private static final String LDAP_SEARCH_AUTH_PW =
-								"derby.authentication.ldap.searchAuthPW";
-	private static final String LDAP_LOCAL_USER_DN =
-								"derby.user";
-	private static final String LDAP_SEARCH_FILTER_USERNAME =
-								"%USERNAME%";
+    //
+    // Derby LDAP Configuration properties
+    //
+    private static final String LDAP_SEARCH_BASE =
+        "derby.authentication.ldap.searchBase";
+    private static final String LDAP_SEARCH_FILTER =
+        "derby.authentication.ldap.searchFilter";
+    private static final String LDAP_SEARCH_AUTH_DN =
+        "derby.authentication.ldap.searchAuthDN";
+    private static final String LDAP_SEARCH_AUTH_PW =
+        "derby.authentication.ldap.searchAuthPW";
+    private static final String LDAP_LOCAL_USER_DN =
+        "derby.user";
+    private static final String LDAP_SEARCH_FILTER_USERNAME =
+        "%USERNAME%";
 
-	public LDAPAuthenticationSchemeImpl(JNDIAuthenticationService as, Properties dbProperties) {
+    public LDAPAuthenticationSchemeImpl(JNDIAuthenticationService as, Properties dbProperties) {
 
-		super(as, dbProperties);
-	}
+        super(as, dbProperties);
+    }
 
-	/**
-	 * Authenticate the passed-in user's credentials.
-	 *
-	 * We authenticate against a LDAP Server.
-	 *
-	 *
-	 * @param userName		The user's name used to connect to JBMS system
-	 * @param userPassword	The user's password used to connect to JBMS system
-	 * @param databaseName	The database which the user wants to connect to.
-	 * @param info			Additional jdbc connection info.
-	 */
-	public boolean	authenticateUser(String userName,
-								 String userPassword,
-								 String databaseName,
-								 Properties info
-								)
-								throws java.sql.SQLException
-	{
-		if ( ((userName == null) || (userName.length() == 0)) ||
-			 ((userPassword == null) || (userPassword.length() == 0)) )
-		{
-			// We don't tolerate 'guest' user for now as well as
-			// null password.
-			// If a null password is passed upon authenticating a user
-			// through LDAP, then the LDAP server might consider this as
-			// anonymous bind and therefore no authentication will be done
-			// at all.
-			return false;
-		}
+    /**
+     * Authenticate the passed-in user's credentials.
+     *
+     * We authenticate against a LDAP Server.
+     *
+     *
+     * @param userName		The user's name used to connect to JBMS system
+     * @param userPassword	The user's password used to connect to JBMS system
+     * @param databaseName	The database which the user wants to connect to.
+     * @param info			Additional jdbc connection info.
+     */
+    public boolean	authenticateUser(String userName,
+                                         String userPassword,
+                                         String databaseName,
+                                         Properties info
+        )
+        throws java.sql.SQLException {
+        if ( ((userName == null) || (userName.length() == 0)) ||
+             ((userPassword == null) || (userPassword.length() == 0)) )
+        {
+            // We don't tolerate 'guest' user for now as well as
+            // null password.
+            // If a null password is passed upon authenticating a user
+            // through LDAP, then the LDAP server might consider this as
+            // anonymous bind and therefore no authentication will be done
+            // at all.
+            return false;
+        }
 
 
-		Exception e;
-		try {
-			Properties env = (Properties) initDirContextEnv.clone();
-			String userDN = null;
-			//
-			// Retrieve the user's DN (Distinguished Name)
-			// If we're asked to look it up locally, do it first
-			// and if we don't find it, we go against the LDAP
-			// server for a look-up (search)
-			//
-			if (useUserPropertyAsDN)
-				userDN =
-					authenticationService.getProperty(
-						org.apache.derby.shared.common.reference.Property.USER_PROPERTY_PREFIX);
+        Exception e;
+        try {
+            Properties env = (Properties) initDirContextEnv.clone();
+            String userDN = null;
+            //
+            // Retrieve the user's DN (Distinguished Name)
+            // If we're asked to look it up locally, do it first
+            // and if we don't find it, we go against the LDAP
+            // server for a look-up (search)
+            //
+            if (useUserPropertyAsDN)
+                userDN =
+                    authenticationService.getProperty(
+                        org.apache.derby.shared.common.reference.Property.USER_PROPERTY_PREFIX);
 
-			if (userDN == (String) null) {
-				userDN = getDNFromUID(userName);
-			}
+            if (userDN == (String) null) {
+                userDN = getDNFromUID(userName);
+            }
 		
-			if (SanityManager.DEBUG)
-			{
-				if (SanityManager.DEBUG_ON(
-						AuthenticationServiceBase.AuthenticationTrace)) {
-					SanityManager.DEBUG(AuthenticationServiceBase.AuthenticationTrace,
+            if (SanityManager.DEBUG)
+            {
+                if (SanityManager.DEBUG_ON(
+                        AuthenticationServiceBase.AuthenticationTrace)) {
+                    SanityManager.DEBUG(AuthenticationServiceBase.AuthenticationTrace,
 					"User DN = ["+ userDN+"]\n");
-				}
-			}
+                }
+            }
 
-			env.put(Context.SECURITY_PRINCIPAL, userDN);
-			env.put(Context.SECURITY_CREDENTIALS, userPassword);
+            env.put(Context.SECURITY_PRINCIPAL, userDN);
+            env.put(Context.SECURITY_CREDENTIALS, userPassword);
 			
-			// Connect & authenticate (bind) to the LDAP server now
+            // Connect & authenticate (bind) to the LDAP server now
 
-			// it is happening right here
+            // it is happening right here
 
             DirContext ctx =   privInitialDirContext(env);
           
             
 
-			// if the above was successfull, then username and
-			// password must be correct
-			return true;
+            // if the above was successfull, then username and
+            // password must be correct
+            return true;
 
-		} catch (javax.naming.AuthenticationException jndiae) {
-			return false;
+        } catch (javax.naming.AuthenticationException jndiae) {
+            return false;
 
-		} catch (javax.naming.NameNotFoundException jndinnfe) {
-			return false;
+        } catch (javax.naming.NameNotFoundException jndinnfe) {
+            return false;
 
-		} catch (javax.naming.NamingException jndine) {
-			e = jndine;
-		}
+        } catch (javax.naming.NamingException jndine) {
+            e = jndine;
+        }
 
-		throw getLoginSQLException(e);
-	}
+        throw getLoginSQLException(e);
+    }
 
-	
+    /**
+     * Given an LDAP search string, returns the string with certain characters
+     * escaped according to RFC 2254 guidelines. Cribbed from org.apache.catalina.realm.JNDIRealm.
+     *
+     * The character mapping is as follows:
+     *     char -&gt;  Replacement
+     *    ---------------------------
+     *     *  -&gt; \2a
+     *     (  -&gt; \28
+     *     )  -&gt; \29
+     *     \  -&gt; \5c
+     *     \0 -&gt; \00
+     *
+     * @param inString string to escape according to RFC 2254 guidelines
+     *
+     * @return String the escaped/encoded result
+     */
+    protected String doFilterEscaping(String inString) {
+        if (inString == null) {
+            return null;
+        }
+        StringBuilder buf = new StringBuilder(inString.length());
+        for (int i = 0; i < inString.length(); i++) {
+            char c = inString.charAt(i);
+            switch (c) {
+                case '\\':
+                    buf.append("\\5c");
+                    break;
+                case '*':
+                    buf.append("\\2a");
+                    break;
+                case '(':
+                    buf.append("\\28");
+                    break;
+                case ')':
+                    buf.append("\\29");
+                    break;
+                case '\0':
+                    buf.append("\\00");
+                    break;
+                default:
+                    buf.append(c);
+                    break;
+            }
+        }
+        return buf.toString();
+    }	
 
     /**
      * Call new InitialDirContext in a privilege block
@@ -201,8 +246,7 @@ extends JNDIAuthenticationSchemeBase
      * for the JNDI provider scheme (here it is LDAP).
      *
      **/
-    protected void setJNDIProviderProperties()
-    {
+    protected void setJNDIProviderProperties() {
 
         // check if we're told to use a different initial context factory
         if (initDirContextEnv.getProperty(
@@ -381,87 +425,91 @@ extends JNDIAuthenticationSchemeBase
     }
 
 
-	/**
-	 * Search for the full user's DN in the LDAP server.
-	 * LDAP server bind may or not be anonymous.
-	 *
-	 * If the admin does not want us to do anonymous bind/search, then we
-	 * must have been given principal/credentials in order to successfully
-	 * bind to perform the user's DN search.
-	 *
-	 * @exception NamingException if could not retrieve the user DN.
-	 **/
-	private String getDNFromUID(String uid)
-		throws javax.naming.NamingException
-	{
-		//
-		// We bind to the LDAP server here
-		// Note that this bind might be anonymous (if anonymous searches
-		// are allowed in the LDAP server, or authenticated if we were
-		// told/configured to.
-		//
-		Properties env = null;
-		if (this.searchAuthDN != (String) null) {
-			env = (Properties) initDirContextEnv.clone();
-			env.put(Context.SECURITY_PRINCIPAL, this.searchAuthDN);
-			env.put(Context.SECURITY_CREDENTIALS, this.searchAuthPW);
-		}
-		else
-			env = initDirContextEnv;
+    /**
+     * Search for the full user's DN in the LDAP server.
+     * LDAP server bind may or not be anonymous.
+     *
+     * If the admin does not want us to do anonymous bind/search, then we
+     * must have been given principal/credentials in order to successfully
+     * bind to perform the user's DN search.
+     *
+     * @exception NamingException if could not retrieve the user DN.
+     **/
+    private String getDNFromUID(String uid)
+        throws javax.naming.NamingException {
 
-		DirContext ctx = privInitialDirContext(env);
+        // Escape the uid as a defense against LDAP injection. See DERBY-7147.
+        uid = doFilterEscaping(uid);
+        
+        //
+        // We bind to the LDAP server here
+        // Note that this bind might be anonymous (if anonymous searches
+        // are allowed in the LDAP server, or authenticated if we were
+        // told/configured to.
+        //
+        Properties env = null;
+        if (this.searchAuthDN != (String) null) {
+            env = (Properties) initDirContextEnv.clone();
+            env.put(Context.SECURITY_PRINCIPAL, this.searchAuthDN);
+            env.put(Context.SECURITY_CREDENTIALS, this.searchAuthPW);
+        }
+        else
+            env = initDirContextEnv;
 
-		// Construct Search Filter
-		SearchControls ctls = new SearchControls();
-		// Set-up a LDAP subtree search scope
-		ctls.setSearchScope(SearchControls.SUBTREE_SCOPE);
+        DirContext ctx = privInitialDirContext(env);
 
-		// Just retrieve the DN
-		ctls.setReturningAttributes(attrDN);
+        // Construct Search Filter
+        SearchControls ctls = new SearchControls();
+        // Set-up a LDAP subtree search scope
+        ctls.setSearchScope(SearchControls.SUBTREE_SCOPE);
 
-		String searchFilter =
-						this.leftSearchFilter + uid + this.rightSearchFilter; 
-		NamingEnumeration results =
-						ctx.search(searchBaseDN, searchFilter, ctls);
+        // Just retrieve the DN
+        ctls.setReturningAttributes(attrDN);
+
+        String searchFilter =
+            this.leftSearchFilter + uid + this.rightSearchFilter; 
+
+        NamingEnumeration results =
+            ctx.search(searchBaseDN, searchFilter, ctls);
 			
-		// If we did not find anything then login failed
-		if (results == null || !results.hasMore())
-			throw new NameNotFoundException();
+        // If we did not find anything then login failed
+        if (results == null || !results.hasMore())
+            throw new NameNotFoundException();
 			
-		SearchResult result = (SearchResult)results.next();
+        SearchResult result = (SearchResult)results.next();
 		
-		if (results.hasMore())
-		{
-			// This is a login failure as we cannot assume the first one
-			// is the valid one.
-			if (SanityManager.DEBUG)
-			{
-				if (SanityManager.DEBUG_ON(
-						AuthenticationServiceBase.AuthenticationTrace)) {
+        if (results.hasMore())
+        {
+            // This is a login failure as we cannot assume the first one
+            // is the valid one.
+            if (SanityManager.DEBUG)
+            {
+                if (SanityManager.DEBUG_ON(
+                        AuthenticationServiceBase.AuthenticationTrace)) {
 
-					java.io.PrintWriter iDbgStream =
-						SanityManager.GET_DEBUG_STREAM();
+                    java.io.PrintWriter iDbgStream =
+                        SanityManager.GET_DEBUG_STREAM();
 
-					iDbgStream.println(
-						" - LDAP Authentication request failure: "+
-						"search filter [" + searchFilter + "]"+
-						", retrieve more than one occurence in "+
-						"LDAP server [" + this.providerURL + "]");
-				}
-			}
-			throw new NameNotFoundException();
-		}
+                    iDbgStream.println(
+                        " - LDAP Authentication request failure: "+
+                        "search filter [" + searchFilter + "]"+
+                        ", retrieve more than one occurence in "+
+                        "LDAP server [" + this.providerURL + "]");
+                }
+            }
+            throw new NameNotFoundException();
+        }
 
-		NameParser parser = ctx.getNameParser(searchBaseDN);
-		Name userDN = parser.parse(searchBaseDN);
+        NameParser parser = ctx.getNameParser(searchBaseDN);
+        Name userDN = parser.parse(searchBaseDN);
 
-		if (userDN == (Name) null)
-			// This should not happen in theory
-			throw new NameNotFoundException();
-		else
-			userDN.addAll(parser.parse(result.getName()));
+        if (userDN == (Name) null)
+            // This should not happen in theory
+            throw new NameNotFoundException();
+        else
+            userDN.addAll(parser.parse(result.getName()));
 		
-		// Return the full user's DN
-		return userDN.toString();
-	}
+        // Return the full user's DN
+        return userDN.toString();
+    }
 }

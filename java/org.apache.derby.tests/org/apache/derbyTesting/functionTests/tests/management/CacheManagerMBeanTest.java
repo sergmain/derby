@@ -21,9 +21,12 @@
 
 package org.apache.derbyTesting.functionTests.tests.management;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.Hashtable;
+import java.util.Properties;
 import java.util.Set;
 import javax.management.ObjectName;
 import javax.management.RuntimeMBeanException;
@@ -41,6 +44,14 @@ public class CacheManagerMBeanTest extends MBeanTest {
     private final static int DEFAULT_PAGE_CACHE_SIZE = 1000;
     private final static int DEFAULT_CONTAINER_CACHE_SIZE = 100;
     private final static int DEFAULT_STATEMENT_CACHE_SIZE = 100;
+
+    // machinery needed for overriding the default MBean deserialization filter.
+    private final static String JAVA_HOME = "java.home";
+    private final static String CONF_DIR = "conf";
+    private final static String MANAGEMENT_DIR = "management";
+    private final static String MANAGEMENT_PROPERTIES_FILE = "management.properties";
+    private final static String DESERIALIZATION_FILTER_PROP = "com.sun.management.jmxremote.serial.filter.pattern";
+    private final static String DERBY_FILTER_VALUE = "*";
 
     private static String[] ALL_ATTRIBUTES = {
         "CollectAccessCounts", "HitCount", "MissCount", "EvictionCount",
@@ -72,6 +83,45 @@ public class CacheManagerMBeanTest extends MBeanTest {
         // runs standalone or first in a suite).
         getConnection().close();
         TestConfiguration.getCurrent().shutdownDatabase();
+    }
+
+    /**
+     * <p>
+     * This method returns true if remote deserialization is enabled for Derby MBeans, that is,
+     * if com.sun.management.jmxremote.serial.filter.pattern=* in conf/management/management.properties.
+     * </p>
+     *
+     * <p>
+     * In a remote JMX configuration, the page and statement caches cannot be interrogated because
+     * Open JDK build 20-ea+27-2213 disabled the rmi deserialization of
+     * some objects required by our MBeans. See DERBY-7149. See also https://bugs.openjdk.org/browse/JDK-8283093
+     * and https://bugs.openjdk.org/browse/JDK-8295938.
+     * In order to read the page and statement caches in a client/server setup,
+     * you have to hack the JVM,
+     * overriding com.sun.management.jmxremote.serial.filter.pattern in conf/management/management.properties.
+     * </p>
+     *
+     * <p>
+     * It would be nice if this overriding could be done by setting a system property,
+     * but that doesn't seem to be supported.
+     * </p>
+     */
+    private boolean remoteDeserializationEnabled() throws Exception {
+
+        File javaHomeDir = new File(System.getProperty(JAVA_HOME));
+        File jmxManagementDir = new File(new File(javaHomeDir, CONF_DIR), MANAGEMENT_DIR);
+        File managementPropertiesFile = new File(jmxManagementDir, MANAGEMENT_PROPERTIES_FILE);
+
+        // read the JVM's management properties
+        Properties originalManagementProperties = new Properties();
+        try (FileInputStream fis = new FileInputStream(managementPropertiesFile))
+        {
+            originalManagementProperties.load(fis);
+        }
+
+        String filterValue = originalManagementProperties.getProperty(DESERIALIZATION_FILTER_PROP);
+
+        return (DERBY_FILTER_VALUE.equals(filterValue));
     }
 
     /**
@@ -134,6 +184,7 @@ public class CacheManagerMBeanTest extends MBeanTest {
      * Test the {@code CacheManagerMBean} for the page cache.
      */
     public void testPageCache() throws Exception {
+
         getConnection(); // boot the database
         Set<ObjectName> names =
                 queryMBeans(createObjectName("PageCache", null));
@@ -208,6 +259,7 @@ public class CacheManagerMBeanTest extends MBeanTest {
      * Test the {@code CacheManagerMBean} for the statement cache.
      */
     public void testStatementCache() throws Exception {
+
         getConnection(); // boot the database
         Set<ObjectName> names =
                 queryMBeans(createObjectName("StatementCache", null));

@@ -45,7 +45,7 @@ import java.text.MessageFormat;
  */
 public final class MessageService {
 
-	private static final Locale EN = new Locale("en", "US");
+    private static final Locale EN = Locale.of("en", "US");
     private static final String LOCALE_STUB = "locale_";
     private static final String CLIENT_MESSAGES = "clientmessages";
     private static final String TOOLS_MESSAGES = "toolsmessages";

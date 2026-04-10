@@ -62,8 +62,7 @@ class RowTriggerExecutor extends GenericTriggerExecutor
 	 * @param colsReadFromTable   columns required from the trigger table
 	 *   by the triggering sql
 	 *
-	 * @exception StandardExcetion on error or general trigger
-	 *	exception
+	 * @throws StandardException on error or general trigger exception
 	 */
 	void fireTrigger 
 	(

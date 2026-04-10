@@ -53,9 +53,6 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.Calendar;
 import java.util.Map;
 import org.apache.derby.iapi.jdbc.CharacterStreamDescriptor;
@@ -479,21 +476,6 @@ public class EmbedCallableStatement extends EmbedPreparedStatement
 
 	}
 
-    public LocalDate getLocalDate(int parameterIndex) throws SQLException
-    {
-        checkStatus();
-        try {
-            LocalDate v = getParms().
-                    getParameterForGet(parameterIndex-1).getLocalDate();
-            wasNull = (v == null);
-            return v;
-        } catch (StandardException e)
-        {
-            throw EmbedResultSet.noStateChangeException(e);
-        }
-        
-    }
-
     /**
 	 * @see CallableStatement#getTime
      * @exception SQLException NoOutputParameters thrown.
@@ -513,21 +495,6 @@ public class EmbedCallableStatement extends EmbedPreparedStatement
 
 	}
 
-    private LocalTime getLocalTime(int parameterIndex) throws SQLException
-    {
-        checkStatus();
-        try {
-            LocalTime v = getParms().
-                    getParameterForGet(parameterIndex-1).getLocalTime();
-            wasNull = (v == null);
-            return v;
-        } catch (StandardException e)
-        {
-            throw EmbedResultSet.noStateChangeException(e);
-        }
-        
-    }
-
     /**
 	 * @see CallableStatement#getTimestamp
      * @exception SQLException NoOutputParameters thrown.
@@ -546,22 +513,6 @@ public class EmbedCallableStatement extends EmbedPreparedStatement
 			throw EmbedResultSet.noStateChangeException(e);
 		}
 	}
-
-    private LocalDateTime getLocalDateTime(int parameterIndex)
-            throws SQLException 
-    {
-        checkStatus();
-        try {
-            LocalDateTime v = getParms().
-                    getParameterForGet(parameterIndex-1).getLocalDateTime();
-            wasNull = (v == null);
-            return v;
-        } catch (StandardException e)
-        {
-            throw EmbedResultSet.noStateChangeException(e);
-        }
-    }
-
     /**
      * Get the value of a SQL DATE parameter as a java.sql.Date object
      *
@@ -1915,16 +1866,10 @@ public class EmbedCallableStatement extends EmbedPreparedStatement
             retval = getDouble(parameterIndex);
         } else if (Date.class.equals(type)) {
             retval = getDate(parameterIndex);
-        } else if (LocalDate.class.equals(type)) {
-            retval = getLocalDate(parameterIndex);
         } else if (Time.class.equals(type)) {
             retval = getTime(parameterIndex);
-        } else if (LocalTime.class.equals(type)) {
-            retval = getLocalTime(parameterIndex);
         } else if (Timestamp.class.equals(type)) {
             retval = getTimestamp(parameterIndex);
-        } else if (LocalDateTime.class.equals(type)) {
-            retval = getLocalDateTime(parameterIndex);
         } else if (Blob.class.equals(type)) {
             retval = getBlob(parameterIndex);
         } else if (Clob.class.equals(type)) {

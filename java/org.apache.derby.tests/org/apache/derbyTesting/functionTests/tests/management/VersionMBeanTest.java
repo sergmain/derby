@@ -70,7 +70,6 @@ public class VersionMBeanTest extends MBeanTest {
      * identifier (DERBY-3466).</p>
      * @return the object name representing the VersionMBean for the derby 
      *         engine in this Derby system.
-     * @throws MalformedObjectNameException if the object name is not valid
      */
     private ObjectName getDerbyJarObjectName() 
             throws Exception {
@@ -96,7 +95,6 @@ public class VersionMBeanTest extends MBeanTest {
      * @return the object name representing the VersionMBean for the Network 
      *         Server running the Derby system represented by the system
      *         identifier obtained from Derby's management service.
-     * @throws MalformedObjectNameException if the object name is not valid
      */
     private ObjectName getDerbynetJarObjectName() 
             throws Exception {

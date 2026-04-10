@@ -1168,8 +1168,6 @@ public class ResultSetTest  extends Wrapper41Test
 
     /**
      * tests the updateBlob that accepts a input stream and the length of the IS.
-     *
-     * @throws an Exception
      */
     public void testUpdateBlobWithLengthofIS()
             throws Exception {
@@ -1201,8 +1199,6 @@ public class ResultSetTest  extends Wrapper41Test
     /**
      * Tests the updateBlob that accepts a input stream and the length of the IS
      * and the parameter name String.
-     *
-     * @throws an Exception
      */
     public void testUpdateBlobStringParameterNameWithLengthofIS()
             throws Exception {
@@ -1333,8 +1329,6 @@ public class ResultSetTest  extends Wrapper41Test
     /**
      * Tests the updateClob that accepts a input stream and the length of the IS
      * and the parameter name String.
-     *
-     * @throws an Exception
      */
     public void testUpdateClobStringParameterNameWithLengthofIS()
             throws Exception {

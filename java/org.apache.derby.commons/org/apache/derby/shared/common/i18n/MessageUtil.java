@@ -31,7 +31,7 @@ import java.text.MessageFormat;
  */
 public class MessageUtil
 {    
-    public static final Locale US = new Locale("en", "US");
+    public static final Locale US = Locale.of("en", "US");
 
     public static final String CLIENT_MESSAGE_RESOURCE_NAME = "org.apache.derby.loc.client.clientmessages";
             

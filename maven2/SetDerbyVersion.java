@@ -287,8 +287,20 @@ public class SetDerbyVersion {
         String parent = pom.getParent();
         if (parent.contains("derbyLocale")) {
             return (replaceCount - 2);
-        // derbynet also requries two replacements (derby.jar dependency)
+        // derbyoptionaltools depends on derby.jar, derbyshared.jar, derbytools.jar
+        } else if (parent.contains("optionaltools")) {
+            return (replaceCount - 4);
+        // derbytools depends on derbyshared.jar
+        } else if (parent.contains("tools")) {
+            return (replaceCount - 2);
+        // derbynet depends on derby.jar, derbyshared.jar, and derbytools.jar
         } else if (parent.contains("net")) {
+            return (replaceCount - 4);
+        // derby depends on derbyshared.jar
+        } else if (parent.contains("engine")) {
+            return (replaceCount - 2);
+        // derbyclient depends on derbyshared.jar
+        } else if (parent.contains("client")) {
             return (replaceCount - 2);
         } else {
             return (replaceCount - 1);

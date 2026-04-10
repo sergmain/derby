@@ -49,8 +49,8 @@ public class RuntimeInfoTest extends BaseJDBCTestCase {
 			"org.apache.derby.drda.NetworkServerControl", "runtimeinfo",
 			"-p", String.valueOf(TestConfiguration.getCurrent().getPort()) };
 	
-    private static final Locale englishLocale = new Locale("en", "US");
-    private static final Locale germanLocale = new Locale("de", "DE");
+    private static final Locale englishLocale = Locale.of("en", "US");
+    private static final Locale germanLocale = Locale.of("de", "DE");
     private static final String stdout_err_tags = "<[^<>]*STD.*>";
 	
 	/**

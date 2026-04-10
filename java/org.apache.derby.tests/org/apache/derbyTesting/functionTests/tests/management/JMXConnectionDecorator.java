@@ -36,6 +36,8 @@ import org.apache.derbyTesting.junit.TestConfiguration;
  * an implementation of this class to obtain JMX connections.
  */
 class JMXConnectionDecorator extends BaseTestSetup {
+
+    private static final String REMOTE_CONNECTION_PROP = "derby.test.remote.connection.getter";
     
     /**
      * Decorate a test so to use JMX connections from the passed in url. 
@@ -74,6 +76,11 @@ class JMXConnectionDecorator extends BaseTestSetup {
                 new PlatformConnectionGetter();
                 
         JMXConnectionGetter.mbeanServerConnector.set(getter);
+
+        if (remote)
+        {
+            System.setProperty(REMOTE_CONNECTION_PROP, "true");
+        }
     }
     
     @Override
@@ -81,6 +88,14 @@ class JMXConnectionDecorator extends BaseTestSetup {
         super.tearDown();
         JMXConnectionGetter.mbeanServerConnector.set(oldGetter);
         oldGetter = null;
+        System.setProperty(REMOTE_CONNECTION_PROP, "false");
+    }
+
+    /**
+     * Return true if we are using a remote JMX connection getter.
+     */
+    public static boolean usingRemoteJMXConnectionGetter() {
+        return Boolean.getBoolean(REMOTE_CONNECTION_PROP);
     }
     
     /**

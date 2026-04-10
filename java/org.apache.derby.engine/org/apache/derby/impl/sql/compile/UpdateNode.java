@@ -1553,7 +1553,7 @@ public final class UpdateNode extends DMLModGeneratedColumnsStatementNode
 	/**
 	 * Check table name and then clear it from the result set columns.
 	 * 
-	 * @exception StandardExcepion if invalid column/table is specified.
+	 * @throws StandardException if invalid column/table is specified.
 	 */
 	private void checkTableNameAndScrubResultColumns(ResultColumnList rcl) 
 			throws StandardException

@@ -160,6 +160,7 @@ public abstract class T_MultiThreadedIterations extends T_MultiIterations implem
 	/*
 	 * run each worker test thread
 	 */
+        @SuppressWarnings("removal")
 	public void run()
 	{
 		String threadName = "[" + Thread.currentThread().getName() + "] ";

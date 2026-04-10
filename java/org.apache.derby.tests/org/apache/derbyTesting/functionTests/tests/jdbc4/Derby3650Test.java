@@ -94,7 +94,7 @@ public class Derby3650Test extends BaseJDBCTestCase
      *
      * @param query                 query to run.
      *
-     * @exception  StandardException  Standard exception policy.
+     * @exception  SQLException  Standard exception policy.
      **/
     private void runQueryCasesClob(
     String query)
@@ -123,7 +123,7 @@ public class Derby3650Test extends BaseJDBCTestCase
      * @param commitAfterLobVerify  true if we should commit after the lob has
      *                              been retrieved and verified.
      *
-     * @exception  StandardException  Standard exception policy.
+     * @exception  SQLException  Standard exception policy.
      **/
     private void runQueryClob(
     String  query,
@@ -191,7 +191,7 @@ public class Derby3650Test extends BaseJDBCTestCase
      *
      * @param query                 query to run.
      *
-     * @exception  StandardException  Standard exception policy.
+     * @exception  SQLException  Standard exception policy.
      **/
     private void runQueryCasesBlob(
     String query)
@@ -218,7 +218,7 @@ public class Derby3650Test extends BaseJDBCTestCase
      * @param commitAfterLobVerify  true if we should commit after the lob has
      *                              been retrieved and verified.
      *
-     * @exception  StandardException  Standard exception policy.
+     * @exception  SQLException  Standard exception policy.
      **/
     private void runQueryBlob(
     String  query,

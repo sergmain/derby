@@ -24,6 +24,7 @@ package org.apache.derbyBuild;
 import java.io.*;
 import java.util.*;
 import org.w3c.dom.*;
+import java.net.URI;
 import java.net.URL;
 import org.apache.tools.ant.BuildException;
 
@@ -383,7 +384,7 @@ public class ReleaseNotesGenerator extends GeneratorBase {
                 Node summaryText = null;
                 Element details = null;
                 try {
-                    URL url = new URL(issue.getReleaseNoteAddress());
+                    URL url = (new URI(issue.getReleaseNoteAddress())).toURL();
                     InputStream is = url.openStream();
                     Document releaseNote = releaseNoteReader.getReleaseNote(is);
                     summaryText = releaseNoteReader.

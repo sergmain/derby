@@ -71,7 +71,7 @@ public class DefaultLocale {
 		// class. The generated class on the stack has no permissions
 		// granted to it. Needs write permission on user.language
         LocaleTestSetup.setDefaultLocale(
-                new java.util.Locale(Locale.trim(), Code.trim()));
+                java.util.Locale.of(Locale.trim(), Code.trim()));
 	}
 
 }

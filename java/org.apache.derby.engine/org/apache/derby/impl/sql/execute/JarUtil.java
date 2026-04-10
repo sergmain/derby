@@ -26,6 +26,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URI;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -358,11 +360,11 @@ public class JarUtil
         throws IOException
     {
         try {
-            return new URL(externalPath).openStream();
-        } catch (MalformedURLException mfurle)
-        {
-            return new FileInputStream(externalPath);
+            return (new URI(externalPath)).toURL().openStream();
         }
+        catch (MalformedURLException mfurle) { return new FileInputStream(externalPath); }
+        catch (URISyntaxException u) { return new FileInputStream(externalPath); }
+        catch (IllegalArgumentException u) { return new FileInputStream(externalPath); }
     }
     
     /**

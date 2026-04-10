@@ -129,6 +129,9 @@ abstract class MBeanTest extends BaseJDBCTestCase {
         list.add("com.sun.management.jmxremote.authenticate=" +
                 Boolean.toString(authentication));
         list.add("com.sun.management.jmxremote.ssl=false");
+
+        // this disables the default jmx deserialization filter. see DERBY-7149.
+        list.add("com.sun.management.jmxremote.serial.filter.pattern=");
         
         if (authentication) {
             list.add("com.sun.management.jmxremote.password.file=" +

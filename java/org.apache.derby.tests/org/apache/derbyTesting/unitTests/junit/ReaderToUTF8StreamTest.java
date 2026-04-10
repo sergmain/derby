@@ -358,7 +358,6 @@ public class ReaderToUTF8StreamTest
      *
      * @param is the stream to check
      * @throws IOException if reading from the stream fails
-     * @throws AssertionFailedError if the stream content isn't as expected
      */
     private void checkBeginningOfStream(InputStream is)
             throws IOException {

@@ -72,7 +72,6 @@ public class NetworkServerMBeanTest extends MBeanTest {
      * @return the object name representing the NetworkServerMBean for the 
      *         Derby Network Server instance associated with this test 
      *         configuration.
-     * @throws MalformedObjectNameException if the object name is not valid
      */
     private ObjectName getNetworkServerMBeanObjectName() 
             throws Exception {

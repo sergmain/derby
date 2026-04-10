@@ -735,9 +735,6 @@ public class StreamingColumnTest extends BaseJDBCTestCase {
      * <p>
      * If parameters are 10,2500 - then the second row inserted will have the
      * 1st column fit, but the second not fit which caused track #2240.
-     * 
-     * @exception StandardException
-     *                Standard exception policy.
      */
     public void testStream8_2500_10() throws Exception {
         int stream1_len = 2500;
@@ -871,9 +868,6 @@ public class StreamingColumnTest extends BaseJDBCTestCase {
      * <p>
      * If input parameters are 10,2500 - then the second row inserted will have
      * the 1st column fit, but the second not fit which caused track #2240.
-     * 
-     * @exception StandardException
-     *                Standard exception policy.
      */
     public void testStream9_10_2500() throws Exception {
         int stream1_len = 10, stream2_len = 2500;
@@ -896,9 +890,6 @@ public class StreamingColumnTest extends BaseJDBCTestCase {
      * <p>
      * If input parameters are 10,2500 - then the second row inserted will have
      * the 1st column fit, but the second not fit which caused track #2240.
-     * 
-     * @exception StandardException
-     *                Standard exception policy.
      */
     public void testStream9_2500_10() throws Exception {
         int stream1_len = 2500, stream2_len = 10;

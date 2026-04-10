@@ -174,7 +174,6 @@ public class StatementPoolingTest
      *
      * @param obj object to check
      * @param expectedName the expected name of the class
-     * @throws AssertionFailedError if the class name is not as expected
      */
     private static void assertClassName(Object obj, String expectedName) {
         assertNotNull("The expected name cannot be <null>", expectedName);

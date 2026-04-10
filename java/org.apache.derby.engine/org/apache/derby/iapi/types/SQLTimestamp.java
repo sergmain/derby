@@ -49,9 +49,6 @@ import java.io.IOException;
 
 import java.text.DateFormat;
 import java.text.ParseException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 /**
  * This contains an instance of a SQL Timestamp object.
@@ -148,14 +145,6 @@ public final class SQLTimestamp extends DataType
 		return new Date(cal.getTimeInMillis());
 	}
 
-	public LocalDate	getLocalDate() throws StandardException
-	{
-	    if (isNull())
-	        return null;
-	    
-	    return SQLDate.getLocalDate(encodedDate);
-	}
-
 	/**
 		getTime returns the time portion of the timestamp
 		Date is set to 1970-01-01
@@ -173,16 +162,6 @@ public final class SQLTimestamp extends DataType
         // maintains that since it has milli-second
         // resolutiuon.
         return SQLTime.getTime(cal, encodedTime, nanos);
-	}
-
-	public LocalTime	getLocalTime() throws StandardException
-	{
-	    if (isNull())
-	        return null;
-	    
-	    // Derby's SQL TIMESTAMP type supports resolution
-	    // to nano-seconds
-	    return SQLTime.getLocalTime(encodedTime, nanos);
 	}
 
 	public Object getObject()
@@ -653,12 +632,6 @@ public final class SQLTimestamp extends DataType
         }
 		/* encodedTime and nanos are already set to zero by restoreToNull() */
 	}
-	public void setValue(LocalDate value) throws StandardException
-	{
-	    restoreToNull();
-	    encodedDate = computeEncodedDate(value);
-	    /* encodedTime and nanos are already set to zero by restoreToNull() */
-	}
     
     
 	/**
@@ -670,17 +643,6 @@ public final class SQLTimestamp extends DataType
 	{
 		restoreToNull();
 		setNumericTimestamp(value, cal);
-	}
-	
-	/**
-		@see DateTimeDataValue#setValue
-
-	 */
-	public void setValue(LocalDateTime value) 
-	        throws StandardException
-	{
-	    restoreToNull();
-	    setNumericTimestamp(value);
 	}
 
 
@@ -890,24 +852,8 @@ public final class SQLTimestamp extends DataType
         
         SQLTime.setTimeInCalendar(cal, encodedTime);
 
-        cal.set(Calendar.MILLISECOND, 0);
+		cal.set(Calendar.MILLISECOND, 0);
     } // end of setCalendar
-	
-	/**
-	 * Get the value field.  We instantiate the field
-	 * on demand.
-	 *
-	 * @return	The value field.
-	 */
-	public LocalDateTime getLocalDateTime()
-	{
-	    if (isNull())
-	        return null;
-        
-        LocalDate localDate = SQLDate.getLocalDate(encodedDate);
-        LocalTime localTime = SQLTime.getLocalTime(encodedTime, nanos);
-        return LocalDateTime.of(localDate, localTime);
-	}
         
 	/**
 	 * Set the encoded values for the timestamp
@@ -929,21 +875,6 @@ public final class SQLTimestamp extends DataType
 		}
 		/* encoded date should already be 0 for null */
 	}
-	
-	private void setNumericTimestamp(LocalDateTime value) throws StandardException
-	{
-	    if (SanityManager.DEBUG)
-	    {
-	        SanityManager.ASSERT(isNull(), "setNumericTimestamp called when already set");
-	    }
-	    if (value != null)
-	    {
-	        encodedDate = computeEncodedDate(value.toLocalDate());
-	        encodedTime = computeEncodedTime(value.toLocalTime());
-	        nanos = value.getNano();
-	    }
-	    /* encoded date should already be 0 for null */
-	}
 
 	/**
 		computeEncodedDate sets the date in a Calendar object
@@ -962,14 +893,6 @@ public final class SQLTimestamp extends DataType
 		currentCal.setTime(value);
 		return SQLDate.computeEncodedDate(currentCal);
 	}
-
-	private static int computeEncodedDate(java.time.LocalDate value) throws StandardException
-	{
-	    if (value == null)
-	        return 0;
-	    
-	    return SQLDate.computeEncodedDate(value);
-	}
 	/**
 		computeEncodedTime extracts the hour, minute and seconds from
 		a java.util.Date value and encodes them as
@@ -983,13 +906,6 @@ public final class SQLTimestamp extends DataType
 	{
 		currentCal.setTime(value);
 		return SQLTime.computeEncodedTime(currentCal);
-	}
-	
-	private static int computeEncodedTime(java.time.LocalTime value) throws StandardException
-	{
-	    if (value == null)
-            return -1;
-	    return SQLTime.computeEncodedTime(value);
 	}
 
     

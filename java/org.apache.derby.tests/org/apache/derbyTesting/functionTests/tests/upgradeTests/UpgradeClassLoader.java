@@ -25,6 +25,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 
@@ -170,11 +172,13 @@ public class UpgradeClassLoader
             String oldURLJarLocation = getOldJarURLLocation(version);
             for (int i=0; i < jarFiles.length; i++) {
                 try {
-                    url[i] = new URL(oldURLJarLocation + "/" + jarFiles[i]);
+                    url[i] = (new URI(oldURLJarLocation + "/" + jarFiles[i])).toURL();
                     Object dummy = url[i].getContent(); // IOException if not available.
-                } catch (MalformedURLException e) {
-                    Assert.fail(e.toString());
-                } catch (IOException e) {
+                }
+                catch (MalformedURLException e) {  Assert.fail(e.toString()); }
+                catch (URISyntaxException u) { Assert.fail(u.toString()); }
+                catch (IllegalArgumentException u) { Assert.fail(u.toString()); }
+                catch (IOException e) {
                     BaseTestCase.alarm("IOException connecting to location: " + oldURLJarLocation + ", msg: '" + e.getMessage() + "'." 
                         + " Upgrade tests can NOT be run!");
                         e.printStackTrace();

@@ -65,6 +65,7 @@ public class OldVersions
         {10, 14, 2, 0}, // 10.14.2.0 (May 3, 2018/ SVN 1828579)
         {10, 15, 1, 3}, // 10.15.1.3 (March 5, 2019 / SVN 1853019)
         {10, 15, 2, 0}, // 10.15.2.0 (February 18, 2020 / SVN 1873585)
+        {10, 16, 1, 1}, // 10.16.1.1 (June 2, 2022 / SVN 1901046)
     };
 
     //Constant for special upgrade testing with both upgrade and create 

@@ -1,6 +1,6 @@
 /*
  
-   Derby - Class BlobTest
+   Derby - Class org.apache.derbyTesting.functionTests.tests.jdbc4.BlobTest
  
    Licensed to the Apache Software Foundation (ASF) under one or more
    contributor license agreements.  See the NOTICE file distributed with
@@ -36,6 +36,9 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Vector;
 import junit.framework.Test;
+
+import org.apache.derby.iapi.types.HarmonySerialBlob;
+
 import org.apache.derbyTesting.functionTests.util.streams.LoopingAlphabetStream;
 import org.apache.derbyTesting.junit.BaseJDBCTestCase;
 import org.apache.derbyTesting.junit.DatabasePropertyTestSetup;
@@ -828,6 +831,26 @@ public class BlobTest
     }
 
 
+    /**
+     * Tests that the length check in
+     * HarmonySerialBlob.getBinaryStream(long pos, long length)
+     * has been fixed
+     *
+     * @throws Exception
+     */
+    public void testDerby_7143()
+    throws Exception {
+        byte[] BYTES1 = {
+            0x0, 0x1, 0x2, 0x3, 0x4
+        };
+        HarmonySerialBlob hsb = new HarmonySerialBlob(BYTES1);
+
+        InputStream is_1 = hsb.getBinaryStream(1L, hsb.length());
+        InputStream is_2 = new java.io.ByteArrayInputStream(BYTES1);
+
+        assertEquals(is_2,is_1);
+    }
+    
     /**
      * Tests free() after implicit free
      *

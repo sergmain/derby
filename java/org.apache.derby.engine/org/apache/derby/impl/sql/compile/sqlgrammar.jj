@@ -254,7 +254,7 @@ public class SQLParser
 		
 		@param version Data Dictionary major version (DataDictionary.DD_ constant)
 		@param feature SQL Feature name, for error text.
-        @throws If the database is not at the required level.
+        @throws StandardException if the database is not at the required level.
 	*/
 	private boolean checkVersion(int version, String feature) throws StandardException
 	{

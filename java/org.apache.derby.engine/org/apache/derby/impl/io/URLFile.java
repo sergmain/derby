@@ -27,6 +27,8 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 
+import java.net.URISyntaxException;
+import java.net.URI;
 import java.net.URL;
 
 /**
@@ -95,9 +97,11 @@ class URLFile extends InputStreamFile<URLStorageFactory>
     {
         try
         {
-            URL url = new URL( path);
+            URL url = (new URI(path)).toURL();
             return url.openStream();
         }
-        catch( IOException ioe){ throw new java.io.FileNotFoundException(path);}
+        catch( IOException ioe){ throw new FileNotFoundException(path);}
+        catch( URISyntaxException u) { throw new FileNotFoundException(u.getMessage()); }
+        catch( IllegalArgumentException u) { throw new FileNotFoundException(u.getMessage()); }
     } // end of getInputStream
 }

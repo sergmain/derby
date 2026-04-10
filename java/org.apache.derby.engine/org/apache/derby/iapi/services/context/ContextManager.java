@@ -255,6 +255,7 @@ public class ContextManager
      *        false not interested of extended diagnostic information
      * @return true if the context manager is shutdown, false otherwise.
      */
+    @SuppressWarnings("removal")
     public boolean cleanupOnError(Throwable error, boolean diagActive)
 	{
 		if (shutdown)

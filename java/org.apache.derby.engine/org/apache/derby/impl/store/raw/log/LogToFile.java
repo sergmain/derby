@@ -87,6 +87,8 @@ import java.io.DataInputStream;
 import java.io.FileNotFoundException;
 
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URI;
 import java.net.URL;
 
 import java.util.Properties;
@@ -3164,9 +3166,12 @@ public final class LogToFile implements LogFactory, ModuleControl, ModuleSupport
 			// in case the user specifies logDevice in URL form
 			String logDeviceURL = null;
 			try {
-				URL url = new URL(logDevice);
+				URL url = (new URI(logDevice)).toURL();
 				logDeviceURL = url.getFile();
-			} catch (MalformedURLException ex) {}
+			}
+                        catch (MalformedURLException ex) {}
+                        catch (URISyntaxException u) {}
+                        catch (IllegalArgumentException u) {}
 			if (logDeviceURL != null)
 				logDevice = logDeviceURL;
         }

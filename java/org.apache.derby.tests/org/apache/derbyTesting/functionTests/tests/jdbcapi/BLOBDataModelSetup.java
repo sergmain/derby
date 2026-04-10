@@ -101,7 +101,7 @@ final public class BLOBDataModelSetup extends BaseJDBCTestSetup
     /**
      * Teardown test.
      * Rollback connection and close it.
-     * @exception Exceptions causes the test to fail with error
+     * @exception Exception causes the test to fail with error
      */
     protected final void tearDown() 
         throws Exception

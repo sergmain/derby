@@ -127,7 +127,7 @@ public class dropcrash extends BaseTest
      * number.  This will result in conglomerate 8320 not having it's 
      * associate data file c2080.dat.
      *
-	 * @exception  StandardException  Standard exception policy.
+     * @exception  SQLException  Standard exception policy.
      **/
     public void drop_crash_drop_table(Connection conn)
         throws SQLException

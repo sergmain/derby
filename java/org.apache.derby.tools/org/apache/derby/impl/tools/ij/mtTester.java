@@ -58,6 +58,7 @@ public class mtTester implements Runnable
 	** signal that we recieved a fatal error before
 	** quittiing; otherwise, we are silent.
 	*/
+        @SuppressWarnings("removal")
 	public void run()
 	{
 		int numIterations = 0;

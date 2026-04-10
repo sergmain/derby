@@ -67,8 +67,8 @@ public class BlobStoredProcedureTest extends BaseJDBCTestCase {
 
     /**
      * Setup the test.
-     * @throws UnsupportedEncodingException 
-     * @throws a SQLException.
+     * @throws UnsupportedEncodingException if the JVM is messed up
+     * @throws SQLException on error
      */
     protected void setUp() throws SQLException, UnsupportedEncodingException {
     	 //Byte array obatined from the string
@@ -113,7 +113,7 @@ public class BlobStoredProcedureTest extends BaseJDBCTestCase {
      * be used in the implementation of Blob.getBytes.
      * @throws UnsupportedEncodingException 
      *
-     * @throws a SQLException.
+     * @throws SQLException on error
      */
     public void testBlobGetBytesSP() throws SQLException, UnsupportedEncodingException {
         // This string represents the substring that is got from the

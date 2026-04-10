@@ -37,6 +37,7 @@ final class SystemContext extends ContextImpl
 		super(cm, "SystemContext");
 	}
 
+        @SuppressWarnings("removal")
 	public void cleanupOnError(Throwable t) {
 
 		boolean doShutdown = false;
