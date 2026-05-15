@@ -90,7 +90,8 @@ public class Utilities {
             }
             str.append(val);
         }
-        return str.toString() + "'";
+        str.append('\'');
+        return str.toString();
     }
 
     /**
